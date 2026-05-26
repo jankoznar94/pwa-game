@@ -449,17 +449,6 @@ const game = (() => {
         ctx.fillStyle = '#ff444488';
         ctx.fillRect(b.x - b.w/2, b.y - b.h/2, b.w, 3);
       }
-
-      // HP bar nad bossem (na canvasu i mimo)
-      const barW = b.w + 10;
-      const barH = 4;
-      const barX = b.x - barW / 2;
-      const barY = b.y - b.h/2 - 10;
-      ctx.fillStyle = '#333';
-      ctx.fillRect(barX, barY, barW, barH);
-      ctx.fillStyle = '#e94560';
-      ctx.fillRect(barX, barY, barW * Math.max(0, pct), barH);
-
     }
     // Střely hráče
     for (const b of state.bulletsPlayer) {
@@ -559,10 +548,17 @@ const game = (() => {
         sepHTML += `<div class="phase-sep" style="left: ${pct}%"></div>`;
       }
       sepContainer.innerHTML = sepHTML;
+
+      // Indikátor fáze
+      const phaseText = ['F1', 'F2', 'F3', 'F4'];
+      const pIdx = Math.min(b.currentPhase, phaseText.length - 1);
+      $('bossPhaseIndicator').textContent = phaseText[pIdx];
+      $('bossPhaseIndicator').style.color = ['#4a7dff', '#4ecca3', '#ffd700', '#e94560'][pIdx] || '#ffd700';
     } else {
       $('bossHpOutside').style.width = '0%';
       $('bossNameHud').textContent = state.waveTransition > 0 ? 'Příprava...' : '???';
       $('bossPhaseSeparators').innerHTML = '';
+      $('bossPhaseIndicator').textContent = '--';
     }
 
     $('gameMoney').textContent = state.money;
@@ -614,7 +610,9 @@ const game = (() => {
     if (state.ended) return;
     update();
     draw();
-    requestAnimationFrame(gameLoopFn);
+    if (!state.pickupActive && !state.ended) {
+      requestAnimationFrame(gameLoopFn);
+    }
   }
 
   // ===== Konec =====
@@ -702,6 +700,16 @@ const game = (() => {
     { id: 'shield', name: '🛡 Štít', desc: 'Absorbuje 1 zásah', baseCost: 20, costMult: 2.0, maxLevel: 1 },
     { id: 'crit', name: '⚡ Kritický zásah', desc: '10% šance na 3× damage', baseCost: 25, costMult: 2.0, maxLevel: 3 }
   ];
+
+  function afterDeathShop() {
+    // Z result obrazovky rovnou do shopu
+    $('result').classList.add('hidden');
+    $('shop').classList.remove('hidden');
+    const save = loadSave();
+    state.money = save.money;
+    state.upgrades = save.upgrades;
+    renderShop();
+  }
 
   function openShop() {
     $('menu').classList.add('hidden');
@@ -814,7 +822,7 @@ const game = (() => {
     // Zpomalení nepřátelských střel
     if (p.temp.slowTimer > 0) {
       p.temp.slowTimer--;
-      const mult = 0.3 + 0.7 * (p.temp.slowTimer / 360); // postupně se vrací
+      const mult = 0.3 + 0.7 * (p.temp.slowTimer / 360);
       for (const b of state.bulletsEnemy) {
         if (b.alive && b.origVx) {
           b.vx = b.origVx * mult;
@@ -822,9 +830,9 @@ const game = (() => {
         }
       }
     } else {
-      // Obnovení původní rychlosti
+      // Obnovení původní rychlosti — pouze pokud byla změněna
       for (const b of state.bulletsEnemy) {
-        if (b.alive && b.origVx && (b.vx !== b.origVx || b.vy !== b.origVy)) {
+        if (b.alive && b.origVx && b.vx !== b.origVx) {
           b.vx = b.origVx;
           b.vy = b.origVy;
         }
@@ -872,7 +880,7 @@ const game = (() => {
   $('menuMoney').textContent = save.money;
   $('menuBossCount').textContent = `Boss #${Math.min(save.bossIndex + 1, BOSSES.length)}`;
 
-  return { start, quit, restart, openShop, closeShop, buyUpgrade, pickUpgrade };
+  return { start, quit, restart, openShop, closeShop, buyUpgrade, pickUpgrade, afterDeathShop };
 })();
 
 if ('serviceWorker' in navigator) {
