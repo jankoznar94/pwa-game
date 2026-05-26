@@ -68,34 +68,34 @@ const game = (() => {
   const BOSSES = [
     { name: 'SCOUT', maxHp: 25, w: 50, h: 25, speed: 1.2,
       shootInterval: 80, bulletSpeed: 2.0, bulletSize: 4, volleyCount: 1,
-      color: '#8B4513', phase: 'early', shootType: 'aim' },
+      color: '#8B4513', phase: 'early' },
     { name: 'BARRACUDA', maxHp: 40, w: 70, h: 30, speed: 1.8,
       shootInterval: 65, bulletSpeed: 2.5, bulletSize: 4, volleyCount: 1,
-      color: '#CD853F', phase: 'early', shootType: 'aim' },
+      color: '#CD853F', phase: 'early' },
     { name: 'JUGGERNAUT', maxHp: 70, w: 100, h: 40, speed: 0,
       shootInterval: 70, bulletSpeed: 2.2, bulletSize: 5, volleyCount: 2,
-      color: '#8B0000', phase: 'mid', shootType: 'spread' },
+      color: '#8B0000', phase: 'mid' },
     { name: 'VIPER', maxHp: 55, w: 60, h: 28, speed: 2.5,
       shootInterval: 55, bulletSpeed: 3.0, bulletSize: 3, volleyCount: 1,
-      color: '#556B2F', phase: 'mid', shootType: 'aim' },
+      color: '#556B2F', phase: 'mid' },
     { name: 'FORTRESS', maxHp: 100, w: 120, h: 50, speed: 0,
       shootInterval: 60, bulletSpeed: 2.5, bulletSize: 6, volleyCount: 3,
-      color: '#800020', phase: 'mid', shootType: 'spread' },
+      color: '#800020', phase: 'mid' },
     { name: 'PHANTOM', maxHp: 75, w: 65, h: 30, speed: 2.0,
       shootInterval: 50, bulletSpeed: 3.2, bulletSize: 3, volleyCount: 2,
-      color: '#4B0082', phase: 'late', shootType: 'aim' },
+      color: '#4B0082', phase: 'late' },
     { name: 'INFERNO', maxHp: 110, w: 100, h: 45, speed: 0.5,
       shootInterval: 50, bulletSpeed: 2.8, bulletSize: 5, volleyCount: 3,
-      color: '#B22222', phase: 'late', shootType: 'spread' },
+      color: '#B22222', phase: 'late' },
     { name: 'BLITZ', maxHp: 90, w: 55, h: 25, speed: 3.0,
       shootInterval: 45, bulletSpeed: 3.5, bulletSize: 3, volleyCount: 2,
-      color: '#2F4F4F', phase: 'late', shootType: 'aim' },
+      color: '#2F4F4F', phase: 'late' },
     { name: 'TITAN', maxHp: 150, w: 140, h: 55, speed: 0.3,
       shootInterval: 55, bulletSpeed: 3.0, bulletSize: 6, volleyCount: 4,
-      color: '#5B0000', phase: 'final', shootType: 'spread' },
+      color: '#5B0000', phase: 'final' },
     { name: 'OBLIVION', maxHp: 200, w: 130, h: 50, speed: 1.5,
       shootInterval: 40, bulletSpeed: 3.5, bulletSize: 5, volleyCount: 4,
-      color: '#1a0030', phase: 'final', shootType: 'aim' }
+      color: '#1a0030', phase: 'final' }
   ];
 
   // ===== Stav =====
@@ -147,7 +147,7 @@ const game = (() => {
       cfg, name: cfg.name, x: W / 2, y: 55,
       w: cfg.w, h: cfg.h,
       hp: cfg.maxHp, maxHp: cfg.maxHp,
-      dir: 1, dirTimer: 0,
+      dir: 1, dirTimer: 40,
       shootCooldown: cfg.shootInterval,
       alive: true, volleyCount: cfg.volleyCount || 1,
       firedVolley: 0, volleyDelay: 0,
@@ -195,17 +195,8 @@ const game = (() => {
     }
     if (boss.firedVolley < boss.volleyCount && boss.shootCooldown > cfg.shootInterval - 5) {
       const count = boss.volleyCount;
-      const p = state.player;
       for (let i = 0; i < count; i++) {
-        let angle;
-        if (cfg.shootType === 'aim') {
-          const dx = p.x - boss.x;
-          const dy = p.y - boss.y;
-          const baseAngle = Math.atan2(dy, dx);
-          angle = baseAngle + (i - (count - 1) / 2) * 0.12;
-        } else {
-          angle = Math.PI / 2 + (i - (count - 1) / 2) * 0.12 + boss.spreadBase;
-        }
+        const angle = Math.PI / 2 + (i - (count - 1) / 2) * 0.15 + boss.spreadBase;
         state.bulletsEnemy.push(createBullet(
           boss.x, boss.y + boss.h/2,
           Math.cos(angle) * cfg.bulletSpeed,
@@ -380,7 +371,7 @@ const game = (() => {
 
       // Kanóny
       ctx.fillStyle = '#555';
-      const canons = cfg.shootType === 'spread' ? 2 : 1;
+      const canons = cfg.volleyCount > 2 ? 3 : 1;
       for (let i = 0; i < canons; i++) {
         const cx = b.x - b.w/4 + i * b.w/2;
         ctx.fillRect(cx - 3, b.y + b.h/2 - 2, 6, 6);
