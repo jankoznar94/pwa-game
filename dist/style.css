@@ -158,3 +158,21 @@ body {
 }
 .shop-btn:disabled { background: #333; color: #666; cursor: default; }
 .shop-btn:active:not(:disabled) { background: #2a5fdf; }
+
+/* ===== Pickup (dočasné upgrady) ===== */
+#pickup h2 { margin-top: 30px; color: #ffd700; text-shadow: 0 0 15px rgba(255,215,0,0.4); }
+.pickup-sub { font-size: 0.85rem; color: #aaa; text-align: center; margin-bottom: 10px; }
+#pickupItems { width: 100%; display: flex; flex-direction: column; gap: 8px; }
+.pickup-card {
+  background: #1a1a3e;
+  border: 2px solid #4a7dff;
+  border-radius: 12px;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.2s;
+  text-align: center;
+}
+.pickup-card:active { transform: scale(0.97); }
+.pickup-card:hover { box-shadow: 0 0 20px rgba(74,125,255,0.3); }
+.pickup-name { font-weight: bold; font-size: 1.1rem; color: #fff; }
+.pickup-desc { font-size: 0.85rem; color: #bbb; margin-top: 4px; }

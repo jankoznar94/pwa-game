@@ -124,20 +124,21 @@ const game = (() => {
   function createPlayer() {
     const u = state.upgrades;
     return {
-      x: W / 2, y: H - 60, w: 18, h: 20,
+      x: W / 2, y: H - 60, w: 24, h: 26,
       maxHp: 3 + (u.maxHp || 0) * 2,
       hp: 3 + (u.maxHp || 0) * 2,
       speed: 3.0 + (u.speed || 0) * 0.5,
       fireRate: Math.max(5, 20 - (u.fireRate || 0) * 3),
       damage: 1 + (u.damage || 0),
       multishot: Math.min(3, Math.floor((u.multishot || 0))),
-      piercing: Math.min(3, Math.floor((u.piercing || 0))),
-      fireCooldown: 0, invincible: 0
+      shield: Math.min(1, Math.floor((u.shield || 0))),
+      shieldHp: Math.min(1, Math.floor((u.shield || 0))),
+      fireCooldown: 0, invincible: 0, temp: {}
     };
   }
 
-  function createBullet(x, y, vx, vy, size, dmg, color, pierce = 0) {
-    return { x, y, vx, vy, size, dmg, color, alive: true, pierce };
+  function createBullet(x, y, vx, vy, size, dmg, color) {
+    return { x, y, vx, vy, size, dmg, color, alive: true };
   }
 
   function createBoss(cfg) {
@@ -232,7 +233,7 @@ const game = (() => {
         const spread = (i - (count - 1) / 2) * 0.08;
         state.bulletsPlayer.push(createBullet(
           p.x + i * 3 - (count - 1) * 1.5, p.y - p.h/2,
-          spread, -6.5, 3, p.damage, '#4affff', p.piercing
+          spread, -6.5, 3, p.damage, '#4affff'
         ));
       }
       sfxShoot();
@@ -265,12 +266,13 @@ const game = (() => {
         { x: b.x, y: b.y, w: b.size * 2, h: b.size * 2 },
         { x: state.boss.x, y: state.boss.y, w: state.boss.w, h: state.boss.h }
       )) {
-        state.boss.hp -= b.dmg;
-        if (b.pierce > 0) {
-          b.pierce--;
-        } else {
-          b.alive = false;
+        let dmgDealt = b.dmg;
+        const p = state.player;
+        if (p.temp.critChance && Math.random() < p.temp.critChance) {
+          dmgDealt *= 3;
         }
+        state.boss.hp -= dmgDealt;
+        b.alive = false;
         state.combo++;
         if (state.boss.hp <= 0) {
           state.boss.hp = 0;
@@ -292,10 +294,15 @@ const game = (() => {
       if (b.y > H + 10 || b.x < -10 || b.x > W + 10) b.alive = false;
       if (p.invincible <= 0 && circleRectCollide(b.x, b.y, b.size, p.x, p.y, p.w, p.h)) {
         b.alive = false;
-        p.hp--;
-        p.invincible = 40;
-        state.combo = 0;
-        sfxPlayerHit();
+        if (p.shieldHp > 0) {
+          p.shieldHp--;
+          sfxHit();
+        } else {
+          p.hp--;
+          p.invincible = 40;
+          state.combo = 0;
+          sfxPlayerHit();
+        }
         if (p.hp <= 0) { p.hp = 0; endGame(false); return; }
       }
     }
@@ -304,18 +311,26 @@ const game = (() => {
     state.bulletsPlayer = state.bulletsPlayer.filter(b => b.alive);
     state.bulletsEnemy = state.bulletsEnemy.filter(b => b.alive);
 
-    // Boss dead → další vlna
-    if (state.boss && !state.boss.alive && !state.waveTransition) {
-      state.waveTransition = 60;
+    // Boss dead → výběr dočasného upgradu
+    if (state.boss && !state.boss.alive && !state.waveTransition && !state.pickupActive) {
+      state.waveTransition = 30; // krátká pauza před pickupe
     }
     if (state.waveTransition > 0) {
       state.waveTransition--;
-      if (state.waveTransition <= 0) {
-        state.bossIndex++;
-        if (state.bossIndex >= BOSSES.length) { endGame(true); return; }
-        spawnBoss();
+      if (state.waveTransition <= 0 && state.boss && !state.boss.alive) {
+        if (state.bossIndex < BOSSES.length - 1) {
+          showPickup();
+          return;
+        } else {
+          state.bossIndex++;
+          endGame(true);
+          return;
+        }
       }
     }
+
+    // Dočasné efekty
+    applyTempEffects();
     updateUI();
   }
 
@@ -523,13 +538,13 @@ const game = (() => {
   function initState() {
     const save = loadSave();
     const defUpg = {};
-    ['maxHp','speed','fireRate','damage','multishot','piercing'].forEach(k => defUpg[k] = save.upgrades[k] || 0);
+    ['maxHp','speed','fireRate','damage','multishot','shield'].forEach(k => defUpg[k] = save.upgrades[k] || 0);
     state = {
       money: save.money, bossIndex: save.bossIndex, upgrades: defUpg,
       player: null, boss: null,
       bulletsPlayer: [], bulletsEnemy: [],
       playerTarget: null, combo: 0,
-      waveTransition: 0, ended: false
+      waveTransition: 0, ended: false, pickupActive: false
     };
     state.player = createPlayer();
     if (gameLoop) cancelAnimationFrame(gameLoop);
@@ -570,7 +585,7 @@ const game = (() => {
     { id: 'fireRate', name: '🔫 Rychlejší palba', desc: 'Zkracuje pauzu mezi výstřely', baseCost: 20, costMult: 1.8, maxLevel: 4 },
     { id: 'speed', name: '⚡ Rychlejší loď', desc: '+0.5 rychlosti pohybu', baseCost: 10, costMult: 1.5, maxLevel: 5 },
     { id: 'multishot', name: '💥 Vícenásobná střela', desc: '+1 střela na výstřel', baseCost: 30, costMult: 2.0, maxLevel: 3 },
-    { id: 'piercing', name: '🎯 Průrazné střely', desc: 'Střela projede bossem (max 3)', baseCost: 25, costMult: 2.0, maxLevel: 3 }
+    { id: 'shield', name: '🛡 Štít', desc: 'Absorbuje 1 zásah', baseCost: 20, costMult: 2.0, maxLevel: 1 }
   ];
 
   function openShop() {
@@ -619,13 +634,116 @@ const game = (() => {
     saveGame();
   }
 
+  // ===== DOČASNÉ UPGRADY (pickup po bossovi) =====
+  const TEMP_UPGRADES = [
+    { id: 'tempShield', name: '🛡 Štít', desc: 'Absorbuje 1 zásah' },
+    { id: 'tempSlow', name: '⏱ Zpomalení', desc: 'Nepřátelské střely na 3 s půl rychlosti' },
+    { id: 'tempBlast', name: '💥 Výbuch', desc: 'Zničí všechny střely na obrazovce' },
+    { id: 'tempHoming', name: '🧲 Navádění', desc: 'Na 3 s střely letí za bossem' },
+    { id: 'tempCrit', name: '⚡ Kritický zásah', desc: '25% šance na trojnásobné poškození' },
+    { id: 'tempDrone', name: '🌀 Dron', desc: 'Dron sestřelí 1 střelu za vteřinu' }
+  ];
+
+  function showPickup() {
+    state.pickupActive = true;
+    $('game').classList.add('hidden');
+    $('pickup').classList.remove('hidden');
+
+    // Vyber 3 náhodné (nebo míň, pokud jich je málo)
+    const shuffled = [...TEMP_UPGRADES].sort(() => Math.random() - 0.5);
+    const choices = shuffled.slice(0, 3);
+
+    $('pickupItems').innerHTML = choices.map(c => `
+      <div class="pickup-card" onclick="game.pickUpgrade('${c.id}')">
+        <div class="pickup-name">${c.name}</div>
+        <div class="pickup-desc">${c.desc}</div>
+      </div>
+    `).join('');
+  }
+
+  function pickUpgrade(id) {
+    if (!state.pickupActive) return;
+    state.pickupActive = false;
+    $('pickup').classList.add('hidden');
+    $('game').classList.remove('hidden');
+
+    const p = state.player;
+    switch (id) {
+      case 'tempShield':
+        p.shieldHp = (p.shieldHp || 0) + 1; break;
+      case 'tempSlow':
+        p.temp.slowTimer = 180; break; // 3 s při 60 fps
+      case 'tempBlast':
+        state.bulletsEnemy = []; break;
+      case 'tempHoming':
+        p.temp.homingTimer = 180; break;
+      case 'tempCrit':
+        p.temp.critChance = 0.25; break;
+      case 'tempDrone':
+        p.temp.droneCount = (p.temp.droneCount || 0) + 1; break;
+    }
+
+    // Nastartuj další stage
+    state.bossIndex++;
+    if (state.bossIndex >= BOSSES.length) { endGame(true); return; }
+    spawnBoss();
+    state.ended = false;
+  }
+
+  // Aplikuj dočasné efekty na střely a updaty
+  function applyTempEffects() {
+    const p = state.player;
+
+    // Zpomalení nepřátelských střel
+    if (p.temp.slowTimer > 0) {
+      p.temp.slowTimer--;
+      for (const b of state.bulletsEnemy) {
+        if (b.alive) { b.vx *= 0.97; b.vy *= 0.97; }
+      }
+    }
+
+    // Navádění střel
+    if (p.temp.homingTimer > 0) {
+      p.temp.homingTimer--;
+      if (state.boss && state.boss.alive) {
+        for (const b of state.bulletsPlayer) {
+          if (!b.alive) continue;
+          const dx = state.boss.x - b.x;
+          const dy = state.boss.y - b.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist > 10) {
+            b.vx += (dx / dist) * 0.3;
+            b.vy += (dy / dist) * 0.3;
+            const spd = Math.sqrt(b.vx * b.vx + b.vy * b.vy);
+            if (spd > 8) { b.vx = (b.vx / spd) * 8; b.vy = (b.vy / spd) * 8; }
+          }
+        }
+      }
+    }
+
+    // Kritický zásah — aplikuju přímo u střely
+    // Dron — sestřelí nepřátelské střely
+    if (p.temp.droneCount > 0 && gameFrame % 60 === 0) {
+      let shots = p.temp.droneCount;
+      for (const b of state.bulletsEnemy) {
+        if (!b.alive || shots <= 0) continue;
+        const dx = b.x - p.x;
+        const dy = b.y - p.y;
+        if (Math.sqrt(dx * dx + dy * dy) < 120) {
+          b.alive = false;
+          shots--;
+        }
+      }
+    }
+  }
+
   // ===== Init =====
   setupInput();
   const save = loadSave();
   $('menuMoney').textContent = save.money;
   $('menuBossCount').textContent = `Boss #${Math.min(save.bossIndex + 1, BOSSES.length)}`;
 
-  return { start, quit, restart, openShop, closeShop, buyUpgrade };
+  return { start, quit, restart, openShop, closeShop, buyUpgrade, pickUpgrade };
 })();
 
 if ('serviceWorker' in navigator) {
