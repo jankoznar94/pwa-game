@@ -192,7 +192,8 @@ const game = (() => {
       alive: true, volleyCount: phase.volleyCount,
       firedVolley: 0, volleyDelay: 0,
       spreadBase: 0,
-      currentPhase: 0
+      currentPhase: 0,
+      phaseFlash: 0
     };
   }
 
@@ -223,38 +224,38 @@ const game = (() => {
     }
     if (newPhase !== boss.currentPhase) {
       boss.currentPhase = newPhase;
-      boss.spreadBase = (boss.spreadBase || 0) + 0.06; // fáze změní rozptyl
+      boss.phaseFlash = 15; // bliknutí při změně fáze
     }
-    const phase = cfg.phases[boss.currentPhase];
 
-    // === Fixní pohyb ===
+    // === Fixní pohyb (vždy, nezávisle na střelbě) ===
     if (cfg.movePattern === 'sweep') {
       boss.x += cfg.speed * boss.dir;
       if (boss.x < boss.w/2) { boss.dir = 1; }
       if (boss.x > W - boss.w/2) { boss.dir = -1; }
     }
-    // 'stationary' = nehýbe se
 
     // === Střelba ===
-    if (boss.volleyDelay > 0) { boss.volleyDelay--; return; }
-    boss.shootCooldown--;
-    if (boss.shootCooldown <= 0) {
-      boss.shootCooldown = phase.shootInterval;
-      boss.firedVolley = 0;
-    }
-    if (boss.firedVolley < phase.volleyCount && boss.shootCooldown > phase.shootInterval - 5) {
-      const count = phase.volleyCount;
-      for (let i = 0; i < count; i++) {
-        const angle = Math.PI / 2 + (i - (count - 1) / 2) * phase.spreadDeg + (boss.spreadBase || 0);
-        state.bulletsEnemy.push(createBullet(
-          boss.x, boss.y + boss.h/2,
-          Math.cos(angle) * phase.bulletSpeed,
-          Math.sin(angle) * phase.bulletSpeed,
-          phase.bulletSize, 1, '#ff4444'
-        ));
+    if (boss.volleyDelay > 0) { boss.volleyDelay--; }
+    else {
+      boss.shootCooldown--;
+      if (boss.shootCooldown <= 0) {
+        boss.shootCooldown = cfg.phases[boss.currentPhase].shootInterval;
+        boss.firedVolley = 0;
       }
-      boss.firedVolley = phase.volleyCount;
-      boss.volleyDelay = 2;
+      const phase = cfg.phases[boss.currentPhase];
+      if (boss.firedVolley < phase.volleyCount && boss.shootCooldown > cfg.phases[boss.currentPhase].shootInterval - 5) {
+        for (let i = 0; i < phase.volleyCount; i++) {
+          const angle = Math.PI / 2 + (i - (phase.volleyCount - 1) / 2) * phase.spreadDeg + (boss.spreadBase || 0);
+          state.bulletsEnemy.push(createBullet(
+            boss.x, boss.y + boss.h/2,
+            Math.cos(angle) * phase.bulletSpeed,
+            Math.sin(angle) * phase.bulletSpeed,
+            phase.bulletSize, 1, '#ff4444'
+          ));
+        }
+        boss.firedVolley = phase.volleyCount;
+        boss.volleyDelay = 2;
+      }
     }
   }
 
@@ -408,11 +409,21 @@ const game = (() => {
       const b = state.boss;
       const cfg = b.cfg;
 
+      // Blikání při změně fáze
+      if (b.phaseFlash > 0) b.phaseFlash--;
+
       // Stín/tělo
       const phaseColors = ['#8b1a1a', '#cc0000', '#ff3333', '#ff6666'];
       const pIdx = Math.min(b.currentPhase, phaseColors.length - 1);
       ctx.fillStyle = phaseColors[pIdx];
       ctx.fillRect(b.x - b.w/2, b.y - b.h/2, b.w, b.h);
+
+      // Zářivý okraj při změně fáze
+      if (b.phaseFlash > 0 && b.phaseFlash % 3 < 2) {
+        ctx.strokeStyle = '#ffff00';
+        ctx.lineWidth = 3;
+        ctx.strokeRect(b.x - b.w/2 - 2, b.y - b.h/2 - 2, b.w + 4, b.h + 4);
+      }
 
       // Kokpit
       ctx.fillStyle = 'rgba(255,255,255,0.15)';
@@ -450,23 +461,6 @@ const game = (() => {
       ctx.font = '8px sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText(`Fáze ${b.currentPhase + 1}/${cfg.phases.length}`, b.x, b.y - b.h/2 - 14);
-    }
-
-    // Dron — krouží kolem hráče
-    if (p.temp.droneCount > 0) {
-      const angle = gameFrame * 0.05;
-      for (let i = 0; i < p.temp.droneCount; i++) {
-        const da = angle + i * Math.PI * 2 / p.temp.droneCount;
-        const dx = p.x + Math.cos(da) * 30;
-        const dy = p.y + Math.sin(da) * 30;
-        ctx.fillStyle = '#4affff';
-        ctx.beginPath();
-        ctx.arc(dx, dy, 5, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = 'rgba(74,255,255,0.3)';
-        ctx.lineWidth = 1;
-        ctx.stroke();
-      }
     }
 
     // Střely hráče
@@ -510,6 +504,41 @@ const game = (() => {
       ctx.lineTo(p.x + 3, p.y + p.h/2.5);
       ctx.fill();
     }
+
+    // Srdíčka (životy hráče) — kreslí se do canvasu dole
+    ctx.font = '16px sans-serif';
+    ctx.textAlign = 'left';
+    let hpText = '';
+    for (let i = 0; i < p.maxHp; i++) {
+      hpText += (i < p.hp) ? '❤️' : '🖤';
+    }
+    ctx.fillStyle = '#fff';
+    ctx.font = '14px sans-serif';
+    ctx.fillText(hpText, 10, H - 8);
+
+    // Štít indikace
+    if (p.shieldHp > 0) {
+      ctx.fillStyle = '#4affff';
+      ctx.font = '12px sans-serif';
+      ctx.fillText(`🛡 ${'■'.repeat(p.shieldHp)}`, 10, H - 24);
+    }
+
+    // Dron — krouží kolem hráče
+    if (p.temp && p.temp.droneCount > 0) {
+      const angle = gameFrame * 0.05;
+      for (let i = 0; i < p.temp.droneCount; i++) {
+        const da = angle + i * Math.PI * 2 / p.temp.droneCount;
+        const dx = p.x + Math.cos(da) * 30;
+        const dy = p.y + Math.sin(da) * 30;
+        ctx.fillStyle = '#4affff';
+        ctx.beginPath();
+        ctx.arc(dx, dy, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(74,255,255,0.3)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+    }
   }
 
   // ===== UI =====
@@ -526,11 +555,6 @@ const game = (() => {
       $('bossHpOutside').style.width = '0%';
       $('bossNameHud').textContent = state.waveTransition > 0 ? 'Příprava...' : '???';
     }
-
-    // Player HP
-    const phPct = Math.max(0, (p.hp / p.maxHp) * 100);
-    $('playerHp').style.width = phPct + '%';
-    $('playerHpText').textContent = `${p.hp}/${p.maxHp}`;
 
     $('gameMoney').textContent = state.money;
     $('gameCombo').textContent = state.combo;
