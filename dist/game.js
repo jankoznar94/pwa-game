@@ -125,8 +125,8 @@ const game = (() => {
     const u = state.upgrades;
     return {
       x: W / 2, y: H - 60, w: 24, h: 26,
-      maxHp: 3 + (u.maxHp || 0) * 2,
-      hp: 3 + (u.maxHp || 0) * 2,
+      maxHp: 3 + (u.maxHp || 0),
+      hp: 3 + (u.maxHp || 0),
       speed: 3.0 + (u.speed || 0) * 0.5,
       fireRate: Math.max(5, 20 - (u.fireRate || 0) * 3),
       damage: 1 + (u.damage || 0),
@@ -592,7 +592,7 @@ const game = (() => {
 
   // ===== OBCHOD =====
   const SHOP_ITEMS = [
-    { id: 'maxHp', name: '🛡 Pevnější štít', desc: '+2 max HP', baseCost: 15, costMult: 1.6, maxLevel: 5 },
+    { id: 'maxHp', name: '🛡 Pevnější štít', desc: '+1 max HP', baseCost: 15, costMult: 1.6, maxLevel: 5 },
     { id: 'damage', name: '⚔ Silnější střely', desc: '+1 poškození', baseCost: 12, costMult: 1.7, maxLevel: 5 },
     { id: 'fireRate', name: '🔫 Rychlejší palba', desc: 'Zkracuje pauzu mezi výstřely', baseCost: 20, costMult: 1.8, maxLevel: 4 },
     { id: 'speed', name: '⚡ Rychlejší loď', desc: '+0.5 rychlosti pohybu', baseCost: 10, costMult: 1.5, maxLevel: 5 },
