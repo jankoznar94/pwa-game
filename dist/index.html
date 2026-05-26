@@ -3,64 +3,66 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="theme-color" content="#1a1a2e" />
+  <meta name="theme-color" content="#0a0a1a" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <link rel="manifest" href="manifest.json" />
-  <title>Boss Boj</title>
+  <title>Boss Slayer</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div id="app">
-    <!-- Menu obrazovka -->
+    <!-- Menu -->
     <div id="menu" class="screen">
-      <h1>⚔ Boss Boj ⚔</h1>
+      <h1>🚀 Boss Slayer 🚀</h1>
+      <div class="stats-row">
+        <span>💰 <span id="menuMoney">0</span></span>
+      </div>
       <button class="btn-main" onclick="game.start()">Hrát</button>
+      <button class="btn-sec" onclick="game.openShop()">🛒 Obchod</button>
+      <p class="boss-count" id="menuBossCount">Boss #1</p>
     </div>
 
-    <!-- Herní obrazovka -->
+    <!-- Hra -->
     <div id="game" class="screen hidden">
       <div id="hud">
         <div class="hp-row">
-          <div class="hp-bar-wrap">
-            <span class="hp-label">Boss</span>
-            <div class="hp-bar"><div id="bossHp" class="hp-fill boss-hp"></div></div>
-            <span id="bossHpText" class="hp-text">200</span>
-          </div>
+          <span class="hp-label">Boss</span>
+          <div class="hp-bar"><div id="bossHp" class="hp-fill boss-hp"></div></div>
+          <span id="bossHpText" class="hp-text"></span>
         </div>
         <div class="hp-row">
-          <div class="hp-bar-wrap">
-            <span class="hp-label">Ty</span>
-            <div class="hp-bar"><div id="playerHp" class="hp-fill player-hp"></div></div>
-            <span id="playerHpText" class="hp-text">100</span>
-          </div>
+          <span class="hp-label">Ty</span>
+          <div class="hp-bar"><div id="playerHp" class="hp-fill player-hp"></div></div>
+          <span id="playerHpText" class="hp-text"></span>
         </div>
-        <div id="phaseDisplay" class="phase-info"></div>
+        <div id="waveInfo" class="wave-info">Boss #1</div>
       </div>
 
-      <canvas id="arena" width="400" height="300"></canvas>
+      <canvas id="arena" width="400" height="500"></canvas>
 
-      <div id="log">
-        <div id="logContent"></div>
+      <div id="bottomInfo">
+        <span>💰 <span id="gameMoney">0</span></span>
+        <span id="gameStatus"></span>
       </div>
-
-      <div id="actions">
-        <button id="btnAttack" class="btn-action btn-attack" onclick="game.attack()">⚔ Útok</button>
-        <button id="btnHeal" class="btn-action btn-heal" onclick="game.heal()">💚 Léčení</button>
-        <button id="btnDodge" class="btn-action btn-dodge" onclick="game.dodge()">💨 Uhnutí</button>
-      </div>
-
-      <button class="btn-back" onclick="game.quit()">✕ Zpět</button>
     </div>
 
-    <!-- Konec hry -->
+    <!-- Konec -->
     <div id="result" class="screen hidden">
       <h1 id="resultTitle"></h1>
       <p id="resultMsg"></p>
+      <p id="resultMoney" class="result-money"></p>
       <button class="btn-main" onclick="game.restart()">Hrát znovu</button>
       <button class="btn-sec" onclick="game.quit()">Menu</button>
     </div>
-  </div>
 
+    <!-- Obchod -->
+    <div id="shop" class="screen hidden">
+      <h2>🛒 Obchod</h2>
+      <p class="shop-money">💰 <span id="shopMoney">0</span></p>
+      <div id="shopItems"></div>
+      <button class="btn-sec" onclick="game.closeShop()">Zpět</button>
+    </div>
+  </div>
   <script src="game.js"></script>
 </body>
 </html>
