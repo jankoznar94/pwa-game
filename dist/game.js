@@ -131,6 +131,7 @@ const game = (() => {
       fireRate: Math.max(5, 20 - (u.fireRate || 0) * 3),
       damage: 1 + (u.damage || 0),
       multishot: Math.min(3, Math.floor((u.multishot || 0))),
+      crit: Math.min(3, Math.floor((u.crit || 0))),
       shield: Math.min(1, Math.floor((u.shield || 0))),
       shieldHp: Math.min(1, Math.floor((u.shield || 0))),
       fireCooldown: 0, invincible: 0, temp: {}
@@ -268,7 +269,7 @@ const game = (() => {
       )) {
         let dmgDealt = b.dmg;
         const p = state.player;
-        if (p.temp.critChance && Math.random() < p.temp.critChance) {
+        if ((p.temp.critChance || p.crit > 0) && Math.random() < (0.1 * p.crit + (p.temp.critChance || 0))) {
           dmgDealt *= 3;
         }
         state.boss.hp -= dmgDealt;
@@ -303,7 +304,18 @@ const game = (() => {
           state.combo = 0;
           sfxPlayerHit();
         }
-        if (p.hp <= 0) { p.hp = 0; endGame(false); return; }
+        if (p.hp <= 0) {
+          if (p.temp.hasExtraLife) {
+            p.temp.hasExtraLife = false;
+            p.hp = 1;
+            p.invincible = 60;
+            sfxHit();
+          } else {
+            p.hp = 0;
+            endGame(false);
+            return;
+          }
+        }
       }
     }
 
@@ -538,7 +550,7 @@ const game = (() => {
   function initState() {
     const save = loadSave();
     const defUpg = {};
-    ['maxHp','speed','fireRate','damage','multishot','shield'].forEach(k => defUpg[k] = save.upgrades[k] || 0);
+    ['maxHp','speed','fireRate','damage','multishot','shield','crit'].forEach(k => defUpg[k] = save.upgrades[k] || 0);
     state = {
       money: save.money, bossIndex: save.bossIndex, upgrades: defUpg,
       player: null, boss: null,
@@ -585,7 +597,8 @@ const game = (() => {
     { id: 'fireRate', name: '🔫 Rychlejší palba', desc: 'Zkracuje pauzu mezi výstřely', baseCost: 20, costMult: 1.8, maxLevel: 4 },
     { id: 'speed', name: '⚡ Rychlejší loď', desc: '+0.5 rychlosti pohybu', baseCost: 10, costMult: 1.5, maxLevel: 5 },
     { id: 'multishot', name: '💥 Vícenásobná střela', desc: '+1 střela na výstřel', baseCost: 30, costMult: 2.0, maxLevel: 3 },
-    { id: 'shield', name: '🛡 Štít', desc: 'Absorbuje 1 zásah', baseCost: 20, costMult: 2.0, maxLevel: 1 }
+    { id: 'shield', name: '🛡 Štít', desc: 'Absorbuje 1 zásah', baseCost: 20, costMult: 2.0, maxLevel: 1 },
+    { id: 'crit', name: '⚡ Kritický zásah', desc: '10% šance na 3× damage', baseCost: 25, costMult: 2.0, maxLevel: 3 }
   ];
 
   function openShop() {
@@ -637,10 +650,10 @@ const game = (() => {
   // ===== DOČASNÉ UPGRADY (pickup po bossovi) =====
   const TEMP_UPGRADES = [
     { id: 'tempShield', name: '🛡 Štít', desc: 'Absorbuje 1 zásah' },
-    { id: 'tempSlow', name: '⏱ Zpomalení', desc: 'Nepřátelské střely na 3 s půl rychlosti' },
+    { id: 'tempSlow', name: '⏱ Zpomalení', desc: 'Nepřátelské střely na 6 s zpomalené' },
     { id: 'tempBlast', name: '💥 Výbuch', desc: 'Zničí všechny střely na obrazovce' },
-    { id: 'tempHoming', name: '🧲 Navádění', desc: 'Na 3 s střely letí za bossem' },
-    { id: 'tempCrit', name: '⚡ Kritický zásah', desc: '25% šance na trojnásobné poškození' },
+    { id: 'tempHoming', name: '🧲 Navádění', desc: 'Na 6 s střely letí za bossem' },
+    { id: 'tempExtraLife', name: '💖 Extra život', desc: 'Po smrti pokračuješ s 1 HP' },
     { id: 'tempDrone', name: '🌀 Dron', desc: 'Dron sestřelí 1 střelu za vteřinu' }
   ];
 
@@ -672,13 +685,13 @@ const game = (() => {
       case 'tempShield':
         p.shieldHp = (p.shieldHp || 0) + 1; break;
       case 'tempSlow':
-        p.temp.slowTimer = 180; break; // 3 s při 60 fps
+        p.temp.slowTimer = 360; break; // 6 s při 60 fps
       case 'tempBlast':
         state.bulletsEnemy = []; break;
       case 'tempHoming':
-        p.temp.homingTimer = 180; break;
-      case 'tempCrit':
-        p.temp.critChance = 0.25; break;
+        p.temp.homingTimer = 360; break;
+      case 'tempExtraLife':
+        p.temp.hasExtraLife = true; break;
       case 'tempDrone':
         p.temp.droneCount = (p.temp.droneCount || 0) + 1; break;
     }
