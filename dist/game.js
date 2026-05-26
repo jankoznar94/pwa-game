@@ -272,11 +272,10 @@ const game = (() => {
           b.alive = false;
         }
         state.combo++;
-        if (state.combo % 10 === 0) state.money += 1;
         if (state.boss.hp <= 0) {
           state.boss.hp = 0;
           state.boss.alive = false;
-          const bonus = 10 + state.bossIndex * 3;
+          const bonus = 12 + state.bossIndex * 5;
           state.money += bonus;
           state.combo = 0;
           sfxBossKill();
