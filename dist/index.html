@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="theme-color" content="#0a0a1a" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <link rel="manifest" href="manifest.json" />
-  <title>Boss Slayer v2</title>
   <meta http-equiv="cache-control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="pragma" content="no-cache" />
+  <link rel="manifest" href="manifest.json" />
+  <title>Boss Slayer v2</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -16,9 +16,7 @@
     <!-- Menu -->
     <div id="menu" class="screen">
       <h1>🚀 Boss Slayer 🚀</h1>
-      <div class="stats-row">
-        <span>💰 <span id="menuMoney">0</span></span>
-      </div>
+      <div class="stats-row">💰 <span id="menuMoney">0</span></div>
       <button class="btn-main" onclick="game.start()">Hrát</button>
       <button class="btn-sec" onclick="game.openShop()">🛒 Obchod</button>
       <p class="boss-count" id="menuBossCount">Boss #1</p>
@@ -27,10 +25,9 @@
     <!-- Hra -->
     <div id="game" class="screen hidden">
       <div id="hud">
-        <div class="hp-row">
-          <span class="hp-label">Boss</span>
-          <div class="hp-bar"><div id="bossHp" class="hp-fill boss-hp"></div></div>
-          <span id="bossHpText" class="hp-text"></span>
+        <div class="boss-hp-header" id="bossHpHeader">
+          <span id="bossNameHud" class="boss-hud-name">Boss</span>
+          <div class="boss-hp-outside"><div id="bossHpOutside" class="boss-hp-fill"></div></div>
         </div>
         <div class="hp-row">
           <span class="hp-label">Ty</span>
@@ -44,7 +41,7 @@
 
       <div id="bottomInfo">
         <span>💰 <span id="gameMoney">0</span></span>
-        <span id="gameStatus"></span>
+        <span>🔥 <span id="gameCombo">0</span></span>
       </div>
     </div>
 
