@@ -649,49 +649,68 @@
   function onEnemyDefeated() {
     const bs = battleState;
     const floor = bs.currentFloor;
+
+    // Goldy a XP vždy
+    state.hero.gold += floor.rewardGold;
+    if (floor.rewardXp) {
+      state.hero.xp += floor.rewardXp;
+      checkLevelUp();
+    }
+    saveGame();
+
     if (floor.boss) {
+      // Boss = loot overlay s výběrem
+      showBossLoot(floor);
+    } else {
+      // Normální patro = instant odměna (už přičteno), pokračuj
       bs.floorIndex++;
       if (bs.floorIndex >= bs.dungeon.floors.length) {
         endDungeon(true);
       } else {
-        // Boss byl poražen, ale dungeon pokračuje
-        showReward(floor);
+        startFloor();
       }
-    } else {
-      bs.floorIndex++;
-      showReward(floor);
     }
   }
 
   // ===== REWARDS =====
-  function showReward(floor) {
-    const items = [];
-    // Zlato
-    items.push({
+  function showBossLoot(floor) {
+    // Sestav možnosti lootu
+    const choices = [];
+
+    // Zlato (vždy)
+    choices.push({
       name: `💰 ${floor.rewardGold} zlata`,
-      desc: 'Můžeš utratit v obchodě'
+      desc: 'Peníze do obchodu',
+      action: () => {} // už přičteno
     });
-    // XP
+
+    // XP (vždy, pokud je)
     if (floor.rewardXp) {
-      items.push({
+      choices.push({
         name: `⭐ ${floor.rewardXp} XP`,
-        desc: 'Zkušenost pro hrdinu'
+        desc: 'Zkušenost pro hrdinu',
+        action: () => {}
       });
     }
-    // Equipment drop - malá šance
-    if (Math.random() < 0.2) {
-      const wpns = ALL_WEAPONS.filter(w => w.id !== 'fists' && !hasWeapon(w.id));
-      const arms = ALL_ARMORS.filter(a => a.id !== 'rags' && !hasArmor(a.id));
-      const shds = ALL_SHIELDS.filter(s => s.id !== 'none' && !hasShield(s.id));
-      const all = [...wpns.map(w => ({ type: 'weapon', item: w })),
-                    ...arms.map(a => ({ type: 'armor', item: a })),
-                    ...shds.map(s => ({ type: 'shield', item: s }))];
-      if (all.length > 0) {
-        const pick = all[rand(0, all.length - 1)];
-        const name = pick.item.name;
-        items.push({
-          name: `🎁 ${name}`,
-          desc: 'Nová výzbroj!',
+
+    // Item drop z bosse — náhodný výběr z dostupných zbraní/zbrojí/štítů
+    const wpns = ALL_WEAPONS.filter(w => w.id !== 'fists' && !hasWeapon(w.id));
+    const arms = ALL_ARMORS.filter(a => a.id !== 'rags' && !hasArmor(a.id));
+    const shds = ALL_SHIELDS.filter(s => s.id !== 'none' && !hasShield(s.id));
+    const allLoot = [...wpns.map(w => ({ type: 'weapon', item: w })),
+                      ...arms.map(a => ({ type: 'armor', item: a })),
+                      ...shds.map(s => ({ type: 'shield', item: s }))];
+
+    if (allLoot.length > 0) {
+      // Vyber 2 náhodné
+      const shuffled = shuffle([...allLoot]);
+      const picks = shuffled.slice(0, 2);
+      for (const pick of picks) {
+        choices.push({
+          name: `🎁 ${pick.item.name}`,
+          desc: pick.type === 'weapon' ? `Útok ×${pick.item.dmgMult}` :
+                pick.type === 'armor' ? `Brnění +${pick.item.armor}` :
+                `Blok ${pick.item.block}%`,
           action: () => {
             if (pick.type === 'weapon') state.hero.weapon = pick.item.id;
             else if (pick.type === 'armor') state.hero.armor = pick.item.id;
@@ -701,41 +720,39 @@
       }
     }
 
-    $('rewardTitle').textContent = floor.boss ? '🎉 Boss poražen!' : '✅ Nepřítel padl!';
-    $('rewardItems').innerHTML = items.map(item =>
-      `<div class="pickup-card">
+    // Zobraz overlay s výběrem
+    $('rewardTitle').textContent = `🎉 ${floor.enemy.name} poražen!`;
+    // Gold a XP jako info nahoře, kliknutelné jsou jen itemy
+    const goldXpItems = choices.filter(c => c.name.startsWith('💰') || c.name.startsWith('⭐'));
+    const lootItems = choices.filter(c => c.name.startsWith('🎁'));
+    $('rewardItems').innerHTML = `
+      ${goldXpItems.map(item => `<div class="pickup-card">
         <div class="name">${item.name}</div>
         <div class="desc">${item.desc}</div>
-      </div>`
-    ).join('');
+      </div>`).join('')}
+      ${lootItems.length > 0 ? `<div class="card-subtitle" style="margin-top:6px">Vyber si odměnu:</div>
+        ${lootItems.map((item, i) => `<div class="pickup-card" onclick="game.claimBossLoot(${i})">
+          <div class="name">${item.name}</div>
+          <div class="desc">${item.desc}</div>
+        </div>`).join('')}
+        <button class="btn btn-primary mt-10" onclick="game.claimBossLoot(-1)">⏭ Přeskočit</button>`
+      : `<button class="btn btn-primary mt-10" onclick="game.claimBossLoot(-1)">Pokračovat</button>`}
+    `;
     $('#rewardOverlay').classList.remove('hidden');
-    battleState.pendingReward = { floor, items, gold: floor.rewardGold, xp: floor.rewardXp || 0 };
+    battleState.bossLootChoices = lootItems;
   }
 
-  function hasWeapon(id) { return state.hero.weapon === id; }
-  function hasArmor(id) { return state.hero.armor === id; }
-  function hasShield(id) { return state.hero.shield === id; }
-
-  function claimReward() {
-    const r = battleState.pendingReward;
-    if (!r) return;
+  function claimBossLoot(idx) {
+    const choices = battleState.bossLootChoices;
     $('#rewardOverlay').classList.add('hidden');
-
-    state.hero.gold += r.gold;
-    if (r.xp) {
-      state.hero.xp += r.xp;
-      checkLevelUp();
-    }
-    // Aplikuj itemy
-    if (r.items) {
-      for (const item of r.items) {
-        if (item.action) item.action();
-      }
+    if (idx >= 0 && choices && choices[idx] && choices[idx].action) {
+      choices[idx].action();
     }
     saveGame();
-    battleState.pendingReward = null;
+    battleState.bossLootChoices = null;
 
-    // Pokračuj nebo konec
+    // Pokračuj
+    battleState.floorIndex++;
     if (battleState.floorIndex >= battleState.dungeon.floors.length) {
       endDungeon(true);
     } else {
@@ -892,7 +909,7 @@
   window.game = {
     startDungeon,
     afterDeath, retry,
-    buyUpgrade, claimReward,
+    buyUpgrade, claimBossLoot,
     simonClick, colorInput, gridPick, useSpell
   };
 
