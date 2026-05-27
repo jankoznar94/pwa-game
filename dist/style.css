@@ -224,24 +224,25 @@ body {
 .grid-defender-area {
   display: flex; flex-direction: column; gap: 12px; align-items: center; margin: 20px 0;
 }
-.grid-enemy-target {
-  text-align: center; padding: 12px; background: #1a1a3a; border-radius: 10px; border: 1px solid #e94560;
+.grid-info {
+  display: flex; align-items: center; gap: 16px; padding: 10px 16px;
+  background: #1a1a3a; border-radius: 10px; border: 1px solid #e94560;
 }
-.grid-enemy-target .target-label { font-size: 14px; color: #8888aa; display: block; margin-bottom: 4px; }
-.grid-enemy-target .target-number { font-size: 36px; font-weight: bold; color: #e94560; }
+.grid-time { font-size: 20px; font-weight: bold; color: #ffd700; min-width: 40px; text-align: center; }
+.grid-target { font-size: 16px; color: #e0e0e0; }
+.grid-target strong { font-size: 24px; color: #e94560; margin-left: 6px; }
 .grid-cards {
   display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
 }
 .grid-card {
-  width: 90px; height: 70px; background: #1a1a3a;
+  width: 90px; height: 65px; background: #1a1a3a;
   border: 2px solid #2a2a4a; border-radius: 8px;
   display: flex; align-items: center; justify-content: center;
   font-size: 16px; font-weight: bold; cursor: pointer;
-  transition: 0.15s; flex-direction: column;
+  transition: 0.15s;
 }
 .grid-card:hover { border-color: #4a7dff; transform: scale(1.05); }
-.grid-card .expr { font-size: 20px; margin-bottom: 2px; }
-.grid-card .card-sub { font-size: 11px; color: #8888aa; }
+.grid-card .expr { font-size: 20px; }
 
 /* === Enemy info === */
 .enemy-face { font-size: 48px; text-align: center; margin: 10px 0; }

@@ -705,10 +705,9 @@
   }
 
   function startMinigame(type) {
-    hideAllMinigames();
-    if (type === 'phantom') { $('simonArea').classList.remove('minigame-hide'); startSimon(); }
-    else if (type === 'archer') { $('colorClashArea').classList.remove('minigame-hide'); startColorClash(); }
-    else { $('gridDefenderArea').classList.remove('minigame-hide'); startGridDefender(); }
+    if (type === 'phantom') startSimon();
+    else if (type === 'archer') startColorClash();
+    else startGridDefender();
   }
 
   // ===== UPDATE BATTLE UI =====
@@ -738,7 +737,7 @@
   function startSimon() {
     const floor = battleState.currentFloor;
     const level = floor.enemy.level || 1;
-    const seqLen = Math.min(2 + Math.floor(level / 2), 6);
+    const seqLen = Math.min(3 + Math.floor(level * 0.6), 7);
     const numCells = Math.min(4 + Math.floor(level / 2), 6);
 
     // Vybereme symboly pro tuto hru
@@ -763,7 +762,7 @@
     updateSimonProgress();
 
     // Přehrát sekvenci
-    let delay = Math.max(150, 300 - level * 15);
+    let delay = Math.max(120, 280 - level * 18);
     simonState.playing = true;
     simonState.showing = true;
     simonState.delay = delay;
@@ -829,20 +828,33 @@
     const level = floor.enemy.level || 1;
     const speed = Math.max(0.8, 3.0 - level * 0.3);
     // Přepočet: 260px / (speed * 60fps) = duration v sekundách
-    const fallDuration = (260 / (speed * 60)).toFixed(2);
+    const fallDuration = Math.max(1.0, 3.0 - level * 0.2).toFixed(2);
     const colors = ['red', 'blue', 'green', 'yellow'];
+    const colLabels = { red: '🔴', blue: '🔵', green: '🟢', yellow: '🟡' };
 
     const arena = $('colorArena');
     arena.innerHTML = '';
-    arena.style.height = '300px';
+    arena.style.height = '260px';
     arena.style.position = 'relative';
+    arena.style.display = 'flex';
+    arena.style.flexDirection = 'column';
 
-    // Vykresli 4 sloupce — každý nad svým tlačítkem
-    const colsHtml = colors.map(c => {
-      const label = { red: '🔴', blue: '🔵', green: '🟢', yellow: '🟡' }[c] || c;
-      return `<div class="color-lane" data-color="${c}">${label}</div>`;
+    // Horní část: sloupce
+    const lanesDiv = document.createElement('div');
+    lanesDiv.style.cssText = 'display:flex;flex:1;';
+    lanesDiv.innerHTML = colors.map(c =>
+      `<div class="color-lane" data-color="${c}" style="flex:1;text-align:center;padding-top:8px;font-size:24px;border-right:1px solid #1a1a3a">${colLabels[c]}</div>`
+    ).join('');
+    arena.appendChild(lanesDiv);
+
+    // Dolní část: tlačítka barev naproti sloupcům
+    const btnRow = document.createElement('div');
+    btnRow.style.cssText = 'display:flex;height:50px;';
+    btnRow.innerHTML = colors.map(c => {
+      const bg = c === 'red' ? '#e94560' : c === 'blue' ? '#4a7dff' : c === 'green' ? '#2ecc71' : '#f1c40f';
+      return `<div style="flex:1;display:flex;align-items:center;justify-content:center;cursor:pointer;background:${bg};margin:2px;border-radius:6px;font-size:16px;color:#fff;font-weight:bold" onclick="game.colorInput('${c}')">${colLabels[c]}</div>`;
     }).join('');
-    arena.innerHTML = colsHtml;
+    arena.appendChild(btnRow);
 
     colorState = {
       active: true, speed, fallDuration, colors, arena,
@@ -895,9 +907,9 @@
     colorState.projectile = el;
     colorState.currentColor = col;
 
-    // Animace pádu pomocí transition (plynulejší)
+    // Animace pádu
     requestAnimationFrame(() => {
-      el.style.top = '260px';
+      el.style.top = '210px';
     });
   }
 
@@ -974,24 +986,46 @@
     gridState = { options, target, active: true };
 
     $('gridArea').innerHTML = `
-      <div class="grid-enemy-target">
-        <span class="target-label">👹 Boss hledá:</span>
-        <span class="target-number">${target}</span>
+      <div class="grid-info">
+        <span class="grid-time" id="gridTimer">5s</span>
+        <span class="grid-target">👹 Najdi: <strong>${target}</strong></span>
       </div>
       <div class="grid-cards">
         ${options.map((o, i) =>
           `<div class="grid-card" onclick="game.gridPick(${i})">
              <span class="expr">${o.expr}</span>
-             <span class="card-sub">${o.wins ? '✅' : '❌'}</span>
            </div>`
         ).join('')}
       </div>
     `;
+
+    // Časovač 5s
+    gridState.timer = 5;
+    const timerEl = $('gridTimer');
+    if (timerEl) {
+      gridState.timerInterval = setInterval(() => {
+        gridState.timer--;
+        timerEl.textContent = gridState.timer + 's';
+        if (gridState.timer <= 0) {
+          clearInterval(gridState.timerInterval);
+          gridState.timerInterval = null;
+          if (gridState.active) {
+            gridState.active = false;
+            sfxPlayerHit();
+            enemyHitsPlayer();
+          }
+        }
+      }, 1000);
+    }
   }
 
   function gridPick(idx) {
     if (!gridState.active) return;
     gridState.active = false;
+    if (gridState.timerInterval) {
+      clearInterval(gridState.timerInterval);
+      gridState.timerInterval = null;
+    }
     const o = gridState.options[idx];
     if (o.wins) {
       sfxSuccess();
