@@ -574,6 +574,9 @@
     });
     battleState.spells.shield.active = false;
     showScreen('battle');
+    // Restartuj gameLoop (po endDungeon byl zrušen)
+    if (gameLoop) { cancelAnimationFrame(gameLoop); gameLoop = null; }
+    gameLoop = requestAnimationFrame(gameLoopFn);
     startFloor();
   }
 
@@ -829,16 +832,12 @@
 
     const arena = $('colorArena');
     arena.innerHTML = '';
-
-    // Player zone na spodku
-    const playerZone = document.createElement('div');
-    playerZone.style.cssText = 'position:absolute;bottom:10px;left:10px;right:10px;height:30px;border:2px dashed #4a7dff;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#8888aa';
-    playerZone.textContent = '⬆️ Sem ťukej barvy!';
-    arena.appendChild(playerZone);
+    // Nastav arénu viditelně
+    arena.style.height = '300px';
 
     colorState = {
       active: true, speed, colors, arena,
-      projectile: null, playerZone
+      projectile: null
     };
 
     spawnColorProjectile();
@@ -859,9 +858,7 @@
 
     const el = document.createElement('div');
     el.className = 'color-projectile ' + col;
-    el.style.left = x + 'px';
-    el.style.top = y + 'px';
-    el.style.background = col === 'red' ? '#e94560' : col === 'blue' ? '#4a7dff' : col === 'green' ? '#2ecc71' : '#f1c40f';
+    el.style.cssText = `left:${x}px;top:${y}px;background:${col === 'red' ? '#e94560' : col === 'blue' ? '#4a7dff' : col === 'green' ? '#2ecc71' : '#f1c40f'};width:40px;height:40px;border-radius:50%;border:2px solid #fff;position:absolute`;
     el.dataset.color = col;
     arena.appendChild(el);
     colorState.projectile = el;

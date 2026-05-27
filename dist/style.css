@@ -188,11 +188,12 @@ body {
 .color-clash-area {
   position: relative; width: 100%; height: 300px;
   background: #0a0a1a; border: 1px solid #2a2a4a; border-radius: 10px;
-  overflow: hidden; margin: 10px 0;
+  overflow: visible; margin: 10px 0;
 }
 .color-projectile {
-  position: absolute; width: 36px; height: 36px; border-radius: 50%;
-  transition: top 0.05s linear;
+  position: absolute; width: 40px; height: 40px; border-radius: 50%;
+  border: 2px solid #fff; box-shadow: 0 0 10px rgba(255,255,255,0.3);
+  transition: none; z-index: 10;
 }
 .color-buttons {
   display: flex; gap: 8px; justify-content: center; margin-top: 10px;
