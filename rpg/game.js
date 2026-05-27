@@ -123,7 +123,8 @@
       hero: {
         level: 1, xp: 0, hp: 3, maxHp: 3, baseDmg: 2,
         weapon: 'fists', armor: 'rags', shield: 'none',
-        gold: 0, permaMaxHp: 0, permaDmg: 0, permaArmor: 0, permaBlock: 0
+        gold: 0, permaMaxHp: 0, permaDmg: 0, permaArmor: 0, permaBlock: 0,
+        inventory: []
       },
       completedDungeons: []
     };
@@ -202,6 +203,66 @@
     $('equipWeapon').textContent = `${s.weapon.name} (×${s.weapon.dmgMult})`;
     $('equipArmor').textContent = `${s.armorItem.name} (${s.armorItem.armor})`;
     $('equipShield').textContent = `${s.shield.name} (${s.shield.block}%)`;
+
+    // Inventář
+    const inv = h.inventory || [];
+    const allItems = [
+      ...ALL_WEAPONS.map(w => ({ type: 'weapon', id: w.id, name: w.name, detail: `×${w.dmgMult}` })),
+      ...ALL_ARMORS.map(a => ({ type: 'armor', id: a.id, name: a.name, detail: `+${a.armor}` })),
+      ...ALL_SHIELDS.map(s => ({ type: 'shield', id: s.id, name: s.name, detail: `${s.block}%` }))
+    ];
+
+    // Co má aktuálně vybaveno
+    const equipped = [
+      { type: 'weapon', id: h.weapon },
+      { type: 'armor', id: h.armor },
+      { type: 'shield', id: h.shield }
+    ];
+
+    // V inventáři máme jen to, co není aktuálně equipnuté a není základní
+    const baseItems = ['fists', 'rags', 'none'];
+    const invItems = inv.filter(i => {
+      const isEquipped = equipped.some(e => e.type === i.type && e.id === i.id);
+      return !isEquipped && !baseItems.includes(i.id);
+    });
+
+    const invContainer = $('inventoryList');
+    if (invItems.length === 0) {
+      invContainer.innerHTML = '<div class="card-subtitle" style="padding:8px">📦 Inventář je prázdný</div>';
+    } else {
+      invContainer.innerHTML = invItems.map(item => {
+        const info = allItems.find(a => a.type === item.type && a.id === item.id);
+        if (!info) return '';
+        const slotLabel = { weapon: 'Zbraň', armor: 'Brnění', shield: 'Štít' }[item.type] || '';
+        return `<div class="equip-slot">
+          <div>
+            <span class="slot-item">${info.name}</span>
+            <span style="font-size:11px;color:#8888aa;margin-left:4px">${slotLabel} ${info.detail}</span>
+          </div>
+          <button class="btn btn-secondary" style="padding:4px 12px;width:auto;margin:0;font-size:12px"
+                  onclick="game.equipItem('${item.type}','${item.id}')">Vybavit</button>
+        </div>`;
+      }).join('');
+    }
+  }
+
+  function equipItem(type, id) {
+    const h = state.hero;
+    // Aktuálně vybavený item vrať do inventáře
+    const currentId = h[type];
+    if (currentId && !['fists','rags','none'].includes(currentId)) {
+      if (!h.inventory) h.inventory = [];
+      // Pouze pokud už není v inventáři
+      if (!h.inventory.some(i => i.type === type && i.id === currentId)) {
+        h.inventory.push({ type, id: currentId });
+      }
+    }
+    // Vybav nový
+    h[type] = id;
+    // Odeber z inventáře
+    h.inventory = (h.inventory || []).filter(i => !(i.type === type && i.id === id));
+    saveGame();
+    renderHero();
   }
 
   // ===== RENDER DUNGEONS =====
@@ -708,21 +769,17 @@
       for (const pick of picks) {
         choices.push({
           name: `🎁 ${pick.item.name}`,
+          type: pick.type,
+          itemId: pick.item.id,
           desc: pick.type === 'weapon' ? `Útok ×${pick.item.dmgMult}` :
                 pick.type === 'armor' ? `Brnění +${pick.item.armor}` :
-                `Blok ${pick.item.block}%`,
-          action: () => {
-            if (pick.type === 'weapon') state.hero.weapon = pick.item.id;
-            else if (pick.type === 'armor') state.hero.armor = pick.item.id;
-            else state.hero.shield = pick.item.id;
-          }
+                `Blok ${pick.item.block}%`
         });
       }
     }
 
     // Zobraz overlay s výběrem
     $('rewardTitle').textContent = `🎉 ${floor.enemy.name} poražen!`;
-    // Gold a XP jako info nahoře, kliknutelné jsou jen itemy
     const goldXpItems = choices.filter(c => c.name.startsWith('💰') || c.name.startsWith('⭐'));
     const lootItems = choices.filter(c => c.name.startsWith('🎁'));
     $('rewardItems').innerHTML = `
@@ -730,7 +787,7 @@
         <div class="name">${item.name}</div>
         <div class="desc">${item.desc}</div>
       </div>`).join('')}
-      ${lootItems.length > 0 ? `<div class="card-subtitle" style="margin-top:6px">Vyber si odměnu:</div>
+      ${lootItems.length > 0 ? `<div class="card-subtitle" style="margin-top:6px">Vyber si odměnu (uloží se do inventáře):</div>
         ${lootItems.map((item, i) => `<div class="pickup-card" onclick="game.claimBossLoot(${i})">
           <div class="name">${item.name}</div>
           <div class="desc">${item.desc}</div>
@@ -745,8 +802,15 @@
   function claimBossLoot(idx) {
     const choices = battleState.bossLootChoices;
     $('#rewardOverlay').classList.add('hidden');
-    if (idx >= 0 && choices && choices[idx] && choices[idx].action) {
-      choices[idx].action();
+    if (idx >= 0 && choices && choices[idx]) {
+      const pick = choices[idx];
+      // Ulož do inventáře
+      if (!state.hero.inventory) state.hero.inventory = [];
+      // Neukládat duplicity (už vlastněný item)
+      const already = state.hero.inventory.some(i => i.type === pick.type && i.id === pick.itemId);
+      if (!already) {
+        state.hero.inventory.push({ type: pick.type, id: pick.itemId });
+      }
     }
     saveGame();
     battleState.bossLootChoices = null;
@@ -910,7 +974,8 @@
     startDungeon,
     afterDeath, retry,
     buyUpgrade, claimBossLoot,
-    simonClick, colorInput, gridPick, useSpell
+    simonClick, colorInput, gridPick, useSpell,
+    equipItem
   };
 
   init();
