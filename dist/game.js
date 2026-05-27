@@ -735,7 +735,7 @@
     const floor = battleState.currentFloor;
     const level = floor.enemy.level || 1;
     const seqLen = Math.min(2 + Math.floor(level / 2), 6);
-    const numCells = Math.min(3 + Math.floor(level / 3), 6);
+    const numCells = Math.min(4 + Math.floor(level / 2), 6);
 
     // Vybereme symboly pro tuto hru
     const symbols = shuffle([...SIMON_SYMBOLS]).slice(0, numCells);
@@ -749,7 +749,9 @@
       simonState.sequence.push(rand(0, numCells - 1));
     }
 
-    // Vykresli grid se symboly
+    // Vykresli grid se symboly — dynamický počet sloupců
+    const cols = Math.min(Math.ceil(numCells / 2), 3);
+    $('simonGrid').style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
     $('simonGrid').innerHTML = symbols.map((sym, i) =>
       `<div class="simon-cell" data-idx="${i}" style="background:${SIMON_COLORS[i]}" onclick="game.simonClick(${i})"><span style="font-size:28px;pointer-events:none;display:flex;align-items:center;justify-content:center;height:100%">${sym}</span></div>`
     ).join('');

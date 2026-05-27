@@ -206,6 +206,10 @@ body {
 .color-btn.blue { background: #4a7dff; }
 .color-btn.green { background: #2ecc71; }
 .color-btn.yellow { background: #f1c40f; }
+.color-projectile.red { background: #e94560; }
+.color-projectile.blue { background: #4a7dff; }
+.color-projectile.green { background: #2ecc71; }
+.color-projectile.yellow { background: #f1c40f; }
 
 /* === Grid Defender === */
 .grid-defender-area {
