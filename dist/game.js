@@ -705,13 +705,10 @@
   }
 
   function startMinigame(type) {
-    // Nejprv ukážeme
-    $('simonArea').classList.remove('minigame-hide');
-    $('colorClashArea').classList.remove('minigame-hide');
-    $('gridDefenderArea').classList.remove('minigame-hide');
-    if (type === 'phantom') startSimon();
-    else if (type === 'archer') startColorClash();
-    else startGridDefender();
+    hideAllMinigames();
+    if (type === 'phantom') { $('simonArea').classList.remove('minigame-hide'); startSimon(); }
+    else if (type === 'archer') { $('colorClashArea').classList.remove('minigame-hide'); startColorClash(); }
+    else { $('gridDefenderArea').classList.remove('minigame-hide'); startGridDefender(); }
   }
 
   // ===== UPDATE BATTLE UI =====
@@ -739,7 +736,6 @@
   const SIMON_COLORS = ['#e94560', '#f1c40f', '#4a7dff', '#2ecc71', '#9b59b6', '#e67e22'];
 
   function startSimon() {
-    $('simonArea').classList.remove('hidden');
     const floor = battleState.currentFloor;
     const level = floor.enemy.level || 1;
     const seqLen = Math.min(2 + Math.floor(level / 2), 6);
@@ -815,10 +811,10 @@
     simonState.playerIndex++;
     updateSimonProgress();
     if (simonState.playerIndex >= simonState.sequence.length) {
-      // Úspěch — vypni input a počkej 1s před dalším kolem
+      // Úspěch — vypni input
       simonState.inputEnabled = false;
       sfxSuccess();
-      setTimeout(() => playerHitsEnemy(), 1000);
+      playerHitsEnemy();
     }
   }
 
@@ -1028,7 +1024,7 @@
       updateBattleUI();
       hideAllMinigames();
       // Krátká pauza před dalším kolem
-      setTimeout(() => startMinigame(e.type), 300);
+      setTimeout(() => startMinigame(e.type), 500);
     }
   }
 
@@ -1314,6 +1310,7 @@
   function gameLoopFn() {
     if (battleState.ended) { gameLoop = null; return; }
     const bs = battleState;
+    if (!bs.spells) { gameLoop = requestAnimationFrame(gameLoopFn); return; }
 
     // Spell cooldown tick (každou vteřinu)
     // Běží v reálném čase - přibližně 60fps, tickujeme každých 60 snímků
