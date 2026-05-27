@@ -45,20 +45,23 @@ const game = (() => {
     setTimeout(() => playTone(165, 0.4, 'square', 0.08), 300);
   }
 
-  // Background music — jednoduchá basová linka
+  // Background music — D moll (D F A)
   let musicInterval = null;
   function startMusic() {
     stopMusic();
     initAudio();
-    const notes = [110, 110, 130.8, 146.8, 110, 110, 98, 82.4];
+    // D moll: D=73.42, F=87.31, A=110.0, D2=146.84
+    // Rozklady: D3 F3 A3 F3 D3 F3 A3 F3 | D3 F3 A3 D4 A3 F3 ...
+    const notes = [73.42, 87.31, 110.0, 87.31, 73.42, 87.31, 110.0, 87.31,
+                   73.42, 87.31, 110.0, 146.84, 110.0, 87.31, 73.42, 87.31];
     let i = 0;
     const playNote = () => {
       if (state.ended) return;
-      playTone(notes[i % notes.length], 0.25, 'triangle', 0.04);
+      playTone(notes[i % notes.length], 0.28, 'triangle', 0.04);
       i++;
     };
     playNote();
-    musicInterval = setInterval(playNote, 350);
+    musicInterval = setInterval(playNote, 300);
   }
   function stopMusic() {
     if (musicInterval) { clearInterval(musicInterval); musicInterval = null; }
@@ -86,211 +89,193 @@ const game = (() => {
   // angle: kladný = doprava, záporný = doleva; shape: 'bar' (plochý obdélník) nebo 'circle'
 
   const BOSSES = [
-    // 1 SCOUT — 2 fáze
+    // 1 SCOUT — pomalý, střílí jednu barovou střelu, postupně přidává diagonály
     { name: 'SCOUT', maxHp: 25, w: 70, h: 35, speed: 1.5,
       movePattern: 'sweep', color: '#8B4513', shape: 'triangle',
       phases: makePhases([
-        { shootInterval: 80, shots: [
-          { angle: 0, xOff: 0, speed: 2.0, size: 6, shape: 'bar' }
+        { shootInterval: 75, gapShift: 3, shots: [
+          { angle: 0, xOff: 'gap-0-0.08', speed: 2.0, size: 6, shape: 'bar' }
         ]},
-        { shootInterval: 60, shots: [
-          { angle: -0.2, xOff: 0, speed: 2.3, size: 4, shape: 'circle' },
-          { angle: 0.2, xOff: 0, speed: 2.3, size: 4, shape: 'circle' }
+        { shootInterval: 55, gapShift: 3, shots: [
+          { angle: -0.18, xOff: 0, speed: 2.3, size: 4, shape: 'circle' },
+          { angle: 0.18, xOff: 0, speed: 2.3, size: 4, shape: 'circle' }
         ]}
       ]) },
-    // 2 BARRACUDA — 3 fáze
+    // 2 BARRACUDA — rychlý sweep, střílí jen kuličky (žádné bary), ve F3 křížem
     { name: 'BARRACUDA', maxHp: 40, w: 80, h: 38, speed: 2.0,
       movePattern: 'sweep', color: '#CD853F', shape: 'diamond',
       phases: makePhases([
-        { shootInterval: 65, shots: [
-          { angle: 0, xOff: 0, speed: 2.5, size: 6, shape: 'bar' }
+        { shootInterval: 60, gapShift: 0, shots: [
+          { angle: 0, xOff: 0, speed: 2.5, size: 5, shape: 'circle' }
         ]},
-        { shootInterval: 55, shots: [
-          { angle: -0.18, xOff: 0, speed: 2.8, size: 4, shape: 'circle' },
-          { angle: 0.18, xOff: 0, speed: 2.8, size: 4, shape: 'circle' }
+        { shootInterval: 50, gapShift: 0, shots: [
+          { angle: -0.15, xOff: -12, speed: 2.8, size: 4, shape: 'circle' },
+          { angle: 0.15, xOff: 12, speed: 2.8, size: 4, shape: 'circle' }
         ]},
-        { shootInterval: 45, shots: [
-          { angle: -0.35, xOff: 0, speed: 3.0, size: 4, shape: 'circle' },
-          { angle: 0.35, xOff: 0, speed: 3.0, size: 4, shape: 'circle' }
+        { shootInterval: 40, gapShift: 0, shots: [
+          { angle: -0.15, xOff: 0, speed: 3.0, size: 4, shape: 'circle' },
+          { angle: 0.15, xOff: 0, speed: 3.0, size: 4, shape: 'circle' }
         ]}
       ]) },
-    // 3 JUGGERNAUT — 2 fáze (wide, stationary)
+    // 3 JUGGERNAUT — wide stationary, střílí bary s mezerou (vždycky je mezera!)
     { name: 'JUGGERNAUT', maxHp: 70, w: 370, h: 50, speed: 0,
       movePattern: 'stationary', color: '#8B0000', shape: 'hexagon',
       phases: makePhases([
-        { shootInterval: 70, shots: [
-          { angle: 0, xOff: -0.3, speed: 2.2, size: 7, shape: 'bar' },
-          { angle: 0, xOff: 0, speed: 2.2, size: 7, shape: 'bar' },
-          { angle: 0, xOff: 0.3, speed: 2.2, size: 7, shape: 'bar' }
+        { shootInterval: 65, gapShift: 4, shots: [
+          { angle: 0, xOff: 'gap--0.3-0.06', speed: 2.2, size: 7, shape: 'bar' },
+          { angle: 0, xOff: 'gap-0-0.06', speed: 2.2, size: 7, shape: 'bar' }
         ]},
-        { shootInterval: 60, shots: [
-          { angle: -0.15, xOff: -0.15, speed: 2.4, size: 5, shape: 'circle' },
-          { angle: -0.15, xOff: 0.15, speed: 2.4, size: 5, shape: 'circle' },
-          { angle: 0.15, xOff: -0.15, speed: 2.4, size: 5, shape: 'circle' },
-          { angle: 0.15, xOff: 0.15, speed: 2.4, size: 5, shape: 'circle' }
+        { shootInterval: 55, gapShift: 4, shots: [
+          { angle: -0.12, xOff: 'gap--0.15-0.06', speed: 2.4, size: 5, shape: 'circle' },
+          { angle: 0.12, xOff: 'gap-0.15-0.06', speed: 2.4, size: 5, shape: 'circle' },
+          { angle: 0, xOff: 'gap--0.25-0.06', speed: 2.4, size: 6, shape: 'bar' },
+          { angle: 0, xOff: 'gap-0.25-0.06', speed: 2.4, size: 6, shape: 'bar' }
         ]}
       ]) },
-    // 4 VIPER — 2 fáze
+    // 4 VIPER — rychlý, střílí jen kuličky v krátkých burstech se svislými páry
     { name: 'VIPER', maxHp: 55, w: 75, h: 32, speed: 2.5,
       movePattern: 'sweep', color: '#556B2F', shape: 'chevron',
       phases: makePhases([
-        { shootInterval: 55, shots: [
-          { angle: 0, xOff: 0, speed: 3.0, size: 5, shape: 'circle' }
+        { shootInterval: 50, gapShift: 0, shots: [
+          { angle: 0, xOff: 0, speed: 3.0, size: 4, shape: 'circle' }
         ]},
-        { shootInterval: 45, shots: [
-          { angle: 0, xOff: -12, speed: 3.2, size: 5, shape: 'circle' },
-          { angle: 0, xOff: 12, speed: 3.2, size: 5, shape: 'circle' }
+        { shootInterval: 40, gapShift: 0, shots: [
+          { angle: 0, xOff: -12, speed: 3.2, size: 4, shape: 'circle' },
+          { angle: 0, xOff: 12, speed: 3.2, size: 4, shape: 'circle' }
         ]}
       ]) },
-    // 5 FORTRESS — 3 fáze (wide, stationary)
+    // 5 FORTRESS — wide stationary, střílí bary + diagonální kuličky, vždy mezera
     { name: 'FORTRESS', maxHp: 100, w: 380, h: 55, speed: 0,
       movePattern: 'stationary', color: '#800020', shape: 'trapezoid',
       phases: makePhases([
-        { shootInterval: 60, shots: [
-          { angle: 0, xOff: -0.3, speed: 2.5, size: 7, shape: 'bar' },
-          { angle: 0, xOff: 0, speed: 2.5, size: 7, shape: 'bar' },
-          { angle: 0, xOff: 0.3, speed: 2.5, size: 7, shape: 'bar' },
-          { angle: 0, xOff: -0.15, speed: 2.5, size: 7, shape: 'bar' },
-          { angle: 0, xOff: 0.15, speed: 2.5, size: 7, shape: 'bar' }
+        { shootInterval: 55, gapShift: 5, shots: [
+          { angle: 0, xOff: 'gap--0.3-0.06', speed: 2.5, size: 7, shape: 'bar' },
+          { angle: 0, xOff: 'gap-0.15-0.06', speed: 2.5, size: 7, shape: 'bar' }
         ]},
-        { shootInterval: 50, shots: [
-          { angle: -0.12, xOff: -0.25, speed: 2.8, size: 5, shape: 'circle' },
-          { angle: -0.12, xOff: 0.25, speed: 2.8, size: 5, shape: 'circle' },
-          { angle: 0.12, xOff: -0.25, speed: 2.8, size: 5, shape: 'circle' },
-          { angle: 0.12, xOff: 0.25, speed: 2.8, size: 5, shape: 'circle' },
-          { angle: -0.12, xOff: 0, speed: 2.8, size: 5, shape: 'circle' },
-          { angle: 0.12, xOff: 0, speed: 2.8, size: 5, shape: 'circle' }
+        { shootInterval: 45, gapShift: 5, shots: [
+          { angle: -0.10, xOff: 'gap--0.25-0.06', speed: 2.8, size: 5, shape: 'circle' },
+          { angle: 0.10, xOff: 'gap-0.25-0.06', speed: 2.8, size: 5, shape: 'circle' },
+          { angle: -0.10, xOff: 'gap-0-0.06', speed: 2.8, size: 5, shape: 'circle' },
+          { angle: 0.10, xOff: 'gap-0-0.06', speed: 2.8, size: 5, shape: 'circle' }
         ]},
-        { shootInterval: 40, shots: [
-          { angle: -0.25, xOff: -0.25, speed: 3.0, size: 4, shape: 'circle' },
-          { angle: -0.25, xOff: 0.25, speed: 3.0, size: 4, shape: 'circle' },
-          { angle: 0.25, xOff: -0.25, speed: 3.0, size: 4, shape: 'circle' },
-          { angle: 0.25, xOff: 0.25, speed: 3.0, size: 4, shape: 'circle' },
-          { angle: -0.25, xOff: 0, speed: 3.0, size: 4, shape: 'circle' },
-          { angle: 0.25, xOff: 0, speed: 3.0, size: 4, shape: 'circle' }
+        { shootInterval: 35, gapShift: 5, shots: [
+          { angle: -0.20, xOff: 'gap--0.25-0.06', speed: 3.0, size: 5, shape: 'circle' },
+          { angle: 0.20, xOff: 'gap-0.25-0.06', speed: 3.0, size: 5, shape: 'circle' },
+          { angle: -0.20, xOff: 'gap-0-0.06', speed: 3.0, size: 5, shape: 'circle' },
+          { angle: 0.20, xOff: 'gap-0-0.06', speed: 3.0, size: 5, shape: 'circle' }
         ]}
       ]) },
-    // 6 PHANTOM — 3 fáze
+    // 6 PHANTOM — teleportuje se (sweep), střílí jen diagonály
     { name: 'PHANTOM', maxHp: 75, w: 80, h: 35, speed: 2.2,
       movePattern: 'sweep', color: '#4B0082', shape: 'oval',
       phases: makePhases([
-        { shootInterval: 50, shots: [
-          { angle: 0, xOff: 0, speed: 3.2, size: 5, shape: 'bar' }
+        { shootInterval: 45, gapShift: 0, shots: [
+          { angle: -0.12, xOff: 0, speed: 3.2, size: 4, shape: 'circle' },
+          { angle: 0.12, xOff: 0, speed: 3.2, size: 4, shape: 'circle' }
         ]},
-        { shootInterval: 42, shots: [
-          { angle: -0.15, xOff: -8, speed: 3.5, size: 4, shape: 'circle' },
-          { angle: 0.15, xOff: 8, speed: 3.5, size: 4, shape: 'circle' }
+        { shootInterval: 38, gapShift: 0, shots: [
+          { angle: -0.25, xOff: 0, speed: 3.5, size: 4, shape: 'circle' },
+          { angle: 0.25, xOff: 0, speed: 3.5, size: 4, shape: 'circle' }
         ]},
-        { shootInterval: 35, shots: [
-          { angle: -0.30, xOff: 0, speed: 3.8, size: 4, shape: 'circle' },
-          { angle: 0.30, xOff: 0, speed: 3.8, size: 4, shape: 'circle' }
+        { shootInterval: 30, gapShift: 0, shots: [
+          { angle: -0.25, xOff: -10, speed: 3.8, size: 4, shape: 'circle' },
+          { angle: 0.25, xOff: 10, speed: 3.8, size: 4, shape: 'circle' },
+          { angle: -0.40, xOff: 0, speed: 3.8, size: 3, shape: 'circle' },
+          { angle: 0.40, xOff: 0, speed: 3.8, size: 3, shape: 'circle' }
         ]}
       ]) },
-    // 7 INFERNO — 3 fáze (wide)
+    // 7 INFERNO — široký sweep, střílí bary na okrajích + postupně přidává diagonály doprostřed
     { name: 'INFERNO', maxHp: 110, w: 360, h: 50, speed: 0.5,
       movePattern: 'sweep', color: '#B22222', shape: 'pentagon',
       phases: makePhases([
-        { shootInterval: 50, shots: [
-          { angle: 0, xOff: -0.25, speed: 2.8, size: 6, shape: 'bar' },
-          { angle: 0, xOff: 0.25, speed: 2.8, size: 6, shape: 'bar' }
+        { shootInterval: 50, gapShift: 4, shots: [
+          { angle: 0, xOff: 'gap--0.3-0.07', speed: 2.8, size: 6, shape: 'bar' },
+          { angle: 0, xOff: 'gap-0.3-0.07', speed: 2.8, size: 6, shape: 'bar' }
         ]},
-        { shootInterval: 42, shots: [
-          { angle: -0.12, xOff: -0.15, speed: 3.0, size: 5, shape: 'circle' },
-          { angle: -0.12, xOff: 0.15, speed: 3.0, size: 5, shape: 'circle' },
-          { angle: 0.12, xOff: -0.15, speed: 3.0, size: 5, shape: 'circle' },
-          { angle: 0.12, xOff: 0.15, speed: 3.0, size: 5, shape: 'circle' }
+        { shootInterval: 42, gapShift: 4, shots: [
+          { angle: -0.10, xOff: 'gap--0.15-0.07', speed: 3.0, size: 5, shape: 'circle' },
+          { angle: 0.10, xOff: 'gap-0.15-0.07', speed: 3.0, size: 5, shape: 'circle' },
+          { angle: -0.10, xOff: 'gap-0-0.07', speed: 3.0, size: 5, shape: 'circle' },
+          { angle: 0.10, xOff: 'gap-0-0.07', speed: 3.0, size: 5, shape: 'circle' }
         ]},
-        { shootInterval: 35, shots: [
-          { angle: -0.25, xOff: -0.25, speed: 3.2, size: 5, shape: 'circle' },
-          { angle: -0.25, xOff: 0.25, speed: 3.2, size: 5, shape: 'circle' },
-          { angle: 0.25, xOff: -0.25, speed: 3.2, size: 5, shape: 'circle' },
-          { angle: 0.25, xOff: 0.25, speed: 3.2, size: 5, shape: 'circle' }
+        { shootInterval: 32, gapShift: 4, shots: [
+          { angle: -0.20, xOff: 'gap--0.2-0.07', speed: 3.2, size: 5, shape: 'circle' },
+          { angle: 0.20, xOff: 'gap-0.2-0.07', speed: 3.2, size: 5, shape: 'circle' },
+          { angle: -0.20, xOff: 'gap-0-0.07', speed: 3.2, size: 5, shape: 'circle' },
+          { angle: 0.20, xOff: 'gap-0-0.07', speed: 3.2, size: 5, shape: 'circle' }
         ]}
       ]) },
-    // 8 BLITZ — 3 fáze (fast)
+    // 8 BLITZ — nejrychlejší, střílí jen kuličky v širokém spreadu
     { name: 'BLITZ', maxHp: 90, w: 70, h: 30, speed: 3.5,
       movePattern: 'sweep', color: '#2F4F4F', shape: 'arrow',
       phases: makePhases([
-        { shootInterval: 45, shots: [
-          { angle: 0, xOff: 0, speed: 3.5, size: 4, shape: 'circle' }
+        { shootInterval: 40, gapShift: 0, shots: [
+          { angle: 0, xOff: 0, speed: 3.5, size: 3, shape: 'circle' }
         ]},
-        { shootInterval: 38, shots: [
-          { angle: 0, xOff: -10, speed: 3.8, size: 4, shape: 'circle' },
-          { angle: 0, xOff: 10, speed: 3.8, size: 4, shape: 'circle' }
+        { shootInterval: 32, gapShift: 0, shots: [
+          { angle: -0.15, xOff: -8, speed: 3.8, size: 3, shape: 'circle' },
+          { angle: 0.15, xOff: 8, speed: 3.8, size: 3, shape: 'circle' }
         ]},
-        { shootInterval: 30, shots: [
-          { angle: -0.20, xOff: 0, speed: 4.0, size: 3, shape: 'circle' },
-          { angle: 0.20, xOff: 0, speed: 4.0, size: 3, shape: 'circle' },
-          { angle: -0.40, xOff: 0, speed: 4.0, size: 3, shape: 'circle' },
-          { angle: 0.40, xOff: 0, speed: 4.0, size: 3, shape: 'circle' }
+        { shootInterval: 24, gapShift: 0, shots: [
+          { angle: -0.20, xOff: 0, speed: 4.2, size: 3, shape: 'circle' },
+          { angle: 0.20, xOff: 0, speed: 4.2, size: 3, shape: 'circle' },
+          { angle: -0.40, xOff: 0, speed: 4.5, size: 2, shape: 'circle' },
+          { angle: 0.40, xOff: 0, speed: 4.5, size: 2, shape: 'circle' }
         ]}
       ]) },
-    // 9 TITAN — 4 fáze (wide)
+    // 9 TITAN — velký pomalý sweep, kombinace barů s mezerou + diagonál
     { name: 'TITAN', maxHp: 150, w: 380, h: 60, speed: 0.3,
       movePattern: 'sweep', color: '#5B0000', shape: 'octagon',
       phases: makePhases([
-        { shootInterval: 55, shots: [
-          { angle: 0, xOff: -0.3, speed: 3.0, size: 7, shape: 'bar' },
-          { angle: 0, xOff: 0, speed: 3.0, size: 7, shape: 'bar' },
-          { angle: 0, xOff: 0.3, speed: 3.0, size: 7, shape: 'bar' }
+        { shootInterval: 55, gapShift: 5, shots: [
+          { angle: 0, xOff: 'gap--0.3-0.06', speed: 3.0, size: 7, shape: 'bar' },
+          { angle: 0, xOff: 'gap-0.15-0.06', speed: 3.0, size: 7, shape: 'bar' }
         ]},
-        { shootInterval: 48, shots: [
-          { angle: -0.10, xOff: -0.3, speed: 3.2, size: 6, shape: 'circle' },
-          { angle: -0.10, xOff: 0, speed: 3.2, size: 6, shape: 'circle' },
-          { angle: -0.10, xOff: 0.3, speed: 3.2, size: 6, shape: 'circle' },
-          { angle: 0.10, xOff: -0.3, speed: 3.2, size: 6, shape: 'circle' },
-          { angle: 0.10, xOff: 0, speed: 3.2, size: 6, shape: 'circle' },
-          { angle: 0.10, xOff: 0.3, speed: 3.2, size: 6, shape: 'circle' }
+        { shootInterval: 46, gapShift: 5, shots: [
+          { angle: -0.08, xOff: 'gap--0.3-0.06', speed: 3.2, size: 6, shape: 'circle' },
+          { angle: 0.08, xOff: 'gap-0.3-0.06', speed: 3.2, size: 6, shape: 'circle' },
+          { angle: -0.08, xOff: 'gap-0-0.06', speed: 3.2, size: 6, shape: 'circle' },
+          { angle: 0.08, xOff: 'gap-0-0.06', speed: 3.2, size: 6, shape: 'circle' }
         ]},
-        { shootInterval: 40, shots: [
-          { angle: -0.20, xOff: -0.2, speed: 3.5, size: 5, shape: 'circle' },
-          { angle: -0.20, xOff: 0.2, speed: 3.5, size: 5, shape: 'circle' },
-          { angle: 0.20, xOff: -0.2, speed: 3.5, size: 5, shape: 'circle' },
-          { angle: 0.20, xOff: 0.2, speed: 3.5, size: 5, shape: 'circle' },
-          { angle: -0.20, xOff: 0, speed: 3.5, size: 5, shape: 'circle' },
-          { angle: 0.20, xOff: 0, speed: 3.5, size: 5, shape: 'circle' }
+        { shootInterval: 38, gapShift: 5, shots: [
+          { angle: -0.15, xOff: 'gap--0.2-0.06', speed: 3.5, size: 5, shape: 'circle' },
+          { angle: 0.15, xOff: 'gap-0.2-0.06', speed: 3.5, size: 5, shape: 'circle' },
+          { angle: -0.15, xOff: 'gap-0-0.06', speed: 3.5, size: 5, shape: 'circle' },
+          { angle: 0.15, xOff: 'gap-0-0.06', speed: 3.5, size: 5, shape: 'circle' }
         ]},
-        { shootInterval: 35, shots: [
-          { angle: -0.30, xOff: -0.25, speed: 3.8, size: 5, shape: 'circle' },
-          { angle: -0.30, xOff: 0.25, speed: 3.8, size: 5, shape: 'circle' },
-          { angle: 0.30, xOff: -0.25, speed: 3.8, size: 5, shape: 'circle' },
-          { angle: 0.30, xOff: 0.25, speed: 3.8, size: 5, shape: 'circle' },
-          { angle: -0.30, xOff: 0, speed: 3.8, size: 5, shape: 'circle' },
-          { angle: 0.30, xOff: 0, speed: 3.8, size: 5, shape: 'circle' }
+        { shootInterval: 32, gapShift: 5, shots: [
+          { angle: -0.25, xOff: 'gap--0.25-0.06', speed: 3.8, size: 5, shape: 'circle' },
+          { angle: 0.25, xOff: 'gap-0.25-0.06', speed: 3.8, size: 5, shape: 'circle' },
+          { angle: -0.25, xOff: 'gap-0-0.06', speed: 3.8, size: 5, shape: 'circle' },
+          { angle: 0.25, xOff: 'gap-0-0.06', speed: 3.8, size: 5, shape: 'circle' }
         ]}
       ]) },
-    // 10 OBLIVION — 4 fáze (wide)
+    // 10 OBLIVION — wide sweep, střílí bary + diagonály, nejvíc střel
     { name: 'OBLIVION', maxHp: 200, w: 380, h: 55, speed: 1.5,
       movePattern: 'sweep', color: '#1a0030', shape: 'star',
       phases: makePhases([
-        { shootInterval: 40, shots: [
-          { angle: 0, xOff: -0.25, speed: 3.5, size: 6, shape: 'bar' },
-          { angle: 0, xOff: 0, speed: 3.5, size: 6, shape: 'bar' },
-          { angle: 0, xOff: 0.25, speed: 3.5, size: 6, shape: 'bar' }
+        { shootInterval: 38, gapShift: 5, shots: [
+          { angle: 0, xOff: 'gap--0.3-0.06', speed: 3.5, size: 6, shape: 'bar' },
+          { angle: 0, xOff: 'gap-0-0.06', speed: 3.5, size: 6, shape: 'bar' },
+          { angle: 0, xOff: 'gap-0.3-0.06', speed: 3.5, size: 6, shape: 'bar' }
         ]},
-        { shootInterval: 35, shots: [
-          { angle: -0.12, xOff: -0.2, speed: 3.8, size: 5, shape: 'circle' },
-          { angle: -0.12, xOff: 0, speed: 3.8, size: 5, shape: 'circle' },
-          { angle: -0.12, xOff: 0.2, speed: 3.8, size: 5, shape: 'circle' },
-          { angle: 0.12, xOff: -0.2, speed: 3.8, size: 5, shape: 'circle' },
-          { angle: 0.12, xOff: 0, speed: 3.8, size: 5, shape: 'circle' },
-          { angle: 0.12, xOff: 0.2, speed: 3.8, size: 5, shape: 'circle' }
+        { shootInterval: 32, gapShift: 5, shots: [
+          { angle: -0.10, xOff: 'gap--0.2-0.06', speed: 3.8, size: 5, shape: 'circle' },
+          { angle: 0.10, xOff: 'gap-0.2-0.06', speed: 3.8, size: 5, shape: 'circle' },
+          { angle: -0.10, xOff: 'gap-0-0.06', speed: 3.8, size: 5, shape: 'circle' },
+          { angle: 0.10, xOff: 'gap-0-0.06', speed: 3.8, size: 5, shape: 'circle' }
         ]},
-        { shootInterval: 30, shots: [
-          { angle: -0.22, xOff: -0.25, speed: 4.0, size: 5, shape: 'circle' },
-          { angle: -0.22, xOff: 0.25, speed: 4.0, size: 5, shape: 'circle' },
-          { angle: 0.22, xOff: -0.25, speed: 4.0, size: 5, shape: 'circle' },
-          { angle: 0.22, xOff: 0.25, speed: 4.0, size: 5, shape: 'circle' },
-          { angle: -0.22, xOff: 0, speed: 4.0, size: 5, shape: 'circle' },
-          { angle: 0.22, xOff: 0, speed: 4.0, size: 5, shape: 'circle' }
+        { shootInterval: 26, gapShift: 5, shots: [
+          { angle: -0.20, xOff: 'gap--0.25-0.06', speed: 4.0, size: 5, shape: 'circle' },
+          { angle: 0.20, xOff: 'gap-0.25-0.06', speed: 4.0, size: 5, shape: 'circle' },
+          { angle: -0.20, xOff: 'gap-0-0.06', speed: 4.0, size: 5, shape: 'circle' },
+          { angle: 0.20, xOff: 'gap-0-0.06', speed: 4.0, size: 5, shape: 'circle' }
         ]},
-        { shootInterval: 25, shots: [
-          { angle: -0.35, xOff: -0.3, speed: 4.2, size: 4, shape: 'circle' },
-          { angle: -0.35, xOff: 0, speed: 4.2, size: 4, shape: 'circle' },
-          { angle: -0.35, xOff: 0.3, speed: 4.2, size: 4, shape: 'circle' },
-          { angle: 0.35, xOff: -0.3, speed: 4.2, size: 4, shape: 'circle' },
-          { angle: 0.35, xOff: 0, speed: 4.2, size: 4, shape: 'circle' },
-          { angle: 0.35, xOff: 0.3, speed: 4.2, size: 4, shape: 'circle' }
+        { shootInterval: 22, gapShift: 5, shots: [
+          { angle: -0.30, xOff: 'gap--0.3-0.06', speed: 4.3, size: 4, shape: 'circle' },
+          { angle: 0.30, xOff: 'gap-0.3-0.06', speed: 4.3, size: 4, shape: 'circle' },
+          { angle: -0.30, xOff: 'gap-0-0.06', speed: 4.3, size: 4, shape: 'circle' },
+          { angle: 0.30, xOff: 'gap-0-0.06', speed: 4.3, size: 4, shape: 'circle' }
         ]}
       ]) }
   ];
@@ -347,9 +332,9 @@ const game = (() => {
       hp: cfg.maxHp, maxHp: cfg.maxHp,
       dir: -1,
       shootCooldown: phase.shootInterval,
-      alive: true, fired: false,
-      currentPhase: 0,
-      phaseFlash: 0
+      alive: true,
+      currentPhase: 0, phaseFlash: 0,
+      burstIndex: 0, burstTimer: 0
     };
   }
 
@@ -390,30 +375,83 @@ const game = (() => {
       if (boss.x > W - boss.w/2) { boss.dir = -1; }
     }
 
-    // === Střelba ===
+    // === Střelba s burst módem ===
     if (boss.shootCooldown > 0) { boss.shootCooldown--; }
-    else {
-      // Sesbíráme shoty ze všech fází 0..currentPhase a vystřelíme je najednou
-      let allShots = [];
+    else if (boss.burstTimer > 0) {
+      // Burst: každý frame jeden projektil
+      boss.burstTimer--;
+      const allShots = boss.allShots || [];
+      if (boss.burstIndex < allShots.length) {
+        const s = allShots[boss.burstIndex];
+        fireShot(boss, s, cfg);
+        boss.burstIndex++;
+      }
+      if (boss.burstIndex >= allShots.length) {
+        // Burst hotov — reset cooldown
+        const curPhase = cfg.phases[boss.currentPhase];
+        boss.shootCooldown = curPhase.shootInterval;
+        boss.burstIndex = 0;
+        boss.burstTimer = 0;
+        boss.gapOffset = (boss.gapOffset || 0) + 1;
+      }
+    } else {
+      // Připrav burst ze všech fází 0..currentPhase
+      const allShots = [];
       for (let f = 0; f <= boss.currentPhase; f++) {
         const ph = cfg.phases[f];
-        for (const s of ph.shots) {
-          allShots.push(s);
+        if (ph.shots) {
+          for (const s of ph.shots) {
+            allShots.push(s);
+          }
         }
       }
-      for (const s of allShots) {
-        // xOff: u wide bossů (w>200) jako násobek w, jinak jako absolutní pixely
-        const xOff = typeof s.xOff === 'number' && Math.abs(s.xOff) >= 1 ? s.xOff : (s.xOff * cfg.w);
-        const angle = Math.PI / 2 + s.angle;
-        state.bulletsEnemy.push(createBullet(
-          boss.x + xOff, boss.y + cfg.h / 2,
-          Math.cos(angle) * s.speed,
-          Math.sin(angle) * s.speed,
-          s.size, 1, '#ff4444', s.shape
-        ));
+      boss.allShots = allShots;
+      boss.burstTimer = allShots.length > 0 ? allShots.length : 1;
+      boss.burstIndex = 0;
+      // První projektil hned
+      if (allShots.length > 0) {
+        fireShot(boss, allShots[0], cfg);
+        boss.burstIndex = 1;
+        boss.burstTimer--;
       }
-      boss.shootCooldown = cfg.phases[boss.currentPhase].shootInterval;
     }
+
+    // gapOffset se cyklicky resetuje, aby nepřetekl
+    if (boss.gapOffset > 1000) boss.gapOffset = 0;
+  }
+
+  function fireShot(boss, s, cfg) {
+    const curPhase = cfg.phases[boss.currentPhase];
+    const gapShift = curPhase.gapShift || 0;
+
+    let xOff;
+    if (typeof s.xOff === 'number' && Math.abs(s.xOff) >= 1) {
+      // Absolutní pixely
+      xOff = s.xOff;
+    } else if (typeof s.xOff === 'number') {
+      // Násobek šířky bosse
+      const gapAdd = s.gap !== false && gapShift > 0
+        ? ((boss.gapOffset || 0) % gapShift) * (cfg.w * 0.06)
+        : 0;
+      xOff = s.xOff * cfg.w + gapAdd;
+    } else if (typeof s.xOff === 'string' && s.xOff.startsWith('gap-')) {
+      // Explicitní gap: "gap-ZÁKLAD-ROZSAH"
+      const parts = s.xOff.replace('gap-', '').split('-').map(Number);
+      const base = parts[0] || 0;
+      const range = parts[1] || 0.1;
+      const cycle = gapShift > 0 ? (boss.gapOffset || 0) % gapShift : 0;
+      xOff = (base + cycle * range) * cfg.w;
+    } else {
+      xOff = 0;
+    }
+
+    const angle = Math.PI / 2 + s.angle;
+    state.bulletsEnemy.push(createBullet(
+      boss.x + xOff, boss.y + cfg.h / 2,
+      Math.cos(angle) * s.speed,
+      Math.sin(angle) * s.speed,
+      s.size, 1, '#ff4444', s.shape
+    ));
   }
 
   // ===== Game loop =====
@@ -837,8 +875,19 @@ const game = (() => {
         y: (clientY - rect.top) * scaleY
       };
     };
-    const onStart = (e) => { e.preventDefault(); if (state.ended) return; state.playerTarget = getPos(e); };
-    const onMove = (e) => { e.preventDefault(); if (state.ended) return; state.playerTarget = getPos(e); };
+    const onStart = (e) => {
+      e.preventDefault();
+      if (state.ended) return;
+      const pos = getPos(e);
+      state.playerTarget = { x: pos.x, y: pos.y - 50 };
+    };
+    const onMove = (e) => {
+      e.preventDefault();
+      if (state.ended) return;
+      const pos = getPos(e);
+      // Posun cíle o 50px nahoru, aby loď nebyla pod prstem
+      state.playerTarget = { x: pos.x, y: pos.y - 50 };
+    };
     const onEnd = (e) => { e.preventDefault(); state.playerTarget = null; };
 
     canvas.addEventListener('touchstart', onStart, { passive: false });
