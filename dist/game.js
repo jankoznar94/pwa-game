@@ -77,7 +77,7 @@ const game = (() => {
       bulletSpeed: basePhases[i].bulletSpeed,
       bulletSize: basePhases[i].bulletSize,
       volleyCount: basePhases[i].volleyCount,
-      spreadDeg: basePhases[i].spreadDeg
+      pattern: basePhases[i].pattern || 'vertical'
     }));
   }
 
@@ -85,71 +85,71 @@ const game = (() => {
     { name: 'SCOUT', maxHp: 25, w: 70, h: 35, speed: 1.5,
       movePattern: 'sweep', color: '#8B4513',
       phases: makePhases(2, [
-        { shootInterval: 80, bulletSpeed: 2.0, bulletSize: 4, volleyCount: 1, spreadDeg: 0.04 },
-        { shootInterval: 60, bulletSpeed: 2.3, bulletSize: 4, volleyCount: 1, spreadDeg: 0.06 }
+        { shootInterval: 80, bulletSpeed: 2.0, bulletSize: 4, volleyCount: 1, pattern: 'vertical' },
+        { shootInterval: 60, bulletSpeed: 2.3, bulletSize: 4, volleyCount: 1, pattern: 'vertical' }
       ]) },
     { name: 'BARRACUDA', maxHp: 40, w: 80, h: 38, speed: 2.0,
       movePattern: 'sweep', color: '#CD853F',
       phases: makePhases(3, [
-        { shootInterval: 65, bulletSpeed: 2.5, bulletSize: 4, volleyCount: 1, spreadDeg: 0.05 },
-        { shootInterval: 55, bulletSpeed: 2.8, bulletSize: 4, volleyCount: 1, spreadDeg: 0.08 },
-        { shootInterval: 45, bulletSpeed: 3.0, bulletSize: 4, volleyCount: 2, spreadDeg: 0.10 }
+        { shootInterval: 65, bulletSpeed: 2.5, bulletSize: 4, volleyCount: 1, pattern: 'vertical' },
+        { shootInterval: 55, bulletSpeed: 2.8, bulletSize: 4, volleyCount: 2, pattern: 'mixed' },
+        { shootInterval: 45, bulletSpeed: 3.0, bulletSize: 4, volleyCount: 2, pattern: 'spread' }
       ]) },
     { name: 'JUGGERNAUT', maxHp: 70, w: 370, h: 50, speed: 0,
       movePattern: 'stationary', color: '#8B0000',
       phases: makePhases(2, [
-        { shootInterval: 70, bulletSpeed: 2.2, bulletSize: 5, volleyCount: 3, spreadDeg: 0.18 },
-        { shootInterval: 60, bulletSpeed: 2.4, bulletSize: 5, volleyCount: 4, spreadDeg: 0.20 }
+        { shootInterval: 70, bulletSpeed: 2.2, bulletSize: 5, volleyCount: 3, pattern: 'vertical' },
+        { shootInterval: 60, bulletSpeed: 2.4, bulletSize: 5, volleyCount: 4, pattern: 'mixed' }
       ]) },
     { name: 'VIPER', maxHp: 55, w: 75, h: 32, speed: 2.5,
       movePattern: 'sweep', color: '#556B2F',
       phases: makePhases(2, [
-        { shootInterval: 55, bulletSpeed: 3.0, bulletSize: 3, volleyCount: 1, spreadDeg: 0.04 },
-        { shootInterval: 45, bulletSpeed: 3.2, bulletSize: 3, volleyCount: 2, spreadDeg: 0.08 }
+        { shootInterval: 55, bulletSpeed: 3.0, bulletSize: 3, volleyCount: 1, pattern: 'vertical' },
+        { shootInterval: 45, bulletSpeed: 3.2, bulletSize: 3, volleyCount: 2, pattern: 'mixed' }
       ]) },
     { name: 'FORTRESS', maxHp: 100, w: 380, h: 55, speed: 0,
       movePattern: 'stationary', color: '#800020',
       phases: makePhases(3, [
-        { shootInterval: 60, bulletSpeed: 2.5, bulletSize: 6, volleyCount: 4, spreadDeg: 0.20 },
-        { shootInterval: 50, bulletSpeed: 2.8, bulletSize: 5, volleyCount: 5, spreadDeg: 0.22 },
-        { shootInterval: 40, bulletSpeed: 3.0, bulletSize: 5, volleyCount: 6, spreadDeg: 0.25 }
+        { shootInterval: 60, bulletSpeed: 2.5, bulletSize: 6, volleyCount: 4, pattern: 'vertical' },
+        { shootInterval: 50, bulletSpeed: 2.8, bulletSize: 5, volleyCount: 5, pattern: 'mixed' },
+        { shootInterval: 40, bulletSpeed: 3.0, bulletSize: 5, volleyCount: 6, pattern: 'spread' }
       ]) },
     { name: 'PHANTOM', maxHp: 75, w: 80, h: 35, speed: 2.2,
       movePattern: 'sweep', color: '#4B0082',
       phases: makePhases(3, [
-        { shootInterval: 50, bulletSpeed: 3.2, bulletSize: 3, volleyCount: 2, spreadDeg: 0.08 },
-        { shootInterval: 42, bulletSpeed: 3.5, bulletSize: 3, volleyCount: 3, spreadDeg: 0.10 },
-        { shootInterval: 35, bulletSpeed: 3.8, bulletSize: 3, volleyCount: 3, spreadDeg: 0.12 }
+        { shootInterval: 50, bulletSpeed: 3.2, bulletSize: 3, volleyCount: 2, pattern: 'vertical' },
+        { shootInterval: 42, bulletSpeed: 3.5, bulletSize: 3, volleyCount: 3, pattern: 'mixed' },
+        { shootInterval: 35, bulletSpeed: 3.8, bulletSize: 3, volleyCount: 3, pattern: 'spread' }
       ]) },
     { name: 'INFERNO', maxHp: 110, w: 360, h: 50, speed: 0.5,
       movePattern: 'sweep', color: '#B22222',
       phases: makePhases(3, [
-        { shootInterval: 50, bulletSpeed: 2.8, bulletSize: 5, volleyCount: 2, spreadDeg: 0.12 },
-        { shootInterval: 42, bulletSpeed: 3.0, bulletSize: 5, volleyCount: 3, spreadDeg: 0.15 },
-        { shootInterval: 35, bulletSpeed: 3.2, bulletSize: 5, volleyCount: 4, spreadDeg: 0.18 }
+        { shootInterval: 50, bulletSpeed: 2.8, bulletSize: 5, volleyCount: 2, pattern: 'vertical' },
+        { shootInterval: 42, bulletSpeed: 3.0, bulletSize: 5, volleyCount: 3, pattern: 'mixed' },
+        { shootInterval: 35, bulletSpeed: 3.2, bulletSize: 5, volleyCount: 4, pattern: 'spread' }
       ]) },
     { name: 'BLITZ', maxHp: 90, w: 70, h: 30, speed: 3.5,
       movePattern: 'sweep', color: '#2F4F4F',
       phases: makePhases(3, [
-        { shootInterval: 45, bulletSpeed: 3.5, bulletSize: 3, volleyCount: 1, spreadDeg: 0.05 },
-        { shootInterval: 38, bulletSpeed: 3.8, bulletSize: 3, volleyCount: 2, spreadDeg: 0.08 },
-        { shootInterval: 30, bulletSpeed: 4.0, bulletSize: 3, volleyCount: 3, spreadDeg: 0.10 }
+        { shootInterval: 45, bulletSpeed: 3.5, bulletSize: 3, volleyCount: 1, pattern: 'vertical' },
+        { shootInterval: 38, bulletSpeed: 3.8, bulletSize: 3, volleyCount: 2, pattern: 'mixed' },
+        { shootInterval: 30, bulletSpeed: 4.0, bulletSize: 3, volleyCount: 3, pattern: 'spread' }
       ]) },
     { name: 'TITAN', maxHp: 150, w: 380, h: 60, speed: 0.3,
       movePattern: 'sweep', color: '#5B0000',
       phases: makePhases(4, [
-        { shootInterval: 55, bulletSpeed: 3.0, bulletSize: 6, volleyCount: 3, spreadDeg: 0.15 },
-        { shootInterval: 48, bulletSpeed: 3.2, bulletSize: 6, volleyCount: 4, spreadDeg: 0.18 },
-        { shootInterval: 40, bulletSpeed: 3.5, bulletSize: 6, volleyCount: 5, spreadDeg: 0.20 },
-        { shootInterval: 35, bulletSpeed: 3.8, bulletSize: 5, volleyCount: 5, spreadDeg: 0.22 }
+        { shootInterval: 55, bulletSpeed: 3.0, bulletSize: 6, volleyCount: 3, pattern: 'vertical' },
+        { shootInterval: 48, bulletSpeed: 3.2, bulletSize: 6, volleyCount: 4, pattern: 'mixed' },
+        { shootInterval: 40, bulletSpeed: 3.5, bulletSize: 6, volleyCount: 5, pattern: 'spread' },
+        { shootInterval: 35, bulletSpeed: 3.8, bulletSize: 5, volleyCount: 5, pattern: 'mixed' }
       ]) },
     { name: 'OBLIVION', maxHp: 200, w: 380, h: 55, speed: 1.5,
       movePattern: 'sweep', color: '#1a0030',
       phases: makePhases(4, [
-        { shootInterval: 40, bulletSpeed: 3.5, bulletSize: 5, volleyCount: 3, spreadDeg: 0.12 },
-        { shootInterval: 35, bulletSpeed: 3.8, bulletSize: 5, volleyCount: 4, spreadDeg: 0.15 },
-        { shootInterval: 30, bulletSpeed: 4.0, bulletSize: 5, volleyCount: 4, spreadDeg: 0.18 },
-        { shootInterval: 25, bulletSpeed: 4.2, bulletSize: 4, volleyCount: 5, spreadDeg: 0.20 }
+        { shootInterval: 40, bulletSpeed: 3.5, bulletSize: 5, volleyCount: 3, pattern: 'vertical' },
+        { shootInterval: 35, bulletSpeed: 3.8, bulletSize: 5, volleyCount: 4, pattern: 'mixed' },
+        { shootInterval: 30, bulletSpeed: 4.0, bulletSize: 5, volleyCount: 4, pattern: 'spread' },
+        { shootInterval: 25, bulletSpeed: 4.2, bulletSize: 4, volleyCount: 5, pattern: 'mixed' }
       ]) }
   ];
 
@@ -260,14 +260,37 @@ const game = (() => {
       }
       const phase = cfg.phases[boss.currentPhase];
       if (boss.firedVolley < phase.volleyCount && boss.shootCooldown > cfg.phases[boss.currentPhase].shootInterval - 5) {
-        // Širocí bossové střílí z různých pozic po šířce
         const isWide = cfg.w > 200;
+        const pat = phase.pattern || 'vertical';
+
         for (let i = 0; i < phase.volleyCount; i++) {
-          const angle = Math.PI / 2 + (i - (phase.volleyCount - 1) / 2) * phase.spreadDeg + (boss.spreadBase || 0);
-          // Offset X: u širokých bossů každý projektil z jiného místa
-          const xOffset = isWide ? (i - (phase.volleyCount - 1) / 2) * (cfg.w * 0.22) : 0;
+          let angle, xOff;
+
+          if (pat === 'vertical') {
+            // Všechny střely rovně dolů, rozprostřené horizontálně
+            angle = Math.PI / 2;
+            xOff = isWide
+              ? (i - (phase.volleyCount - 1) / 2) * (cfg.w * 0.22)
+              : (i - (phase.volleyCount - 1) / 2) * 15;
+          } else if (pat === 'mixed') {
+            // Prostřídané: sudé = svisle dolů z okrajů, liché = diagonálně ze středu
+            if (i % 2 === 0) {
+              angle = Math.PI / 2;
+              xOff = isWide
+                ? (i < phase.volleyCount / 2 ? -cfg.w * 0.35 : cfg.w * 0.35)
+                : (i < phase.volleyCount / 2 ? -20 : 20);
+            } else {
+              angle = Math.PI / 2 + (i % 2 === 1 ? 0.15 : -0.15);
+              xOff = 0;
+            }
+          } else { // 'spread'
+            // Kužel ze středu jako dřív, ale u širokých bossů s offsetem
+            angle = Math.PI / 2 + (i - (phase.volleyCount - 1) / 2) * 0.08;
+            xOff = isWide ? (i - (phase.volleyCount - 1) / 2) * (cfg.w * 0.18) : 0;
+          }
+
           state.bulletsEnemy.push(createBullet(
-            boss.x + xOffset, boss.y + boss.h / 2,
+            boss.x + xOff, boss.y + boss.h / 2,
             Math.cos(angle) * phase.bulletSpeed,
             Math.sin(angle) * phase.bulletSpeed,
             phase.bulletSize, 1, '#ff4444'
@@ -476,15 +499,15 @@ const game = (() => {
       ctx.fillRect(b.x - 2, b.y - 5, 4, 10);
     }
 
-    // Nepřátelské střely
+    // Nepřátelské střely (3× větší vizuálně)
     for (const b of state.bulletsEnemy) {
       ctx.fillStyle = b.color;
       ctx.beginPath();
-      ctx.arc(b.x, b.y, b.size, 0, Math.PI * 2);
+      ctx.arc(b.x, b.y, b.size * 3, 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = 'rgba(255,100,100,0.3)';
       ctx.beginPath();
-      ctx.arc(b.x, b.y, b.size + 2, 0, Math.PI * 2);
+      ctx.arc(b.x, b.y, b.size * 3 + 3, 0, Math.PI * 2);
       ctx.fill();
     }
 
@@ -640,6 +663,8 @@ const game = (() => {
     state.ended = true;
     stopMusic();
     if (gameLoop) cancelAnimationFrame(gameLoop);
+    // Uložit index pro zprávu, pak resetovat
+    const diedOnBoss = state.bossIndex;
     // Při smrti reset na prvního bosse, při výhře uložit postup
     if (!won) {
       state.bossIndex = 0;
@@ -663,7 +688,7 @@ const game = (() => {
       $('resultTitle').textContent = '💀 ZNIČEN 💀';
       $('resultTitle').style.color = '#e94560';
       $('resultMsg').textContent = state.boss
-        ? `Zastavil tě ${state.boss.name} (#${state.bossIndex + 1})`
+        ? `Zastavil tě ${state.boss.name} (#${diedOnBoss + 1})`
         : 'Hra skončila';
       sfxGameOver();
     }
