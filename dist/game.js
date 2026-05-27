@@ -12,6 +12,7 @@
   let audioCtx = null;
   function initAudio() {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
   }
   function playTone(freq, duration, type = 'sine', vol = 0.15) {
     try {
@@ -885,8 +886,7 @@
 
     const el = document.createElement('div');
     el.className = 'color-projectile ' + col;
-    el.style.left = x + 'px';
-    el.style.top = y + 'px';
+    el.style.cssText = `left:${x}px;top:${y}px;background:${col === 'red' ? '#e94560' : col === 'blue' ? '#4a7dff' : col === 'green' ? '#2ecc71' : '#f1c40f'}`;
     el.dataset.color = col;
     arena.appendChild(el);
     colorState.projectile = el;
