@@ -89,14 +89,14 @@ const game = (() => {
   // angle: kladný = doprava, záporný = doleva; shape: 'bar' (plochý obdélník) nebo 'circle'
 
   const BOSSES = [
-    // 1 SCOUT — pomalý, střílí jednu barovou střelu, postupně přidává diagonály
+    // 1 SCOUT — pomalý, střílí jen kuličky (vždy mezera)
     { name: 'SCOUT', maxHp: 25, w: 70, h: 35, speed: 1.5,
       movePattern: 'sweep', color: '#8B4513', shape: 'triangle',
       phases: makePhases([
-        { shootInterval: 75, gapShift: 3, shots: [
-          { angle: 0, xOff: 'gap-0-0.08', speed: 2.0, size: 6, shape: 'bar' }
+        { shootInterval: 70, gapShift: 0, shots: [
+          { angle: 0, xOff: 0, speed: 2.0, size: 4, shape: 'circle' }
         ]},
-        { shootInterval: 55, gapShift: 3, shots: [
+        { shootInterval: 55, gapShift: 0, shots: [
           { angle: -0.18, xOff: 0, speed: 2.3, size: 4, shape: 'circle' },
           { angle: 0.18, xOff: 0, speed: 2.3, size: 4, shape: 'circle' }
         ]}
@@ -559,7 +559,7 @@ const game = (() => {
     state.bulletsPlayer = state.bulletsPlayer.filter(b => b.alive);
     state.bulletsEnemy = state.bulletsEnemy.filter(b => b.alive);
 
-    // Boss dead → pozastavit a ukázat pickup
+    // Boss dead → pozastavit a ukázat pickup (pouze po lichém bossovi)
     if (state.boss && !state.boss.alive && !state.waveTransition && !state.pickupActive) {
       // Okamžitě smažeme všechny nepřátelské projektily
       state.bulletsEnemy = [];
@@ -571,7 +571,14 @@ const game = (() => {
         if (state.bossIndex < BOSSES.length - 1) {
           stopMusic();
           if (gameLoop) cancelAnimationFrame(gameLoop);
-          showPickup();
+          // Pickup jen po každém druhém bossovi (1, 3, 5, 7, 9)
+          if (state.bossIndex % 2 === 1) {
+            showPickup();
+          } else {
+            $('pickup').classList.add('hidden');
+            state.pickupActive = false;
+            applyPerkAndContinue(null);
+          }
           return;
         } else {
           state.bossIndex++;
@@ -753,6 +760,19 @@ const game = (() => {
 
     // Hráč
     if (!(p.invincible > 0 && Math.floor(p.invincible / 4) % 2 === 0)) {
+      // Extra life indikace — zlatá pulzující záře
+      if (p.temp.hasExtraLife) {
+        ctx.strokeStyle = `rgba(255, 215, 0, ${0.3 + Math.sin(gameFrame * 0.08) * 0.2})`;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.w * 0.8, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.strokeStyle = `rgba(255, 215, 0, ${0.1 + Math.sin(gameFrame * 0.08) * 0.08})`;
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.w * 1.1, 0, Math.PI * 2);
+        ctx.stroke();
+      }
       ctx.fillStyle = '#4a7dff';
       ctx.beginPath();
       ctx.moveTo(p.x, p.y - p.h/2);
@@ -954,7 +974,8 @@ const game = (() => {
       player: null, boss: null,
       bulletsPlayer: [], bulletsEnemy: [],
       playerTarget: null, combo: 0,
-      waveTransition: 0, ended: false, pickupActive: false
+      waveTransition: 0, ended: false, pickupActive: false,
+      chosenPerks: []
     };
     state.player = createPlayer();
     if (gameLoop) cancelAnimationFrame(gameLoop);
@@ -1055,14 +1076,12 @@ const game = (() => {
     saveGame();
   }
 
-  // ===== DOČASNÉ UPGRADY (pickup po bossovi) =====
-  const TEMP_UPGRADES = [
-    { id: 'tempShield', name: '🛡 Štít', desc: 'Absorbuje 1 zásah' },
-    { id: 'tempSlow', name: '⏱ Zpomalení', desc: 'Nepřátelské střely na 6 s zpomalené' },
-    { id: 'tempBlast', name: '💥 Výbuch', desc: 'Zničí všechny střely na obrazovce' },
-    { id: 'tempHoming', name: '🧲 Navádění', desc: 'Na 6 s střely letí za bossem' },
-    { id: 'tempExtraLife', name: '💖 Extra život', desc: 'Po smrti pokračuješ s 1 HP' },
-    { id: 'tempDrone', name: '🌀 Dron', desc: 'Dron sestřelí 1 střelu za vteřinu' }
+  // ===== DOČASNÉ UPGRADY (perky — po každém 2. bossovi, trvají do konce runu) =====
+  const PERK_LIST = [
+    { id: 'perkShield', name: '🛡 Štít', desc: 'Absorbuje 1 zásah (permanentně)' },
+    { id: 'perkHoming', name: '🧲 Navádění', desc: 'Střely letí za bossem (permanentně)' },
+    { id: 'perkExtraLife', name: '💖 Extra život', desc: 'Po smrti ožiješ s 1 HP' },
+    { id: 'perkDrone', name: '🌀 Dron', desc: 'Dron sestřeluje střely v okolí' }
   ];
 
   function showPickup() {
@@ -1070,9 +1089,19 @@ const game = (() => {
     $('game').classList.add('hidden');
     $('pickup').classList.remove('hidden');
 
-    // Vyber 3 náhodné (nebo míň, pokud jich je málo)
-    const shuffled = [...TEMP_UPGRADES].sort(() => Math.random() - 0.5);
-    const choices = shuffled.slice(0, 3);
+    // Filtruj perky, které už hráč v tomto runu nemá
+    const available = PERK_LIST.filter(p => !state.chosenPerks.includes(p.id));
+    if (available.length === 0) {
+      // Všechny perky už jsou vybrané — přeskoč
+      $('pickup').classList.add('hidden');
+      $('game').classList.remove('hidden');
+      state.pickupActive = false;
+      applyPerkAndContinue(null);
+      return;
+    }
+    // Vyber 2 náhodné (nebo míň)
+    const shuffled = [...available].sort(() => Math.random() - 0.5);
+    const choices = shuffled.slice(0, 2);
 
     $('pickupItems').innerHTML = choices.map(c => `
       <div class="pickup-card" onclick="game.pickUpgrade('${c.id}')">
@@ -1088,20 +1117,20 @@ const game = (() => {
     $('pickup').classList.add('hidden');
     $('game').classList.remove('hidden');
 
+    state.chosenPerks.push(id);
+    applyPerkAndContinue(id);
+  }
+
+  function applyPerkAndContinue(id) {
     const p = state.player;
-    switch (id) {
-      case 'tempShield':
-        p.shieldHp = (p.shieldHp || 0) + 1; break;
-      case 'tempSlow':
-        p.temp.slowTimer = 360; break; // 6 s při 60 fps
-      case 'tempBlast':
-        state.bulletsEnemy = []; break;
-      case 'tempHoming':
-        p.temp.homingTimer = 360; break;
-      case 'tempExtraLife':
-        p.temp.hasExtraLife = true; break;
-      case 'tempDrone':
-        p.temp.droneCount = (p.temp.droneCount || 0) + 1; break;
+    if (id === 'perkShield') {
+      p.shieldHp = (p.shieldHp || 0) + 1;
+    } else if (id === 'perkHoming') {
+      p.temp.homing = true;
+    } else if (id === 'perkExtraLife') {
+      p.temp.hasExtraLife = true;
+    } else if (id === 'perkDrone') {
+      p.temp.droneCount = (p.temp.droneCount || 0) + 1;
     }
 
     // Nastartuj další stage
@@ -1113,57 +1142,24 @@ const game = (() => {
     gameLoop = requestAnimationFrame(gameLoopFn);
   }
 
-  // Aplikuj dočasné efekty na střely a updaty
+  // Aplikuj efekty — navádění a dron jsou permanentní
   function applyTempEffects() {
     const p = state.player;
 
-    // Zpomalení nepřátelských střel
-    if (p.temp.slowTimer > 0) {
-      p.temp.slowTimer--;
-      const mult = 0.3 + 0.7 * (p.temp.slowTimer / 360);
-      for (const b of state.bulletsEnemy) {
-        if (b.alive && b.origVx) {
-          b.vx = b.origVx * mult;
-          b.vy = b.origVy * mult;
-        }
-      }
-    } else {
-      // Obnovení původní rychlosti — pouze pokud byla změněna
-      for (const b of state.bulletsEnemy) {
-        if (b.alive && b.origVx && b.vx !== b.origVx) {
-          b.vx = b.origVx;
-          b.vy = b.origVy;
-        }
-      }
-    }
-
-    // Navádění střel
-    if (p.temp.homingTimer > 0) {
-      p.temp.homingTimer--;
-      if (state.boss && state.boss.alive) {
-        for (const b of state.bulletsPlayer) {
-          if (!b.alive) continue;
-          const dx = state.boss.x - b.x;
-          const dy = state.boss.y - b.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist > 10) {
-            // Nastav rychlost PŘÍMO k cíli, NEPŘIDÁVEJ (žádná kumulace)
-            b.vx = (dx / dist) * 6.5;
-            b.vy = (dy / dist) * 6.5;
-          }
-        }
-      }
-    } else {
-      // Když homing skončí, vrať střely na původní trajektorii
+    // Navádění střel (permanentní, pokud vybrané)
+    if (p.temp.homing && state.boss && state.boss.alive) {
       for (const b of state.bulletsPlayer) {
-        if (b.alive && b.origVx !== undefined) {
-          b.vx = b.origVx;
-          b.vy = b.origVy;
+        if (!b.alive) continue;
+        const dx = state.boss.x - b.x;
+        const dy = state.boss.y - b.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist > 10) {
+          b.vx = (dx / dist) * 6.5;
+          b.vy = (dy / dist) * 6.5;
         }
       }
     }
 
-    // Kritický zásah — aplikuju přímo u střely
     // Dron — sestřelí nepřátelské střely
     if (p.temp.droneCount > 0 && gameFrame % 60 === 0) {
       let shots = p.temp.droneCount;
