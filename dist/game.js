@@ -83,60 +83,60 @@ const game = (() => {
 
   const BOSSES = [
     { name: 'SCOUT', maxHp: 25, w: 70, h: 35, speed: 1.5,
-      movePattern: 'sweep', color: '#8B4513',
+      movePattern: 'sweep', color: '#8B4513', shape: 'triangle',
       phases: makePhases(2, [
         { shootInterval: 80, bulletSpeed: 2.0, bulletSize: 4, volleyCount: 1, pattern: 'vertical' },
         { shootInterval: 60, bulletSpeed: 2.3, bulletSize: 4, volleyCount: 1, pattern: 'vertical' }
       ]) },
     { name: 'BARRACUDA', maxHp: 40, w: 80, h: 38, speed: 2.0,
-      movePattern: 'sweep', color: '#CD853F',
+      movePattern: 'sweep', color: '#CD853F', shape: 'diamond',
       phases: makePhases(3, [
         { shootInterval: 65, bulletSpeed: 2.5, bulletSize: 4, volleyCount: 1, pattern: 'vertical' },
         { shootInterval: 55, bulletSpeed: 2.8, bulletSize: 4, volleyCount: 2, pattern: 'mixed' },
         { shootInterval: 45, bulletSpeed: 3.0, bulletSize: 4, volleyCount: 2, pattern: 'spread' }
       ]) },
     { name: 'JUGGERNAUT', maxHp: 70, w: 370, h: 50, speed: 0,
-      movePattern: 'stationary', color: '#8B0000',
+      movePattern: 'stationary', color: '#8B0000', shape: 'hexagon',
       phases: makePhases(2, [
         { shootInterval: 70, bulletSpeed: 2.2, bulletSize: 5, volleyCount: 3, pattern: 'vertical' },
         { shootInterval: 60, bulletSpeed: 2.4, bulletSize: 5, volleyCount: 4, pattern: 'mixed' }
       ]) },
     { name: 'VIPER', maxHp: 55, w: 75, h: 32, speed: 2.5,
-      movePattern: 'sweep', color: '#556B2F',
+      movePattern: 'sweep', color: '#556B2F', shape: 'chevron',
       phases: makePhases(2, [
         { shootInterval: 55, bulletSpeed: 3.0, bulletSize: 3, volleyCount: 1, pattern: 'vertical' },
         { shootInterval: 45, bulletSpeed: 3.2, bulletSize: 3, volleyCount: 2, pattern: 'mixed' }
       ]) },
     { name: 'FORTRESS', maxHp: 100, w: 380, h: 55, speed: 0,
-      movePattern: 'stationary', color: '#800020',
+      movePattern: 'stationary', color: '#800020', shape: 'trapezoid',
       phases: makePhases(3, [
         { shootInterval: 60, bulletSpeed: 2.5, bulletSize: 6, volleyCount: 4, pattern: 'vertical' },
         { shootInterval: 50, bulletSpeed: 2.8, bulletSize: 5, volleyCount: 5, pattern: 'mixed' },
         { shootInterval: 40, bulletSpeed: 3.0, bulletSize: 5, volleyCount: 6, pattern: 'spread' }
       ]) },
     { name: 'PHANTOM', maxHp: 75, w: 80, h: 35, speed: 2.2,
-      movePattern: 'sweep', color: '#4B0082',
+      movePattern: 'sweep', color: '#4B0082', shape: 'oval',
       phases: makePhases(3, [
         { shootInterval: 50, bulletSpeed: 3.2, bulletSize: 3, volleyCount: 2, pattern: 'vertical' },
         { shootInterval: 42, bulletSpeed: 3.5, bulletSize: 3, volleyCount: 3, pattern: 'mixed' },
         { shootInterval: 35, bulletSpeed: 3.8, bulletSize: 3, volleyCount: 3, pattern: 'spread' }
       ]) },
     { name: 'INFERNO', maxHp: 110, w: 360, h: 50, speed: 0.5,
-      movePattern: 'sweep', color: '#B22222',
+      movePattern: 'sweep', color: '#B22222', shape: 'pentagon',
       phases: makePhases(3, [
         { shootInterval: 50, bulletSpeed: 2.8, bulletSize: 5, volleyCount: 2, pattern: 'vertical' },
         { shootInterval: 42, bulletSpeed: 3.0, bulletSize: 5, volleyCount: 3, pattern: 'mixed' },
         { shootInterval: 35, bulletSpeed: 3.2, bulletSize: 5, volleyCount: 4, pattern: 'spread' }
       ]) },
     { name: 'BLITZ', maxHp: 90, w: 70, h: 30, speed: 3.5,
-      movePattern: 'sweep', color: '#2F4F4F',
+      movePattern: 'sweep', color: '#2F4F4F', shape: 'arrow',
       phases: makePhases(3, [
         { shootInterval: 45, bulletSpeed: 3.5, bulletSize: 3, volleyCount: 1, pattern: 'vertical' },
         { shootInterval: 38, bulletSpeed: 3.8, bulletSize: 3, volleyCount: 2, pattern: 'mixed' },
         { shootInterval: 30, bulletSpeed: 4.0, bulletSize: 3, volleyCount: 3, pattern: 'spread' }
       ]) },
     { name: 'TITAN', maxHp: 150, w: 380, h: 60, speed: 0.3,
-      movePattern: 'sweep', color: '#5B0000',
+      movePattern: 'sweep', color: '#5B0000', shape: 'octagon',
       phases: makePhases(4, [
         { shootInterval: 55, bulletSpeed: 3.0, bulletSize: 6, volleyCount: 3, pattern: 'vertical' },
         { shootInterval: 48, bulletSpeed: 3.2, bulletSize: 6, volleyCount: 4, pattern: 'mixed' },
@@ -144,7 +144,7 @@ const game = (() => {
         { shootInterval: 35, bulletSpeed: 3.8, bulletSize: 5, volleyCount: 5, pattern: 'mixed' }
       ]) },
     { name: 'OBLIVION', maxHp: 200, w: 380, h: 55, speed: 1.5,
-      movePattern: 'sweep', color: '#1a0030',
+      movePattern: 'sweep', color: '#1a0030', shape: 'star',
       phases: makePhases(4, [
         { shootInterval: 40, bulletSpeed: 3.5, bulletSize: 5, volleyCount: 3, pattern: 'vertical' },
         { shootInterval: 35, bulletSpeed: 3.8, bulletSize: 5, volleyCount: 4, pattern: 'mixed' },
@@ -459,11 +459,88 @@ const game = (() => {
       // Blikání při změně fáze
       if (b.phaseFlash > 0) b.phaseFlash--;
 
-      // Stín/tělo
+      // Barva těla podle fáze
       const phaseColors = ['#8b1a1a', '#cc0000', '#ff3333', '#ff6666'];
       const pIdx = Math.min(b.currentPhase, phaseColors.length - 1);
       ctx.fillStyle = phaseColors[pIdx];
-      ctx.fillRect(b.x - b.w/2, b.y - b.h/2, b.w, b.h);
+
+      // === Tvar podle cfg.shape ===
+      const drawShape = (cx, cy, cw, ch, shape) => {
+        ctx.beginPath();
+        switch (shape) {
+          case 'triangle':
+            ctx.moveTo(cx, cy - ch/2);
+            ctx.lineTo(cx - cw/2, cy + ch/2);
+            ctx.lineTo(cx + cw/2, cy + ch/2);
+            break;
+          case 'diamond':
+            ctx.moveTo(cx, cy - ch/2);
+            ctx.lineTo(cx + cw/2, cy);
+            ctx.lineTo(cx, cy + ch/2);
+            ctx.lineTo(cx - cw/2, cy);
+            break;
+          case 'hexagon':
+            for (let i = 0; i < 6; i++) {
+              const a = (i / 6) * Math.PI * 2 - Math.PI/2;
+              const px = cx + (cw/2) * Math.cos(a);
+              const py = cy + (ch/2) * Math.sin(a);
+              i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+            }
+            break;
+          case 'chevron':
+            ctx.moveTo(cx - cw/2, cy + ch/2);
+            ctx.lineTo(cx, cy);
+            ctx.lineTo(cx + cw/2, cy + ch/2);
+            ctx.lineTo(cx, cy + ch/4);
+            break;
+          case 'trapezoid':
+            ctx.moveTo(cx - cw/3, cy - ch/2);
+            ctx.lineTo(cx + cw/3, cy - ch/2);
+            ctx.lineTo(cx + cw/2, cy + ch/2);
+            ctx.lineTo(cx - cw/2, cy + ch/2);
+            break;
+          case 'oval':
+            ctx.ellipse(cx, cy, cw/2, ch/2, 0, 0, Math.PI * 2);
+            break;
+          case 'pentagon':
+            for (let i = 0; i < 5; i++) {
+              const a = (i / 5) * Math.PI * 2 - Math.PI/2;
+              const px = cx + (cw/2) * Math.cos(a);
+              const py = cy + (ch/2) * Math.sin(a);
+              i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+            }
+            break;
+          case 'arrow':
+            ctx.moveTo(cx - cw/2, cy + ch/2);
+            ctx.lineTo(cx, cy - ch/2);
+            ctx.lineTo(cx + cw/2, cy + ch/2);
+            ctx.lineTo(cx, cy + ch/4);
+            break;
+          case 'octagon':
+            for (let i = 0; i < 8; i++) {
+              const a = (i / 8) * Math.PI * 2 - Math.PI/2;
+              const px = cx + (cw/2) * Math.cos(a);
+              const py = cy + (ch/2) * Math.sin(a);
+              i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+            }
+            break;
+          case 'star':
+            for (let i = 0; i < 10; i++) {
+              const a = (i / 10) * Math.PI * 2 - Math.PI/2;
+              const r = i % 2 === 0 ? cw/2 : cw/4;
+              const px = cx + r * Math.cos(a);
+              const py = cy + r * Math.sin(a);
+              i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+            }
+            break;
+          default:
+            ctx.rect(cx - cw/2, cy - ch/2, cw, ch);
+        }
+        ctx.closePath();
+        ctx.fill();
+      };
+
+      drawShape(b.x, b.y, b.w, b.h, cfg.shape || 'rect');
 
       // Zářivý okraj při změně fáze
       if (b.phaseFlash > 0 && b.phaseFlash % 3 < 2) {
@@ -503,11 +580,11 @@ const game = (() => {
     for (const b of state.bulletsEnemy) {
       ctx.fillStyle = b.color;
       ctx.beginPath();
-      ctx.arc(b.x, b.y, b.size * 3, 0, Math.PI * 2);
+      ctx.arc(b.x, b.y, b.size * 1.8, 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = 'rgba(255,100,100,0.3)';
       ctx.beginPath();
-      ctx.arc(b.x, b.y, b.size * 3 + 3, 0, Math.PI * 2);
+      ctx.arc(b.x, b.y, b.size * 1.8 + 2, 0, Math.PI * 2);
       ctx.fill();
     }
 
@@ -663,12 +740,10 @@ const game = (() => {
     state.ended = true;
     stopMusic();
     if (gameLoop) cancelAnimationFrame(gameLoop);
-    // Uložit index pro zprávu, pak resetovat
+    // Uložit index pro zprávu
     const diedOnBoss = state.bossIndex;
-    // Při smrti reset na prvního bosse, při výhře uložit postup
-    if (!won) {
-      state.bossIndex = 0;
-    }
+    // Reset při smrti i při výhře (další run od #1)
+    state.bossIndex = 0;
     saveGame();
 
     // Zavřít pickup okno, pokud bylo otevřené
