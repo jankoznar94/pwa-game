@@ -8,6 +8,41 @@
   const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
   const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = rand(0, i); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
+  // ===== AUDIO =====
+  let audioCtx = null;
+  function initAudio() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  function playTone(freq, duration, type = 'sine', vol = 0.15) {
+    try {
+      initAudio();
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.type = type;
+      o.frequency.value = freq;
+      g.gain.value = vol;
+      g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+      o.connect(g);
+      g.connect(audioCtx.destination);
+      o.start();
+      o.stop(audioCtx.currentTime + duration);
+    } catch {}
+  }
+  function sfxHit() { playTone(220, 0.12, 'sawtooth', 0.08); }
+  function sfxPlayerHit() { playTone(140, 0.2, 'square', 0.10); }
+  function sfxSuccess() {
+    playTone(523, 0.1, 'sine', 0.12);
+    setTimeout(() => playTone(659, 0.1, 'sine', 0.12), 80);
+    setTimeout(() => playTone(784, 0.15, 'sine', 0.14), 160);
+  }
+  function sfxEnemyDefeat() {
+    playTone(440, 0.08, 'square', 0.1);
+    setTimeout(() => playTone(330, 0.08, 'square', 0.1), 80);
+    setTimeout(() => playTone(220, 0.15, 'square', 0.08), 160);
+  }
+
+  // Simon frekvence v D moll
+  const SIMON_FREQS = [73.42*4, 87.31*4, 110.0*4, 146.84*2, 164.81*2, 196.0*2];
   // ===== DUNGEONS =====
   const DUNGEONS = [
     {
@@ -320,7 +355,7 @@
     const symbols = shuffle([...SIMON_SYMBOLS]).slice(0, numCells);
     simonState = {
       sequence: [], playerIndex: 0, showing: true, inputEnabled: false,
-      symbols, numCells, seqLen
+      symbols, numCells, seqLen, skipped: false
     };
 
     // Vygeneruj sekvenci
@@ -328,48 +363,83 @@
       simonState.sequence.push(rand(0, numCells - 1));
     }
 
-    // Vykresli grid
+    // Vykresli grid se symboly
     $('simonGrid').innerHTML = symbols.map((sym, i) =>
-      `<div class="simon-cell" data-idx="${i}" style="background:${SIMON_COLORS[i]}" onclick="game.simonClick(${i})"></div>`
+      `<div class="simon-cell" data-idx="${i}" style="background:${SIMON_COLORS[i]}" onclick="game.simonClick(${i})"><span style="font-size:28px;pointer-events:none;display:flex;align-items:center;justify-content:center;height:100%">${sym}</span></div>`
     ).join('');
     $('simonPrompt').textContent = '👀 Zapamatuj si sekvenci!';
     updateSimonProgress();
 
+    // Skip tlačítko
+    let skipBtn = $('simonSkip');
+    if (!skipBtn) {
+      skipBtn = document.createElement('button');
+      skipBtn.id = 'simonSkip';
+      skipBtn.className = 'btn btn-secondary';
+      skipBtn.textContent = '⏭ Přeskočit animaci';
+      skipBtn.addEventListener('click', () => skipSimonAnimation());
+      $('simonGrid').parentNode.insertBefore(skipBtn, $('simonGrid').nextSibling);
+    }
+    skipBtn.classList.remove('hidden');
+
     // Přehrát sekvenci
-    let delay = 300 - level * 15;
+    let delay = Math.max(150, 300 - level * 15);
     simonState.playing = true;
     simonState.showing = true;
+    simonState.delay = delay;
     playSimonSequence(0, delay);
   }
 
+  function skipSimonAnimation() {
+    if (!simonState.showing) return;
+    simonState.showing = false;
+    simonState.inputEnabled = true;
+    simonState.skipped = true;
+    $('simonPrompt').textContent = '🎯 Zopakuj sekvenci!';
+    const skipBtn = $('simonSkip');
+    if (skipBtn) skipBtn.classList.add('hidden');
+    const cells = document.querySelectorAll('.simon-cell');
+    cells.forEach(c => c.classList.remove('lit'));
+  }
+
   function playSimonSequence(idx, delay) {
+    if (!simonState.showing) return; // bylo přeskočeno
     if (idx >= simonState.sequence.length) {
       simonState.showing = false;
       simonState.inputEnabled = true;
       $('simonPrompt').textContent = '🎯 Zopakuj sekvenci!';
+      const skipBtn = $('simonSkip');
+      if (skipBtn) skipBtn.classList.add('hidden');
       return;
     }
-    // Zvýrazni buňku
+    initAudio();
     const cells = document.querySelectorAll('.simon-cell');
     const cellIdx = simonState.sequence[idx];
     cells.forEach(c => c.classList.remove('lit'));
     cells[cellIdx].classList.add('lit');
+    // Audio tón
+    const freq = SIMON_FREQS[cellIdx % SIMON_FREQS.length];
+    playTone(freq, 0.15, 'sine', 0.12);
 
     setTimeout(() => {
       cells.forEach(c => c.classList.remove('lit'));
-      setTimeout(() => playSimonSequence(idx + 1, delay), 100);
+      setTimeout(() => playSimonSequence(idx + 1, delay), 80);
     }, delay);
   }
 
   function simonClick(idx) {
     if (!simonState.inputEnabled || simonState.showing) return;
+    initAudio();
     const cells = document.querySelectorAll('.simon-cell');
     cells[idx].classList.add('active');
     setTimeout(() => cells[idx].classList.remove('active'), 150);
+    // Audio při ťuknutí
+    playTone(SIMON_FREQS[idx % SIMON_FREQS.length], 0.12, 'sine', 0.10);
 
     if (idx !== simonState.sequence[simonState.playerIndex]) {
       // Chyba
       simonState.inputEnabled = false;
+      sfxPlayerHit();
       enemyHitsPlayer();
       return;
     }
@@ -378,6 +448,7 @@
     if (simonState.playerIndex >= simonState.sequence.length) {
       // Úspěch
       simonState.inputEnabled = false;
+      sfxSuccess();
       playerHitsEnemy();
     }
   }
@@ -456,14 +527,19 @@
   function colorInput(color) {
     if (!colorState.active) return;
     if (color === colorState.currentColor) {
-      // Správně
+      // Správně — exploze!
       colorState.active = false;
       if (colorState.projectile && colorState.projectile.parentNode) {
-        colorState.projectile.remove();
+        // Exploze
+        const el = colorState.projectile;
+        el.style.transition = 'transform 0.2s, opacity 0.2s';
+        el.style.transform = 'scale(2.5)';
+        el.style.opacity = '0';
+        el.style.border = '3px solid #fff';
+        setTimeout(() => el.remove(), 200);
       }
+      sfxHit();
       playerHitsEnemy();
-    } else {
-      // Špatná barva - netrestáme, jen ignorujeme (trest je až když projektil doletí)
     }
   }
 
@@ -505,8 +581,10 @@
     gridState.active = false;
     const o = gridState.options[idx];
     if (o.wins) {
+      sfxSuccess();
       playerHitsEnemy();
     } else {
+      sfxPlayerHit();
       enemyHitsPlayer();
     }
   }
@@ -522,10 +600,10 @@
     if (e.hp <= 0) {
       e.hp = 0;
       updateBattleUI();
+      sfxEnemyDefeat();
       onEnemyDefeated();
     } else {
       updateBattleUI();
-      // Další kolo
       hideAllMinigames();
       startMinigame(e.type);
     }
