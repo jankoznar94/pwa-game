@@ -45,27 +45,30 @@
   const SIMON_FREQS = [73.42*4, 87.31*4, 110.0*4, 146.84*2, 164.81*2, 196.0*2];
   // ===== DUNGEONS =====
   const DUNGEONS = [
+    // 0 — Les stínů
     {
-      id: 0, name: 'Les stínů', unlockReq: null,
+      id: 0, name: '🌲 Les stínů', unlockReq: null,
       floors: [
         { enemy: { name: 'Mladý přízrak', type: 'phantom', hp: 5, face: '👻', level: 1 }, rewardGold: 5 },
-        { enemy: { name: 'Lovec', type: 'archer', hp: 8, face: '🏹', level: 1 }, rewardGold: 7 },
+        { enemy: { name: 'Lesní lovec', type: 'archer', hp: 8, face: '🏹', level: 1 }, rewardGold: 7 },
         { enemy: { name: 'Noční přízrak', type: 'phantom', hp: 10, face: '👻', level: 2 }, rewardGold: 10 },
         { boss: true, enemy: { name: 'Stínový pán', type: 'phantom', hp: 15, face: '👹', level: 2 }, rewardGold: 20, rewardXp: 5 }
       ]
     },
+    // 1 — Hořící katakomby
     {
-      id: 1, name: 'Hořící katakomby', unlockReq: 0,
+      id: 1, name: '🔥 Hořící katakomby', unlockReq: 0,
       floors: [
-        { enemy: { name: 'Střelec', type: 'archer', hp: 12, face: '🏹', level: 2 }, rewardGold: 10 },
-        { enemy: { name: 'Štítový tank', type: 'tank', hp: 15, face: '🛡️', level: 2 }, rewardGold: 12 },
+        { enemy: { name: 'Tlející střelec', type: 'archer', hp: 12, face: '🏹', level: 2 }, rewardGold: 10 },
+        { enemy: { name: 'Kostěný štít', type: 'tank', hp: 15, face: '🛡️', level: 2 }, rewardGold: 12 },
         { enemy: { name: 'Ohnivý střelec', type: 'archer', hp: 18, face: '🏹', level: 3 }, rewardGold: 15 },
         { enemy: { name: 'Starý přízrak', type: 'phantom', hp: 20, face: '👻', level: 3 }, rewardGold: 18 },
         { boss: true, enemy: { name: 'Archivář zhouby', type: 'tank', hp: 28, face: '👹', level: 4 }, rewardGold: 30, rewardXp: 8 }
       ]
     },
+    // 2 — Prokletá věž
     {
-      id: 2, name: 'Prokletá věž', unlockReq: 1,
+      id: 2, name: '🗼 Prokletá věž', unlockReq: 1,
       floors: [
         { enemy: { name: 'Zkušený střelec', type: 'archer', hp: 20, face: '🏹', level: 3 }, rewardGold: 15 },
         { enemy: { name: 'Těžký tank', type: 'tank', hp: 25, face: '🛡️', level: 3 }, rewardGold: 18 },
@@ -73,10 +76,96 @@
         { enemy: { name: 'Mistr střelec', type: 'archer', hp: 30, face: '🏹', level: 4 }, rewardGold: 22 },
         { boss: true, enemy: { name: 'Věžový démon', type: 'phantom', hp: 40, face: '👹', level: 5 }, rewardGold: 40, rewardXp: 12 }
       ]
+    },
+    // 3 — Pouštní nekropole
+    {
+      id: 3, name: '🏜️ Pouštní nekropole', unlockReq: 2,
+      floors: [
+        { enemy: { name: 'Písečný ostrostřelec', type: 'archer', hp: 26, face: '🏹', level: 4 }, rewardGold: 18 },
+        { enemy: { name: 'Hliněný obr', type: 'tank', hp: 32, face: '🛡️', level: 4 }, rewardGold: 22 },
+        { enemy: { name: 'Písečný přízrak', type: 'phantom', hp: 34, face: '👻', level: 5 }, rewardGold: 24 },
+        { enemy: { name: 'Šílený lučištník', type: 'archer', hp: 36, face: '🏹', level: 5 }, rewardGold: 26 },
+        { boss: true, enemy: { name: 'Faraonova kletba', type: 'tank', hp: 50, face: '🐍', level: 6 }, rewardGold: 50, rewardXp: 15 }
+      ]
+    },
+    // 4 — Bažiny zapomnění
+    {
+      id: 4, name: '🌿 Bažiny zapomnění', unlockReq: 3,
+      floors: [
+        { enemy: { name: 'Jedovatý střelec', type: 'archer', hp: 32, face: '🏹', level: 5 }, rewardGold: 22 },
+        { enemy: { name: 'Bahenní tank', type: 'tank', hp: 38, face: '🛡️', level: 5 }, rewardGold: 26 },
+        { enemy: { name: 'Mlžný přízrak', type: 'phantom', hp: 40, face: '👻', level: 6 }, rewardGold: 28 },
+        { enemy: { name: 'Zrádný lučištník', type: 'archer', hp: 42, face: '🏹', level: 6 }, rewardGold: 30 },
+        { enemy: { name: 'Hlubinný strážce', type: 'tank', hp: 45, face: '🛡️', level: 6 }, rewardGold: 32 },
+        { boss: true, enemy: { name: 'Král bažin', type: 'phantom', hp: 60, face: '🐊', level: 7 }, rewardGold: 60, rewardXp: 18 }
+      ]
+    },
+    // 5 — Prales krve
+    {
+      id: 5, name: '🌴 Prales krve', unlockReq: 4,
+      floors: [
+        { enemy: { name: 'Šípkový lovec', type: 'archer', hp: 38, face: '🏹', level: 6 }, rewardGold: 28 },
+        { enemy: { name: 'Kamenný tank', type: 'tank', hp: 44, face: '🛡️', level: 6 }, rewardGold: 32 },
+        { enemy: { name: 'Džunglová příšera', type: 'phantom', hp: 46, face: '👻', level: 7 }, rewardGold: 34 },
+        { enemy: { name: 'Pralesní střelec', type: 'archer', hp: 50, face: '🏹', level: 7 }, rewardGold: 36 },
+        { enemy: { name: 'Kořenový obr', type: 'tank', hp: 52, face: '🛡️', level: 7 }, rewardGold: 38 },
+        { boss: true, enemy: { name: 'Duch pralesa', type: 'phantom', hp: 72, face: '🌳', level: 8 }, rewardGold: 75, rewardXp: 22 }
+      ]
+    },
+    // 6 — Lávové údolí
+    {
+      id: 6, name: '🌋 Lávové údolí', unlockReq: 5,
+      floors: [
+        { enemy: { name: 'Žhavý střelec', type: 'archer', hp: 46, face: '🏹', level: 7 }, rewardGold: 34 },
+        { enemy: { name: 'Lávový tank', type: 'tank', hp: 52, face: '🛡️', level: 7 }, rewardGold: 38 },
+        { enemy: { name: 'Popelem přízrak', type: 'phantom', hp: 56, face: '👻', level: 8 }, rewardGold: 40 },
+        { enemy: { name: 'Železný lučištník', type: 'archer', hp: 60, face: '🏹', level: 8 }, rewardGold: 44 },
+        { enemy: { name: 'Tavený strážce', type: 'tank', hp: 64, face: '🛡️', level: 8 }, rewardGold: 46 },
+        { boss: true, enemy: { name: 'Magma behemot', type: 'tank', hp: 85, face: '🐲', level: 9 }, rewardGold: 90, rewardXp: 28 }
+      ]
+    },
+    // 7 — Ledová propast
+    {
+      id: 7, name: '❄️ Ledová propast', unlockReq: 6,
+      floors: [
+        { enemy: { name: 'Ledový lučištník', type: 'archer', hp: 54, face: '🏹', level: 8 }, rewardGold: 40 },
+        { enemy: { name: 'Mrazivý tank', type: 'tank', hp: 62, face: '🛡️', level: 8 }, rewardGold: 44 },
+        { enemy: { name: 'Sněžný přízrak', type: 'phantom', hp: 66, face: '👻', level: 9 }, rewardGold: 46 },
+        { enemy: { name: 'Polární střelec', type: 'archer', hp: 70, face: '🏹', level: 9 }, rewardGold: 50 },
+        { enemy: { name: 'Ledová zeď', type: 'tank', hp: 74, face: '🛡️', level: 9 }, rewardGold: 52 },
+        { boss: true, enemy: { name: 'Sněžný král', type: 'phantom', hp: 100, face: '🧊', level: 10 }, rewardGold: 110, rewardXp: 35 }
+      ]
+    },
+    // 8 — Nebeská pevnost
+    {
+      id: 8, name: '☁️ Nebeská pevnost', unlockReq: 7,
+      floors: [
+        { enemy: { name: 'Nebeský lučištník', type: 'archer', hp: 64, face: '🏹', level: 9 }, rewardGold: 48 },
+        { enemy: { name: 'Oblakový strážce', type: 'tank', hp: 72, face: '🛡️', level: 9 }, rewardGold: 52 },
+        { enemy: { name: 'Hvězdný přízrak', type: 'phantom', hp: 76, face: '👻', level: 10 }, rewardGold: 55 },
+        { enemy: { name: 'Bleskový střelec', type: 'archer', hp: 80, face: '🏹', level: 10 }, rewardGold: 58 },
+        { enemy: { name: 'Nebeský titán', type: 'tank', hp: 85, face: '🛡️', level: 11 }, rewardGold: 62 },
+        { enemy: { name: 'Větrný duch', type: 'phantom', hp: 88, face: '👻', level: 11 }, rewardGold: 65 },
+        { boss: true, enemy: { name: 'Nebeský drak', type: 'archer', hp: 120, face: '🐉', level: 12 }, rewardGold: 140, rewardXp: 45 }
+      ]
+    },
+    // 9 — Zřícenina času
+    {
+      id: 9, name: '⏳ Zřícenina času', unlockReq: 8,
+      floors: [
+        { enemy: { name: 'Časový střelec', type: 'archer', hp: 76, face: '🏹', level: 10 }, rewardGold: 55 },
+        { enemy: { name: 'Rozpadlý tank', type: 'tank', hp: 84, face: '🛡️', level: 10 }, rewardGold: 60 },
+        { enemy: { name: 'Stín času', type: 'phantom', hp: 88, face: '👻', level: 11 }, rewardGold: 64 },
+        { enemy: { name: 'Zapomenutý lučištník', type: 'archer', hp: 92, face: '🏹', level: 11 }, rewardGold: 68 },
+        { enemy: { name: 'Prastarý strážce', type: 'tank', hp: 96, face: '🛡️', level: 12 }, rewardGold: 72 },
+        { enemy: { name: 'Časoměřič', type: 'phantom', hp: 100, face: '👻', level: 12 }, rewardGold: 76 },
+        { enemy: { name: 'Rozpadlý lučištník', type: 'archer', hp: 104, face: '🏹', level: 13 }, rewardGold: 80 },
+        { boss: true, enemy: { name: 'Architekt času', type: 'tank', hp: 150, face: '⌛', level: 14 }, rewardGold: 200, rewardXp: 60 }
+      ]
     }
   ];
   const MAX_FLOORS = 10;
-  const XP_PER_LEVEL = [5, 8, 12, 16, 22, 28, 35, 45, 55, 70];
+  const XP_PER_LEVEL = [5, 8, 12, 16, 22, 28, 35, 45, 55, 70, 85, 100, 120, 140, 160, 185, 210, 240, 270, 300];
 
   // ===== EQUIPMENT =====
   const ALL_WEAPONS = [
