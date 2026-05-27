@@ -509,10 +509,77 @@
     updateBattleUI();
     hideAllMinigames();
 
+    // Animace příchodu nepřítele + floor zpráva
+    animateEnemyEnter();
+    const floorLabel = floor.boss ? `👹 Boss: ${floor.enemy.name}` : `👾 ${floor.enemy.name}`;
+    showFloorMessage(`Patro ${bs.floorIndex + 1}\n${floorLabel}`);
+
     // Odpočet před začátkem kola
     showCountdown(3, () => {
       startMinigame(bs.enemy.type);
     });
+  }
+
+  // ===== ANIMACE =====
+  function animateEnemyEnter() {
+    const face = $('enemyFace');
+    face.classList.remove('enemy-enter', 'enemy-idle', 'boss-idle', 'enemy-defeat');
+    // Force reflow
+    void face.offsetWidth;
+    face.classList.add('enemy-enter');
+    setTimeout(() => {
+      if (battleState.isBossFloor) {
+        face.classList.add('boss-idle');
+      } else {
+        face.classList.add('enemy-idle');
+      }
+    }, 500);
+  }
+
+  function animateHit(target) {
+    if (target === 'enemy') {
+      $('battleScreen').classList.add('hit-flash-blue');
+      setTimeout(() => $('battleScreen').classList.remove('hit-flash-blue'), 300);
+    } else {
+      $('battleScreen').classList.add('screen-shake', 'hit-flash');
+      setTimeout(() => {
+        $('battleScreen').classList.remove('screen-shake', 'hit-flash');
+      }, 300);
+    }
+  }
+
+  function showDamageFloat(amount, side) {
+    const container = $('battleScreen').querySelector('.card');
+    if (!container) return;
+    const el = document.createElement('div');
+    el.className = 'dmg-float';
+    el.textContent = `-${amount}`;
+    el.style.color = side === 'player' ? '#e94560' : '#4a7dff';
+    el.style.left = side === 'player' ? '20%' : '70%';
+    el.style.top = '50%';
+    container.appendChild(el);
+    setTimeout(() => el.remove(), 800);
+  }
+
+  function animateEnemyDefeat() {
+    const face = $('enemyFace');
+    face.classList.remove('enemy-idle', 'boss-idle', 'enemy-enter');
+    face.classList.add('enemy-defeat');
+    // Po animaci schováme obličej
+    setTimeout(() => {
+      face.textContent = '💫';
+      face.classList.remove('enemy-defeat');
+    }, 600);
+  }
+
+  function showFloorMessage(text) {
+    const existing = document.querySelector('.floor-msg');
+    if (existing) existing.remove();
+    const el = document.createElement('div');
+    el.className = 'floor-msg';
+    el.textContent = text;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 2000);
   }
 
   // ===== COUNTDOWN =====
@@ -827,15 +894,23 @@
     const stats = getHeroStats();
     const dmg = Math.max(1, stats.damage + rand(-1, 1));
     e.hp -= dmg;
+
+    // Animace
+    animateHit('enemy');
+    showDamageFloat(dmg, 'enemy');
+
     if (e.hp <= 0) {
       e.hp = 0;
       updateBattleUI();
       sfxEnemyDefeat();
-      onEnemyDefeated();
+      animateEnemyDefeat();
+      // Počkáme na dokončení animace, pak reward
+      setTimeout(() => onEnemyDefeated(), 600);
     } else {
       updateBattleUI();
       hideAllMinigames();
-      startMinigame(e.type);
+      // Krátká pauza před dalším kolem
+      setTimeout(() => startMinigame(e.type), 300);
     }
   }
 
@@ -847,7 +922,10 @@
     // Shield spell blok?
     if (bs.spells.shield.active) {
       bs.spells.shield.active = false;
-      // Blokováno!
+      // Animace bloku
+      $('battleScreen').classList.add('hit-flash-blue');
+      setTimeout(() => $('battleScreen').classList.remove('hit-flash-blue'), 300);
+      showDamageFloat(0, 'player');
       updateBattleUI();
       hideAllMinigames();
       startMinigame(bs.enemy.type);
@@ -857,6 +935,9 @@
     // Blok štítem?
     if (stats.block > 0 && Math.random() * 100 < stats.block) {
       // Blokováno štítem
+      $('battleScreen').classList.add('hit-flash-blue');
+      setTimeout(() => $('battleScreen').classList.remove('hit-flash-blue'), 300);
+      showDamageFloat(0, 'player');
       updateBattleUI();
       hideAllMinigames();
       startMinigame(bs.enemy.type);
@@ -864,6 +945,11 @@
     }
 
     const dmg = Math.max(1, battleState.enemy.level + rand(0, 1) - stats.armor);
+
+    // Animace zásahu na hráče
+    animateHit('player');
+    showDamageFloat(dmg, 'player');
+
     bs.playerHp -= dmg;
     if (bs.playerHp <= 0) {
       bs.playerHp = 0;
@@ -872,7 +958,7 @@
     } else {
       updateBattleUI();
       hideAllMinigames();
-      startMinigame(bs.enemy.type);
+      setTimeout(() => startMinigame(bs.enemy.type), 300);
     }
   }
 
