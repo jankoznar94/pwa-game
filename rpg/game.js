@@ -508,7 +508,34 @@
 
     updateBattleUI();
     hideAllMinigames();
-    startMinigame(bs.enemy.type);
+
+    // Odpočet před začátkem kola
+    showCountdown(3, () => {
+      startMinigame(bs.enemy.type);
+    });
+  }
+
+  // ===== COUNTDOWN =====
+  function showCountdown(seconds, callback) {
+    let remaining = seconds;
+    const el = $('countdownOverlay');
+    const numEl = $('countdownNumber');
+    el.classList.remove('hidden');
+    numEl.textContent = remaining;
+    const interval = setInterval(() => {
+      remaining--;
+      if (remaining <= 0) {
+        clearInterval(interval);
+        el.classList.add('hidden');
+        if (callback) callback();
+      } else {
+        numEl.textContent = remaining;
+        // Tón při každém tiknutí
+        playTone(440 + remaining * 60, 0.15, 'sine', 0.1);
+      }
+    }, 1000);
+    // První tón hned
+    playTone(440 + remaining * 60, 0.15, 'sine', 0.1);
   }
 
   function hideAllMinigames() {
