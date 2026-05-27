@@ -1,0 +1,201 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: system-ui, sans-serif;
+  background: #0a0a1a;
+  color: #e0e0e0;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+.container { max-width: 420px; margin: 0 auto; padding: 16px; }
+
+/* === Navigation === */
+.nav-bar {
+  display: flex; gap: 8px; padding: 10px 16px;
+  background: #12122a; border-bottom: 1px solid #2a2a4a;
+}
+.nav-bar a {
+  flex: 1; text-align: center; padding: 8px; border-radius: 6px;
+  text-decoration: none; color: #8888aa; font-size: 13px;
+  background: #1a1a3a; transition: 0.2s;
+}
+.nav-bar a:hover, .nav-bar a.active { color: #fff; background: #2a2a5a; }
+
+/* === Buttons === */
+.btn {
+  display: block; width: 100%; padding: 14px; margin: 8px 0;
+  border: none; border-radius: 8px; font-size: 16px; font-weight: bold;
+  cursor: pointer; transition: 0.2s; text-align: center;
+}
+.btn-primary { background: #4a7dff; color: #fff; }
+.btn-primary:hover { background: #5a8dff; }
+.btn-secondary { background: #3a3a5a; color: #e0e0e0; }
+.btn-secondary:hover { background: #4a4a6a; }
+.btn-danger { background: #e94560; color: #fff; }
+.btn-success { background: #2ecc71; color: #fff; }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* === Cards === */
+.card {
+  background: #12122a; border: 1px solid #2a2a4a;
+  border-radius: 10px; padding: 16px; margin: 10px 0;
+}
+.card-title { font-size: 18px; font-weight: bold; margin-bottom: 8px; }
+.card-subtitle { font-size: 13px; color: #8888aa; margin-bottom: 6px; }
+
+/* === Hero === */
+.hero-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.stat { text-align: center; padding: 8px; background: #1a1a3a; border-radius: 6px; }
+.stat-value { font-size: 22px; font-weight: bold; color: #4affff; }
+.stat-label { font-size: 11px; color: #8888aa; }
+.section-title { font-size: 16px; font-weight: bold; margin: 16px 0 8px 0; color: #aaaacc; }
+
+/* === Equipment === */
+.equip-slot {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px; background: #1a1a3a; border-radius: 6px; margin: 4px 0;
+}
+.equip-slot .slot-name { font-size: 13px; color: #8888aa; }
+.equip-slot .slot-item { font-size: 14px; font-weight: bold; }
+
+/* === Dungeon Map === */
+.dungeon-card {
+  background: #12122a; border: 1px solid #2a2a4a;
+  border-radius: 10px; padding: 14px; margin: 10px 0;
+  cursor: pointer; transition: 0.2s;
+}
+.dungeon-card:hover { border-color: #4a7dff; }
+.dungeon-card.locked { opacity: 0.4; cursor: not-allowed; }
+.dungeon-card.locked:hover { border-color: #2a2a4a; }
+.dungeon-card .dungeon-name { font-size: 16px; font-weight: bold; }
+.dungeon-card .dungeon-info { font-size: 12px; color: #8888aa; margin-top: 4px; }
+.dungeon-card .win-badge {
+  display: inline-block; padding: 2px 8px; background: #2ecc71;
+  color: #fff; border-radius: 4px; font-size: 11px; margin-top: 4px;
+}
+
+/* === Battle === */
+#battleScreen { display: none; }
+#battleScreen.active { display: block; }
+.battle-hud { display: flex; justify-content: space-between; margin-bottom: 10px; }
+.battle-hp-bar {
+  height: 20px; background: #2a2a2a; border-radius: 10px; overflow: hidden; margin: 4px 0;
+}
+.battle-hp-fill {
+  height: 100%; transition: width 0.3s; border-radius: 10px;
+}
+.battle-hp-fill.player { background: linear-gradient(90deg, #4a7dff, #6b9fff); }
+.battle-hp-fill.enemy { background: linear-gradient(90deg, #e94560, #ff6b6b); }
+
+/* === Simon Says === */
+.simon-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+  max-width: 240px; margin: 20px auto;
+}
+.simon-cell {
+  aspect-ratio: 1; border-radius: 10px; cursor: pointer;
+  transition: 0.15s; border: 2px solid #2a2a4a;
+}
+.simon-cell.active { border-color: #fff; transform: scale(1.05); }
+.simon-cell.lit { filter: brightness(1.5); border-color: #fff; }
+
+/* === Color Clash === */
+.color-clash-area {
+  position: relative; width: 100%; height: 300px;
+  background: #0a0a1a; border: 1px solid #2a2a4a; border-radius: 10px;
+  overflow: hidden; margin: 10px 0;
+}
+.color-projectile {
+  position: absolute; width: 36px; height: 36px; border-radius: 50%;
+  transition: top 0.05s linear;
+}
+.color-buttons {
+  display: flex; gap: 8px; justify-content: center; margin-top: 10px;
+}
+.color-btn {
+  width: 56px; height: 56px; border-radius: 50%; border: 3px solid transparent;
+  cursor: pointer; transition: 0.1s;
+}
+.color-btn:active { transform: scale(0.9); border-color: #fff; }
+.color-btn.red { background: #e94560; }
+.color-btn.blue { background: #4a7dff; }
+.color-btn.green { background: #2ecc71; }
+.color-btn.yellow { background: #f1c40f; }
+
+/* === Grid Defender === */
+.grid-defender-area {
+  display: flex; gap: 8px; justify-content: center; margin: 20px 0;
+}
+.grid-card {
+  width: 80px; height: 100px; background: #1a1a3a;
+  border: 2px solid #2a2a4a; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px; font-weight: bold; cursor: pointer;
+  transition: 0.15s; flex-direction: column;
+}
+.grid-card:hover { border-color: #4a7dff; transform: scale(1.05); }
+.grid-card .card-sub { font-size: 11px; color: #8888aa; margin-top: 4px; }
+.grid-card.enemy-card {
+  border-color: #e94560; cursor: default;
+}
+.grid-card.enemy-card:hover { transform: none; border-color: #e94560; }
+
+/* === Enemy info === */
+.enemy-face { font-size: 48px; text-align: center; margin: 10px 0; }
+.enemy-name { text-align: center; font-size: 18px; font-weight: bold; }
+.enemy-type-badge {
+  display: inline-block; padding: 2px 10px; border-radius: 4px;
+  font-size: 11px; margin-left: 6px;
+}
+.enemy-type-badge.phantom { background: #8e44ad; }
+.enemy-type-badge.archer { background: #e67e22; }
+.enemy-type-badge.tank { background: #c0392b; }
+
+/* === Pickup === */
+.pickup-overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.8); display: flex; align-items: center;
+  justify-content: center; z-index: 100;
+}
+.pickup-box { background: #12122a; border: 1px solid #4a7dff; border-radius: 12px; padding: 20px; max-width: 320px; width: 90%; }
+.pickup-title { font-size: 18px; font-weight: bold; text-align: center; margin-bottom: 12px; }
+.pickup-items { display: flex; flex-direction: column; gap: 8px; }
+.pickup-card {
+  padding: 12px; background: #1a1a3a; border-radius: 8px;
+  cursor: pointer; transition: 0.2s; text-align: center;
+}
+.pickup-card:hover { background: #2a2a5a; border-color: #4a7dff; }
+.pickup-card .name { font-weight: bold; font-size: 15px; }
+.pickup-card .desc { font-size: 12px; color: #8888aa; margin-top: 4px; }
+
+/* === Result === */
+.result-screen { text-align: center; padding: 40px 20px; }
+.result-screen .result-icon { font-size: 64px; }
+.result-screen .result-title { font-size: 24px; font-weight: bold; margin: 10px 0; }
+.result-screen .result-sub { font-size: 14px; color: #8888aa; }
+
+/* === Spells === */
+.spell-bar {
+  display: flex; gap: 6px; justify-content: center; margin-top: 10px;
+  flex-wrap: wrap;
+}
+.spell-btn {
+  padding: 8px 14px; border: none; border-radius: 6px;
+  font-size: 13px; font-weight: bold; cursor: pointer;
+  transition: 0.2s; position: relative;
+}
+.spell-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.spell-btn .cd-text { font-size: 10px; opacity: 0.7; display: block; }
+.spell-btn.fire { background: #e94560; color: #fff; }
+.spell-btn.ice { background: #4a7dff; color: #fff; }
+.spell-btn.heal { background: #2ecc71; color: #fff; }
+.spell-btn.shield { background: #f1c40f; color: #222; }
+
+/* === Misc === */
+.hidden { display: none !important; }
+.text-center { text-align: center; }
+.text-gold { color: #ffd700; }
+.text-green { color: #2ecc71; }
+.text-red { color: #e94560; }
+.mt-10 { margin-top: 10px; }
+.mb-10 { margin-bottom: 10px; }
+.flex-between { display: flex; justify-content: space-between; align-items: center; }

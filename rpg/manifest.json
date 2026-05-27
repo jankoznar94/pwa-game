@@ -1,0 +1,10 @@
+{
+  "name": "Dungeon Recall",
+  "short_name": "DungeonRecall",
+  "description": "RPG s minihrami - Simon Says, Color Clash, Grid Defender",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#0a0a1a",
+  "theme_color": "#12122a",
+  "icons": []
+}

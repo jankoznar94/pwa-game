@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+  <title>Dungeon Recall</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ===== NAVIGATION ===== -->
+<nav class="nav-bar">
+  <a href="#" data-screen="hero" class="active">⚔️ Hrdina</a>
+  <a href="#" data-screen="adventure">🗺️ Výprava</a>
+  <a href="#" data-screen="shop">🏪 Obchod</a>
+</nav>
+
+<!-- ===== HRDINA ===== -->
+<div id="heroScreen" class="container">
+  <div class="card">
+    <div class="flex-between">
+      <div class="card-title" id="heroName">Dobrodruh</div>
+      <div><span class="text-gold" id="heroGold">💰 0</span></div>
+    </div>
+    <div class="card-subtitle">Level <span id="heroLevel">1</span> • Zkušenost: <span id="heroXp">0</span>/<span id="heroXpNext">5</span></div>
+  </div>
+
+  <div class="hero-stats">
+    <div class="stat"><div class="stat-value" id="statHp">3</div><div class="stat-label">❤️ Životy</div></div>
+    <div class="stat"><div class="stat-value" id="statDmg">2</div><div class="stat-label">⚔️ Útok</div></div>
+    <div class="stat"><div class="stat-value" id="statArmor">0</div><div class="stat-label">🛡️ Brnění</div></div>
+    <div class="stat"><div class="stat-value" id="statBlock">0%</div><div class="stat-label">🏰 Blok</div></div>
+  </div>
+
+  <div class="section-title">🎒 Výzbroj</div>
+  <div id="equipmentList">
+    <div class="equip-slot"><span class="slot-name">Zbraň</span><span class="slot-item" id="equipWeapon">✊ Pěsti (×1.0)</span></div>
+    <div class="equip-slot"><span class="slot-name">Brnění</span><span class="slot-item" id="equipArmor">🧥 Hadry (0)</span></div>
+    <div class="equip-slot"><span class="slot-name">Štít</span><span class="slot-item" id="equipShield">— (0%)</span></div>
+  </div>
+
+  <div class="section-title">🔮 Kouzla</div>
+  <div id="spellList">
+    <div class="equip-slot"><span class="slot-name">🔥 Oheň</span><span class="slot-item" id="spellFire">⏳ 8s (nepřítel)</span></div>
+    <div class="equip-slot"><span class="slot-name">❄️ Mráz</span><span class="slot-item" id="spellIce">⏳ 12s (zpomalení)</span></div>
+    <div class="equip-slot"><span class="slot-name">💚 Léčení</span><span class="slot-item" id="spellHeal">⏳ 15s (+1 HP)</span></div>
+    <div class="equip-slot"><span class="slot-name">🛡️ Bariéra</span><span class="slot-item" id="spellShield">⏳ 12s (blok)</span></div>
+  </div>
+</div>
+
+<!-- ===== DOBRODRUŽSTVÍ ===== -->
+<div id="adventureScreen" class="container hidden">
+  <div class="card">
+    <div class="card-title">🗺️ Dungeony</div>
+    <div class="card-subtitle">Probojuj se dungeonem a poraz bosse!</div>
+  </div>
+  <div id="dungeonList"></div>
+</div>
+
+<!-- ===== OBCHOD ===== -->
+<div id="shopScreen" class="container hidden">
+  <div class="card">
+    <div class="flex-between">
+      <div class="card-title">🏪 Obchod</div>
+      <div><span class="text-gold" id="shopGold">💰 0</span></div>
+    </div>
+    <div class="card-subtitle">Permanentní vylepšení (přežijí smrt)</div>
+  </div>
+  <div id="shopItems"></div>
+</div>
+
+<!-- ===== SOUBOJ ===== -->
+<div id="battleScreen" class="container">
+  <div class="card">
+    <div class="flex-between">
+      <span class="text-green" id="battleDungeon">Dungeon 1</span>
+      <span id="battleFloor">Patro 1/10</span>
+    </div>
+
+    <!-- HP bary -->
+    <div class="flex-between" style="margin-top:8px">
+      <span>❤️ <span id="battlePlayerHpText">3</span>/<span id="battlePlayerMaxHp">3</span></span>
+      <span><span id="battleEnemyHpText">5</span>/<span id="battleEnemyMaxHp">5</span> 👹</span>
+    </div>
+    <div class="battle-hp-bar"><div class="battle-hp-fill player" id="battlePlayerHpBar" style="width:100%"></div></div>
+    <div class="battle-hp-bar"><div class="battle-hp-fill enemy" id="battleEnemyHpBar" style="width:100%"></div></div>
+
+    <!-- Nepřítel -->
+    <div class="enemy-face" id="enemyFace">👻</div>
+    <div class="enemy-name">
+      <span id="enemyName">Přízrak</span>
+      <span class="enemy-type-badge" id="enemyTypeBadge">👻 Simon</span>
+    </div>
+
+    <!-- ===== SIMON SAYS ===== -->
+    <div id="simonArea">
+      <div class="card-subtitle text-center mt-10" id="simonPrompt">Zopakuj sekvenci!</div>
+      <div class="simon-grid" id="simonGrid"></div>
+      <div class="text-center">
+        <span id="simonProgress" style="font-size:13px;color:#8888aa">0/3</span>
+      </div>
+    </div>
+
+    <!-- ===== COLOR CLASH ===== -->
+    <div id="colorClashArea" class="hidden">
+      <div class="card-subtitle text-center mt-10">Ťukni na správnou barvu!</div>
+      <div class="color-clash-area" id="colorArena"></div>
+      <div class="color-buttons">
+        <button class="color-btn red" data-color="red" onclick="game.colorInput('red')"></button>
+        <button class="color-btn blue" data-color="blue" onclick="game.colorInput('blue')"></button>
+        <button class="color-btn green" data-color="green" onclick="game.colorInput('green')"></button>
+        <button class="color-btn yellow" data-color="yellow" onclick="game.colorInput('yellow')"></button>
+      </div>
+    </div>
+
+    <!-- ===== GRID DEFENDER ===== -->
+    <div id="gridDefenderArea" class="hidden">
+      <div class="card-subtitle text-center mt-10">Vyber kartu s vyšší hodnotou!</div>
+      <div class="grid-defender-area" id="gridArea"></div>
+    </div>
+
+    <!-- ===== SPELLS ===== -->
+    <div class="spell-bar" id="spellBar">
+      <button class="spell-btn fire" data-spell="fire" onclick="game.useSpell('fire')">🔥 <span class="cd-text" id="spellCdFire">✓</span></button>
+      <button class="spell-btn ice" data-spell="ice" onclick="game.useSpell('ice')">❄️ <span class="cd-text" id="spellCdIce">✓</span></button>
+      <button class="spell-btn heal" data-spell="heal" onclick="game.useSpell('heal')">💚 <span class="cd-text" id="spellCdHeal">✓</span></button>
+      <button class="spell-btn shield" data-spell="shield" onclick="game.useSpell('shield')">🛡️ <span class="cd-text" id="spellCdShield">✓</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== REWARD OVERLAY ===== -->
+<div id="rewardOverlay" class="pickup-overlay hidden">
+  <div class="pickup-box">
+    <div class="pickup-title" id="rewardTitle">🎁 Odměna!</div>
+    <div class="pickup-items" id="rewardItems"></div>
+    <button class="btn btn-primary mt-10" onclick="game.claimReward()">Pokračovat</button>
+  </div>
+</div>
+
+<!-- ===== RESULT SCREEN ===== -->
+<div id="resultScreen" class="hidden">
+  <div class="result-screen container">
+    <div class="result-icon" id="resultIcon">💀</div>
+    <div class="result-title" id="resultTitle">Padl jsi</div>
+    <div class="result-sub" id="resultMsg"></div>
+    <div class="result-sub mt-10 text-gold" id="resultGold">💰 +0 zlata</div>
+    <button class="btn btn-primary mt-10" onclick="game.afterDeath()">🏪 Obchod</button>
+    <button class="btn btn-secondary" onclick="game.retry()">🔄 Zkusit znovu</button>
+  </div>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
