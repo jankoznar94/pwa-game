@@ -375,27 +375,11 @@ const game = (() => {
       if (boss.x > W - boss.w/2) { boss.dir = -1; }
     }
 
-    // === Střelba s burst módem ===
+    // === Střelba — všechny shoty najednou, pak cooldown ===
     if (boss.shootCooldown > 0) { boss.shootCooldown--; }
-    else if (boss.burstTimer > 0) {
-      // Burst: každý frame jeden projektil
-      boss.burstTimer--;
-      const allShots = boss.allShots || [];
-      if (boss.burstIndex < allShots.length) {
-        const s = allShots[boss.burstIndex];
-        fireShot(boss, s, cfg);
-        boss.burstIndex++;
-      }
-      if (boss.burstIndex >= allShots.length) {
-        // Burst hotov — reset cooldown
-        const curPhase = cfg.phases[boss.currentPhase];
-        boss.shootCooldown = curPhase.shootInterval;
-        boss.burstIndex = 0;
-        boss.burstTimer = 0;
-        boss.gapOffset = (boss.gapOffset || 0) + 1;
-      }
-    } else {
-      // Připrav burst ze všech fází 0..currentPhase
+    else {
+      const curPhase = cfg.phases[boss.currentPhase];
+      // Sesbíráme shoty ze všech fází 0..currentPhase
       const allShots = [];
       for (let f = 0; f <= boss.currentPhase; f++) {
         const ph = cfg.phases[f];
@@ -405,15 +389,12 @@ const game = (() => {
           }
         }
       }
-      boss.allShots = allShots;
-      boss.burstTimer = allShots.length > 0 ? allShots.length : 1;
-      boss.burstIndex = 0;
-      // První projektil hned
-      if (allShots.length > 0) {
-        fireShot(boss, allShots[0], cfg);
-        boss.burstIndex = 1;
-        boss.burstTimer--;
+      // Vystřelíme všechny najednou
+      for (const s of allShots) {
+        fireShot(boss, s, cfg);
       }
+      boss.shootCooldown = curPhase.shootInterval;
+      boss.gapOffset = (boss.gapOffset || 0) + 1;
     }
 
     // gapOffset se cyklicky resetuje, aby nepřetekl
@@ -577,6 +558,7 @@ const game = (() => {
           } else {
             $('pickup').classList.add('hidden');
             state.pickupActive = false;
+            state.ended = true;
             applyPerkAndContinue(null);
           }
           return;
@@ -899,14 +881,14 @@ const game = (() => {
       e.preventDefault();
       if (state.ended) return;
       const pos = getPos(e);
-      state.playerTarget = { x: pos.x, y: pos.y - 50 };
+      state.playerTarget = { x: pos.x, y: pos.y - 70 };
     };
     const onMove = (e) => {
       e.preventDefault();
       if (state.ended) return;
       const pos = getPos(e);
-      // Posun cíle o 50px nahoru, aby loď nebyla pod prstem
-      state.playerTarget = { x: pos.x, y: pos.y - 50 };
+      // Posun cíle o 70px nahoru, aby loď nebyla pod prstem
+      state.playerTarget = { x: pos.x, y: pos.y - 70 };
     };
     const onEnd = (e) => { e.preventDefault(); state.playerTarget = null; };
 
