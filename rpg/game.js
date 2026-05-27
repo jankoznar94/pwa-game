@@ -759,18 +759,6 @@
     $('simonPrompt').textContent = '👀 Zapamatuj si sekvenci!';
     updateSimonProgress();
 
-    // Skip tlačítko
-    let skipBtn = $('simonSkip');
-    if (!skipBtn) {
-      skipBtn = document.createElement('button');
-      skipBtn.id = 'simonSkip';
-      skipBtn.className = 'btn btn-secondary';
-      skipBtn.textContent = '⏭ Přeskočit animaci';
-      skipBtn.addEventListener('click', () => skipSimonAnimation());
-      $('simonGrid').parentNode.insertBefore(skipBtn, $('simonGrid').nextSibling);
-    }
-    skipBtn.classList.remove('hidden');
-
     // Přehrát sekvenci
     let delay = Math.max(150, 300 - level * 15);
     simonState.playing = true;
@@ -779,26 +767,11 @@
     playSimonSequence(0, delay);
   }
 
-  function skipSimonAnimation() {
-    if (!simonState.showing) return;
-    simonState.showing = false;
-    simonState.inputEnabled = true;
-    simonState.skipped = true;
-    $('simonPrompt').textContent = '🎯 Zopakuj sekvenci!';
-    const skipBtn = $('simonSkip');
-    if (skipBtn) skipBtn.classList.add('hidden');
-    const cells = document.querySelectorAll('.simon-cell');
-    cells.forEach(c => c.classList.remove('lit'));
-  }
-
   function playSimonSequence(idx, delay) {
-    if (!simonState.showing) return; // bylo přeskočeno
     if (idx >= simonState.sequence.length) {
       simonState.showing = false;
       simonState.inputEnabled = true;
       $('simonPrompt').textContent = '🎯 Zopakuj sekvenci!';
-      const skipBtn = $('simonSkip');
-      if (skipBtn) skipBtn.classList.add('hidden');
       return;
     }
     initAudio();
@@ -835,10 +808,10 @@
     simonState.playerIndex++;
     updateSimonProgress();
     if (simonState.playerIndex >= simonState.sequence.length) {
-      // Úspěch
+      // Úspěch — vypni input a počkej 1s před dalším kolem
       simonState.inputEnabled = false;
       sfxSuccess();
-      playerHitsEnemy();
+      setTimeout(() => playerHitsEnemy(), 1000);
     }
   }
 
@@ -886,7 +859,9 @@
 
     const el = document.createElement('div');
     el.className = 'color-projectile ' + col;
-    el.style.cssText = `left:${x}px;top:${y}px;background:${col === 'red' ? '#e94560' : col === 'blue' ? '#4a7dff' : col === 'green' ? '#2ecc71' : '#f1c40f'}`;
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
+    el.style.background = col === 'red' ? '#e94560' : col === 'blue' ? '#4a7dff' : col === 'green' ? '#2ecc71' : '#f1c40f';
     el.dataset.color = col;
     arena.appendChild(el);
     colorState.projectile = el;
