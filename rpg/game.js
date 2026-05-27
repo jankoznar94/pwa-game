@@ -98,6 +98,24 @@
     { id: 'tower', name: '🏰 Pavéza', block: 35, cost: 140 }
   ];
 
+  // ===== RARITY =====
+  const RARITIES = [
+    { id: 'common', name: 'Common',  mult: 1.0, weight: 50, color: '#aaaaaa', icon: '⬜' },
+    { id: 'uncommon', name: 'Uncommon', mult: 1.3, weight: 30, color: '#2ecc71', icon: '🟢' },
+    { id: 'rare', name: 'Rare',  mult: 1.7, weight: 15, color: '#4a7dff', icon: '🔵' },
+    { id: 'epic', name: 'Epic',  mult: 2.2, weight: 5, color: '#9b59b6', icon: '🟣' }
+  ];
+  function rollRarity() {
+    const total = RARITIES.reduce((s, r) => s + r.weight, 0);
+    let roll = Math.random() * total;
+    for (const r of RARITIES) {
+      roll -= r.weight;
+      if (roll <= 0) return r.id;
+    }
+    return 'common';
+  }
+  function getRarity(id) { return RARITIES.find(r => r.id === id) || RARITIES[0]; }
+
   const SPELL_COOLDOWNS = {
     fire: 8, ice: 12, heal: 15, shield: 12
   };
@@ -124,7 +142,9 @@
         level: 1, xp: 0, hp: 3, maxHp: 3, baseDmg: 2,
         weapon: 'fists', armor: 'rags', shield: 'none',
         gold: 0, permaMaxHp: 0, permaDmg: 0, permaArmor: 0, permaBlock: 0,
-        inventory: []
+        inventory: [],
+        // Rarity pro vybavené itemy (default common)
+        weaponRarity: 'common', armorRarity: 'common', shieldRarity: 'common'
       },
       completedDungeons: []
     };
@@ -142,12 +162,16 @@
     const wpn = ALL_WEAPONS.find(w => w.id === h.weapon) || ALL_WEAPONS[0];
     const arm = ALL_ARMORS.find(a => a.id === h.armor) || ALL_ARMORS[0];
     const shd = ALL_SHIELDS.find(s => s.id === h.shield) || ALL_SHIELDS[0];
+    const wpnRar = getRarity(h.weaponRarity || 'common');
+    const armRar = getRarity(h.armorRarity || 'common');
+    const shdRar = getRarity(h.shieldRarity || 'common');
     return {
       maxHp: h.permaMaxHp + 3,
-      damage: Math.round((h.permaDmg + h.baseDmg) * wpn.dmgMult),
-      armor: h.permaArmor + arm.armor,
-      block: Math.min(50, h.permaBlock + shd.block),
-      weapon: wpn, armorItem: arm, shield: shd
+      damage: Math.round((h.permaDmg + h.baseDmg) * wpn.dmgMult * wpnRar.mult),
+      armor: Math.round((h.permaArmor + arm.armor) * armRar.mult),
+      block: Math.min(50, Math.round((h.permaBlock + shd.block) * shdRar.mult)),
+      weapon: wpn, armorItem: arm, shield: shd,
+      weaponRarity: wpnRar, armorRarity: armRar, shieldRarity: shdRar
     };
   }
 
@@ -201,8 +225,11 @@
     $('statArmor').textContent = s.armor;
     $('statBlock').textContent = s.block + '%';
     $('equipWeapon').textContent = `${s.weapon.name} (×${s.weapon.dmgMult})`;
+    $('equipWeapon').style.color = s.weaponRarity.color;
     $('equipArmor').textContent = `${s.armorItem.name} (${s.armorItem.armor})`;
+    $('equipArmor').style.color = s.armorRarity.color;
     $('equipShield').textContent = `${s.shield.name} (${s.shield.block}%)`;
+    $('equipShield').style.color = s.shieldRarity.color;
 
     // Inventář
     const inv = h.inventory || [];
@@ -234,31 +261,36 @@
         const info = allItems.find(a => a.type === item.type && a.id === item.id);
         if (!info) return '';
         const slotLabel = { weapon: 'Zbraň', armor: 'Brnění', shield: 'Štít' }[item.type] || '';
+        const iRar = getRarity(item.rarity || 'common');
         return `<div class="equip-slot">
           <div>
-            <span class="slot-item">${info.name}</span>
+            <span class="slot-item" style="color:${iRar.color}">${iRar.icon} ${info.name}</span>
             <span style="font-size:11px;color:#8888aa;margin-left:4px">${slotLabel} ${info.detail}</span>
+            <span style="font-size:10px;color:${iRar.color};margin-left:4px">${iRar.name}</span>
           </div>
           <button class="btn btn-secondary" style="padding:4px 12px;width:auto;margin:0;font-size:12px"
-                  onclick="game.equipItem('${item.type}','${item.id}')">Vybavit</button>
+                  onclick="game.equipItem('${item.type}','${item.id}','${item.rarity || 'common'}')">Vybavit</button>
         </div>`;
       }).join('');
     }
   }
 
-  function equipItem(type, id) {
+  function equipItem(type, id, rarity = 'common') {
     const h = state.hero;
-    // Aktuálně vybavený item vrať do inventáře
+    // Aktuálně vybavený item vrať do inventáře i s jeho raritou
     const currentId = h[type];
+    const currentRarityKey = type + 'Rarity';
+    const currentRarity = h[currentRarityKey] || 'common';
     if (currentId && !['fists','rags','none'].includes(currentId)) {
       if (!h.inventory) h.inventory = [];
       // Pouze pokud už není v inventáři
       if (!h.inventory.some(i => i.type === type && i.id === currentId)) {
-        h.inventory.push({ type, id: currentId });
+        h.inventory.push({ type, id: currentId, rarity: currentRarity });
       }
     }
     // Vybav nový
     h[type] = id;
+    h[currentRarityKey] = rarity;
     // Odeber z inventáře
     h.inventory = (h.inventory || []).filter(i => !(i.type === type && i.id === id));
     saveGame();
@@ -734,6 +766,22 @@
   }
 
   // ===== REWARDS =====
+  function hasWeapon(id) {
+    const h = state.hero;
+    if (h.weapon === id) return true;
+    return (h.inventory || []).some(i => i.type === 'weapon' && i.id === id);
+  }
+  function hasArmor(id) {
+    const h = state.hero;
+    if (h.armor === id) return true;
+    return (h.inventory || []).some(i => i.type === 'armor' && i.id === id);
+  }
+  function hasShield(id) {
+    const h = state.hero;
+    if (h.shield === id) return true;
+    return (h.inventory || []).some(i => i.type === 'shield' && i.id === id);
+  }
+
   function showBossLoot(floor) {
     // Sestav možnosti lootu
     const choices = [];
@@ -754,28 +802,30 @@
       });
     }
 
-    // Item drop z bosse — náhodný výběr z dostupných zbraní/zbrojí/štítů
-    const wpns = ALL_WEAPONS.filter(w => w.id !== 'fists' && !hasWeapon(w.id));
-    const arms = ALL_ARMORS.filter(a => a.id !== 'rags' && !hasArmor(a.id));
-    const shds = ALL_SHIELDS.filter(s => s.id !== 'none' && !hasShield(s.id));
-    const allLoot = [...wpns.map(w => ({ type: 'weapon', item: w })),
-                      ...arms.map(a => ({ type: 'armor', item: a })),
-                      ...shds.map(s => ({ type: 'shield', item: s }))];
+    // Item drop z bosse — 2 náhodné itemy s RNG raritou
+    const wpnPool = ALL_WEAPONS.filter(w => w.id !== 'fists');
+    const armPool = ALL_ARMORS.filter(a => a.id !== 'rags');
+    const shdPool = ALL_SHIELDS.filter(s => s.id !== 'none');
+    const allLoot = [
+      ...wpnPool.map(w => ({ type: 'weapon', item: w })),
+      ...armPool.map(a => ({ type: 'armor', item: a })),
+      ...shdPool.map(s => ({ type: 'shield', item: s }))
+    ];
 
-    if (allLoot.length > 0) {
-      // Vyber 2 náhodné
-      const shuffled = shuffle([...allLoot]);
-      const picks = shuffled.slice(0, 2);
-      for (const pick of picks) {
-        choices.push({
-          name: `🎁 ${pick.item.name}`,
-          type: pick.type,
-          itemId: pick.item.id,
-          desc: pick.type === 'weapon' ? `Útok ×${pick.item.dmgMult}` :
-                pick.type === 'armor' ? `Brnění +${pick.item.armor}` :
-                `Blok ${pick.item.block}%`
-        });
-      }
+    const shuffled = shuffle([...allLoot]);
+    const picks = shuffled.slice(0, 2);
+    for (const pick of picks) {
+      const rarity = rollRarity();
+      const rar = getRarity(rarity);
+      choices.push({
+        name: `${rar.icon} ${pick.item.name}`,
+        type: pick.type,
+        itemId: pick.item.id,
+        rarity: rarity,
+        desc: `${rar.name} — ${pick.type === 'weapon' ? `Útok ×${pick.item.dmgMult}` :
+               pick.type === 'armor' ? `Brnění +${pick.item.armor}` :
+               `Blok ${pick.item.block}%`}`
+      });
     }
 
     // Zobraz overlay s výběrem
@@ -788,10 +838,13 @@
         <div class="desc">${item.desc}</div>
       </div>`).join('')}
       ${lootItems.length > 0 ? `<div class="card-subtitle" style="margin-top:6px">Vyber si odměnu (uloží se do inventáře):</div>
-        ${lootItems.map((item, i) => `<div class="pickup-card" onclick="game.claimBossLoot(${i})">
-          <div class="name">${item.name}</div>
-          <div class="desc">${item.desc}</div>
-        </div>`).join('')}
+        ${lootItems.map((item, i) => {
+          const rar = getRarity(item.rarity || 'common');
+          return `<div class="pickup-card" style="border:1px solid ${rar.color}" onclick="game.claimBossLoot(${i})">
+          <div class="name" style="color:${rar.color}">${rar.icon} ${item.name}</div>
+          <div class="desc" style="color:${rar.color}">${item.desc}</div>
+        </div>`;
+        }).join('')}
         <button class="btn btn-primary mt-10" onclick="game.claimBossLoot(-1)">⏭ Přeskočit</button>`
       : `<button class="btn btn-primary mt-10" onclick="game.claimBossLoot(-1)">Pokračovat</button>`}
     `;
@@ -804,12 +857,12 @@
     $('#rewardOverlay').classList.add('hidden');
     if (idx >= 0 && choices && choices[idx]) {
       const pick = choices[idx];
-      // Ulož do inventáře
+      // Ulož do inventáře i s raritou
       if (!state.hero.inventory) state.hero.inventory = [];
       // Neukládat duplicity (už vlastněný item)
       const already = state.hero.inventory.some(i => i.type === pick.type && i.id === pick.itemId);
       if (!already) {
-        state.hero.inventory.push({ type: pick.type, id: pick.itemId });
+        state.hero.inventory.push({ type: pick.type, id: pick.itemId, rarity: pick.rarity || 'common' });
       }
     }
     saveGame();
@@ -953,9 +1006,19 @@
       state.hero = {
         level: 1, xp: 0, hp: 3, maxHp: 3, baseDmg: 2,
         weapon: 'fists', armor: 'rags', shield: 'none',
-        gold: 0, permaMaxHp: 0, permaDmg: 0, permaArmor: 0, permaBlock: 0
+        gold: 0, permaMaxHp: 0, permaDmg: 0, permaArmor: 0, permaBlock: 0,
+        inventory: []
       };
     }
+    // Migrace starých save — doplnit raritu
+    if (!state.hero.inventory) state.hero.inventory = [];
+    state.hero.inventory = state.hero.inventory.map(i => {
+      if (!i.rarity) i.rarity = 'common';
+      return i;
+    });
+    if (!state.hero.weaponRarity) state.hero.weaponRarity = 'common';
+    if (!state.hero.armorRarity) state.hero.armorRarity = 'common';
+    if (!state.hero.shieldRarity) state.hero.shieldRarity = 'common';
 
     // Navigation
     document.querySelectorAll('.nav-bar a').forEach(a => {
