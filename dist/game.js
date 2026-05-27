@@ -828,6 +828,8 @@
     const floor = battleState.currentFloor;
     const level = floor.enemy.level || 1;
     const speed = Math.max(0.8, 3.0 - level * 0.3);
+    // Přepočet: 260px / (speed * 60fps) = duration v sekundách
+    const fallDuration = (260 / (speed * 60)).toFixed(2);
     const colors = ['red', 'blue', 'green', 'yellow'];
 
     const arena = $('colorArena');
@@ -843,7 +845,7 @@
     arena.innerHTML = colsHtml;
 
     colorState = {
-      active: true, speed, colors, arena,
+      active: true, speed, fallDuration, colors, arena,
       projectile: null, currentColor: null, laneEl: null
     };
 
@@ -879,7 +881,7 @@
     el.style.borderRadius = '50%';
     el.style.border = '2px solid #fff';
     el.style.position = 'absolute';
-    el.style.transition = `top ${1 / colorState.speed}s linear`;
+    el.style.transition = `top ${colorState.fallDuration}s linear`;
     el.dataset.color = col;
     // Když doletí ke dnu — zranění
     el.addEventListener('transitionend', () => {
