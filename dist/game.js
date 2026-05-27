@@ -1,21 +1,19 @@
-const game = (() => {
+(function() {
   'use strict';
 
-  // ===== Canvas =====
-  const canvas = document.getElementById('arena');
-  const ctx = canvas.getContext('2d');
-  const W = 400, H = 500;
-
-  // ===== DOM =====
+  // ===== HELPERS =====
   const $ = id => document.getElementById(id);
+  const rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+  const randF = (min, max) => Math.random() * (max - min) + min;
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = rand(0, i); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
-  // ===== Zvuky (Web Audio API) =====
+  // ===== AUDIO =====
   let audioCtx = null;
   function initAudio() {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   }
-
-  function playTone(freq, duration, type = 'square', vol = 0.12) {
+  function playTone(freq, duration, type = 'sine', vol = 0.15) {
     try {
       initAudio();
       const o = audioCtx.createOscillator();
@@ -30,1187 +28,1315 @@ const game = (() => {
       o.stop(audioCtx.currentTime + duration);
     } catch {}
   }
-
-  function sfxShoot() { playTone(880, 0.06, 'square', 0.06); }
-  function sfxHit() { playTone(220, 0.12, 'sawtooth', 0.10); }
-  function sfxPlayerHit() { playTone(140, 0.2, 'square', 0.12); }
-  function sfxBossKill() {
-    playTone(440, 0.1, 'square', 0.1);
-    setTimeout(() => playTone(660, 0.1, 'square', 0.1), 100);
-    setTimeout(() => playTone(880, 0.2, 'square', 0.12), 200);
+  function sfxHit() { playTone(220, 0.12, 'sawtooth', 0.08); }
+  function sfxPlayerHit() { playTone(140, 0.2, 'square', 0.10); }
+  function sfxSuccess() {
+    playTone(523, 0.1, 'sine', 0.12);
+    setTimeout(() => playTone(659, 0.1, 'sine', 0.12), 80);
+    setTimeout(() => playTone(784, 0.15, 'sine', 0.14), 160);
   }
-  function sfxGameOver() {
-    playTone(330, 0.15, 'square', 0.1);
-    setTimeout(() => playTone(220, 0.15, 'square', 0.1), 150);
-    setTimeout(() => playTone(165, 0.4, 'square', 0.08), 300);
+  function sfxEnemyDefeat() {
+    playTone(440, 0.08, 'square', 0.1);
+    setTimeout(() => playTone(330, 0.08, 'square', 0.1), 80);
+    setTimeout(() => playTone(220, 0.15, 'square', 0.08), 160);
   }
 
-  // Background music — D moll (D F A)
-  let musicInterval = null;
-  function startMusic() {
-    stopMusic();
-    initAudio();
-    // D moll: D=73.42, F=87.31, A=110.0, D2=146.84
-    // Rozklady: D3 F3 A3 F3 D3 F3 A3 F3 | D3 F3 A3 D4 A3 F3 ...
-    const notes = [73.42, 87.31, 110.0, 87.31, 73.42, 87.31, 110.0, 87.31,
-                   73.42, 87.31, 110.0, 146.84, 110.0, 87.31, 73.42, 87.31];
-    let i = 0;
-    const playNote = () => {
-      if (state.ended) return;
-      playTone(notes[i % notes.length], 0.28, 'triangle', 0.04);
-      i++;
-    };
-    playNote();
-    musicInterval = setInterval(playNote, 300);
-  }
-  function stopMusic() {
-    if (musicInterval) { clearInterval(musicInterval); musicInterval = null; }
-  }
-
-  // ===== Boss konfigurace (10 unikátních s fázemi) =====
-  // Každá fáze definuje shoty, které se PŘIDÁVAJÍ k shotům z předchozích fází.
-  // Příklad: F1 = [svislý bar], F2 = [svislý bar + 2 diagonální circle]
-  // Funkce makePhases vytvoří fáze s hpThresholdy a zachová každé shots pole.
-
-  function makePhases(basePhases) {
-    const num = basePhases.length;
-    const thresholds = [];
-    for (let i = 0; i < num; i++) {
-      thresholds.push(1.0 - i / num);
+  // Simon frekvence v D moll
+  const SIMON_FREQS = [73.42*4, 87.31*4, 110.0*4, 146.84*2, 164.81*2, 196.0*2];
+  // ===== DUNGEONS =====
+  const DUNGEONS = [
+    // 0 — Les stínů
+    {
+      id: 0, name: '🌲 Les stínů', unlockReq: null,
+      floors: [
+        { enemy: { name: 'Mladý přízrak', type: 'phantom', hp: 5, face: '👻', level: 1 }, rewardGold: 5 },
+        { enemy: { name: 'Lesní lovec', type: 'archer', hp: 8, face: '🏹', level: 1 }, rewardGold: 7 },
+        { enemy: { name: 'Noční přízrak', type: 'phantom', hp: 10, face: '👻', level: 2 }, rewardGold: 10 },
+        { boss: true, enemy: { name: 'Stínový pán', type: 'phantom', hp: 15, face: '👹', level: 2 }, rewardGold: 20, rewardXp: 5 }
+      ]
+    },
+    // 1 — Hořící katakomby
+    {
+      id: 1, name: '🔥 Hořící katakomby', unlockReq: 0,
+      floors: [
+        { enemy: { name: 'Tlející střelec', type: 'archer', hp: 12, face: '🏹', level: 2 }, rewardGold: 10 },
+        { enemy: { name: 'Kostěný štít', type: 'tank', hp: 15, face: '🛡️', level: 2 }, rewardGold: 12 },
+        { enemy: { name: 'Ohnivý střelec', type: 'archer', hp: 18, face: '🏹', level: 3 }, rewardGold: 15 },
+        { enemy: { name: 'Starý přízrak', type: 'phantom', hp: 20, face: '👻', level: 3 }, rewardGold: 18 },
+        { boss: true, enemy: { name: 'Archivář zhouby', type: 'tank', hp: 28, face: '👹', level: 4 }, rewardGold: 30, rewardXp: 8 }
+      ]
+    },
+    // 2 — Prokletá věž
+    {
+      id: 2, name: '🗼 Prokletá věž', unlockReq: 1,
+      floors: [
+        { enemy: { name: 'Zkušený střelec', type: 'archer', hp: 20, face: '🏹', level: 3 }, rewardGold: 15 },
+        { enemy: { name: 'Těžký tank', type: 'tank', hp: 25, face: '🛡️', level: 3 }, rewardGold: 18 },
+        { enemy: { name: 'Zlý přízrak', type: 'phantom', hp: 28, face: '👻', level: 4 }, rewardGold: 20 },
+        { enemy: { name: 'Mistr střelec', type: 'archer', hp: 30, face: '🏹', level: 4 }, rewardGold: 22 },
+        { boss: true, enemy: { name: 'Věžový démon', type: 'phantom', hp: 40, face: '👹', level: 5 }, rewardGold: 40, rewardXp: 12 }
+      ]
+    },
+    // 3 — Pouštní nekropole
+    {
+      id: 3, name: '🏜️ Pouštní nekropole', unlockReq: 2,
+      floors: [
+        { enemy: { name: 'Písečný ostrostřelec', type: 'archer', hp: 26, face: '🏹', level: 4 }, rewardGold: 18 },
+        { enemy: { name: 'Hliněný obr', type: 'tank', hp: 32, face: '🛡️', level: 4 }, rewardGold: 22 },
+        { enemy: { name: 'Písečný přízrak', type: 'phantom', hp: 34, face: '👻', level: 5 }, rewardGold: 24 },
+        { enemy: { name: 'Šílený lučištník', type: 'archer', hp: 36, face: '🏹', level: 5 }, rewardGold: 26 },
+        { boss: true, enemy: { name: 'Faraonova kletba', type: 'tank', hp: 50, face: '🐍', level: 6 }, rewardGold: 50, rewardXp: 15 }
+      ]
+    },
+    // 4 — Bažiny zapomnění
+    {
+      id: 4, name: '🌿 Bažiny zapomnění', unlockReq: 3,
+      floors: [
+        { enemy: { name: 'Jedovatý střelec', type: 'archer', hp: 32, face: '🏹', level: 5 }, rewardGold: 22 },
+        { enemy: { name: 'Bahenní tank', type: 'tank', hp: 38, face: '🛡️', level: 5 }, rewardGold: 26 },
+        { enemy: { name: 'Mlžný přízrak', type: 'phantom', hp: 40, face: '👻', level: 6 }, rewardGold: 28 },
+        { enemy: { name: 'Zrádný lučištník', type: 'archer', hp: 42, face: '🏹', level: 6 }, rewardGold: 30 },
+        { enemy: { name: 'Hlubinný strážce', type: 'tank', hp: 45, face: '🛡️', level: 6 }, rewardGold: 32 },
+        { boss: true, enemy: { name: 'Král bažin', type: 'phantom', hp: 60, face: '🐊', level: 7 }, rewardGold: 60, rewardXp: 18 }
+      ]
+    },
+    // 5 — Prales krve
+    {
+      id: 5, name: '🌴 Prales krve', unlockReq: 4,
+      floors: [
+        { enemy: { name: 'Šípkový lovec', type: 'archer', hp: 38, face: '🏹', level: 6 }, rewardGold: 28 },
+        { enemy: { name: 'Kamenný tank', type: 'tank', hp: 44, face: '🛡️', level: 6 }, rewardGold: 32 },
+        { enemy: { name: 'Džunglová příšera', type: 'phantom', hp: 46, face: '👻', level: 7 }, rewardGold: 34 },
+        { enemy: { name: 'Pralesní střelec', type: 'archer', hp: 50, face: '🏹', level: 7 }, rewardGold: 36 },
+        { enemy: { name: 'Kořenový obr', type: 'tank', hp: 52, face: '🛡️', level: 7 }, rewardGold: 38 },
+        { boss: true, enemy: { name: 'Duch pralesa', type: 'phantom', hp: 72, face: '🌳', level: 8 }, rewardGold: 75, rewardXp: 22 }
+      ]
+    },
+    // 6 — Lávové údolí
+    {
+      id: 6, name: '🌋 Lávové údolí', unlockReq: 5,
+      floors: [
+        { enemy: { name: 'Žhavý střelec', type: 'archer', hp: 46, face: '🏹', level: 7 }, rewardGold: 34 },
+        { enemy: { name: 'Lávový tank', type: 'tank', hp: 52, face: '🛡️', level: 7 }, rewardGold: 38 },
+        { enemy: { name: 'Popelem přízrak', type: 'phantom', hp: 56, face: '👻', level: 8 }, rewardGold: 40 },
+        { enemy: { name: 'Železný lučištník', type: 'archer', hp: 60, face: '🏹', level: 8 }, rewardGold: 44 },
+        { enemy: { name: 'Tavený strážce', type: 'tank', hp: 64, face: '🛡️', level: 8 }, rewardGold: 46 },
+        { boss: true, enemy: { name: 'Magma behemot', type: 'tank', hp: 85, face: '🐲', level: 9 }, rewardGold: 90, rewardXp: 28 }
+      ]
+    },
+    // 7 — Ledová propast
+    {
+      id: 7, name: '❄️ Ledová propast', unlockReq: 6,
+      floors: [
+        { enemy: { name: 'Ledový lučištník', type: 'archer', hp: 54, face: '🏹', level: 8 }, rewardGold: 40 },
+        { enemy: { name: 'Mrazivý tank', type: 'tank', hp: 62, face: '🛡️', level: 8 }, rewardGold: 44 },
+        { enemy: { name: 'Sněžný přízrak', type: 'phantom', hp: 66, face: '👻', level: 9 }, rewardGold: 46 },
+        { enemy: { name: 'Polární střelec', type: 'archer', hp: 70, face: '🏹', level: 9 }, rewardGold: 50 },
+        { enemy: { name: 'Ledová zeď', type: 'tank', hp: 74, face: '🛡️', level: 9 }, rewardGold: 52 },
+        { boss: true, enemy: { name: 'Sněžný král', type: 'phantom', hp: 100, face: '🧊', level: 10 }, rewardGold: 110, rewardXp: 35 }
+      ]
+    },
+    // 8 — Nebeská pevnost
+    {
+      id: 8, name: '☁️ Nebeská pevnost', unlockReq: 7,
+      floors: [
+        { enemy: { name: 'Nebeský lučištník', type: 'archer', hp: 64, face: '🏹', level: 9 }, rewardGold: 48 },
+        { enemy: { name: 'Oblakový strážce', type: 'tank', hp: 72, face: '🛡️', level: 9 }, rewardGold: 52 },
+        { enemy: { name: 'Hvězdný přízrak', type: 'phantom', hp: 76, face: '👻', level: 10 }, rewardGold: 55 },
+        { enemy: { name: 'Bleskový střelec', type: 'archer', hp: 80, face: '🏹', level: 10 }, rewardGold: 58 },
+        { enemy: { name: 'Nebeský titán', type: 'tank', hp: 85, face: '🛡️', level: 11 }, rewardGold: 62 },
+        { enemy: { name: 'Větrný duch', type: 'phantom', hp: 88, face: '👻', level: 11 }, rewardGold: 65 },
+        { boss: true, enemy: { name: 'Nebeský drak', type: 'archer', hp: 120, face: '🐉', level: 12 }, rewardGold: 140, rewardXp: 45 }
+      ]
+    },
+    // 9 — Zřícenina času
+    {
+      id: 9, name: '⏳ Zřícenina času', unlockReq: 8,
+      floors: [
+        { enemy: { name: 'Časový střelec', type: 'archer', hp: 76, face: '🏹', level: 10 }, rewardGold: 55 },
+        { enemy: { name: 'Rozpadlý tank', type: 'tank', hp: 84, face: '🛡️', level: 10 }, rewardGold: 60 },
+        { enemy: { name: 'Stín času', type: 'phantom', hp: 88, face: '👻', level: 11 }, rewardGold: 64 },
+        { enemy: { name: 'Zapomenutý lučištník', type: 'archer', hp: 92, face: '🏹', level: 11 }, rewardGold: 68 },
+        { enemy: { name: 'Prastarý strážce', type: 'tank', hp: 96, face: '🛡️', level: 12 }, rewardGold: 72 },
+        { enemy: { name: 'Časoměřič', type: 'phantom', hp: 100, face: '👻', level: 12 }, rewardGold: 76 },
+        { enemy: { name: 'Rozpadlý lučištník', type: 'archer', hp: 104, face: '🏹', level: 13 }, rewardGold: 80 },
+        { boss: true, enemy: { name: 'Architekt času', type: 'tank', hp: 150, face: '⌛', level: 14 }, rewardGold: 200, rewardXp: 60 }
+      ]
     }
-    return thresholds.map((t, i) => ({
-      hpThreshold: t,
-      shootInterval: basePhases[i].shootInterval,
-      gapShift: basePhases[i].gapShift || 0,
-      gapStep: basePhases[i].gapStep || 10,
-      shots: basePhases[i].shots
-    }));
-  }
+  ];
+  const MAX_FLOORS = 10;
+  const XP_PER_LEVEL = [5, 8, 12, 16, 22, 28, 35, 45, 55, 70, 85, 100, 120, 140, 160, 185, 210, 240, 270, 300];
 
-  // Helper pro definici shotu: { angle, xOff, speed, size, shape }
-  // xOff: >=1 nebo <=-1 = absolutní pixely od středu bosse; string 'gap-BASE-RANGE' = BASE + cycle*RANGE (px)
-
-  const BOSSES = [
-    // 1 SCOUT — pomalý sweep, střílí jen kuličky
-    { name: 'SCOUT', maxHp: 25, w: 70, h: 35, speed: 1.5,
-      movePattern: 'sweep', color: '#8B4513', shape: 'triangle',
-      phases: makePhases([
-        { shootInterval: 65, gapShift: 0, gapStep: 0, shots: [
-          { angle: 0, xOff: 0, speed: 2.0, size: 4, shape: 'circle' }
-        ]},
-        { shootInterval: 50, gapShift: 0, gapStep: 0, shots: [
-          { angle: -0.18, xOff: 0, speed: 2.3, size: 4, shape: 'circle' },
-          { angle: 0.18, xOff: 0, speed: 2.3, size: 4, shape: 'circle' }
-        ]}
-      ]) },
-    // 2 BARRACUDA — rychlý sweep, jen kuličky, páry do stran
-    { name: 'BARRACUDA', maxHp: 40, w: 80, h: 38, speed: 2.0,
-      movePattern: 'sweep', color: '#CD853F', shape: 'diamond',
-      phases: makePhases([
-        { shootInterval: 55, gapShift: 0, gapStep: 0, shots: [
-          { angle: 0, xOff: 0, speed: 2.5, size: 5, shape: 'circle' }
-        ]},
-        { shootInterval: 45, gapShift: 0, gapStep: 0, shots: [
-          { angle: -0.15, xOff: -12, speed: 2.8, size: 4, shape: 'circle' },
-          { angle: 0.15, xOff: 12, speed: 2.8, size: 4, shape: 'circle' }
-        ]},
-        { shootInterval: 35, gapShift: 0, gapStep: 0, shots: [
-          { angle: -0.18, xOff: -12, speed: 3.0, size: 4, shape: 'circle' },
-          { angle: 0.18, xOff: 12, speed: 3.0, size: 4, shape: 'circle' },
-          { angle: -0.35, xOff: 0, speed: 3.0, size: 4, shape: 'circle' },
-          { angle: 0.35, xOff: 0, speed: 3.0, size: 4, shape: 'circle' }
-        ]}
-      ]) },
-    // 3 JUGGERNAUT — wide stationary, salvy barů přes celou šířku s putující mezerou
-    { name: 'JUGGERNAUT', maxHp: 70, w: 370, h: 50, speed: 0,
-      movePattern: 'stationary', color: '#8B0000', shape: 'hexagon',
-      phases: makePhases([
-        { shootInterval: 60, gapShift: 6, gapStep: 16, shots: [
-          { angle: 0, xOff: -160, speed: 2.2, size: 8, shape: 'bar' },
-          { angle: 0, xOff: -80, speed: 2.2, size: 8, shape: 'bar' },
-          { angle: 0, xOff: 80, speed: 2.2, size: 8, shape: 'bar' },
-          { angle: 0, xOff: 160, speed: 2.2, size: 8, shape: 'bar' }
-        ]},
-        { shootInterval: 50, gapShift: 6, gapStep: 16, shots: [
-          { angle: -0.10, xOff: -120, speed: 2.4, size: 5, shape: 'circle' },
-          { angle: 0.10, xOff: -120, speed: 2.4, size: 5, shape: 'circle' },
-          { angle: -0.10, xOff: -40, speed: 2.4, size: 5, shape: 'circle' },
-          { angle: 0.10, xOff: -40, speed: 2.4, size: 5, shape: 'circle' },
-          { angle: -0.10, xOff: 40, speed: 2.4, size: 5, shape: 'circle' },
-          { angle: 0.10, xOff: 40, speed: 2.4, size: 5, shape: 'circle' },
-          { angle: -0.10, xOff: 120, speed: 2.4, size: 5, shape: 'circle' },
-          { angle: 0.10, xOff: 120, speed: 2.4, size: 5, shape: 'circle' }
-        ]}
-      ]) },
-    // 4 VIPER — rychlý sweep, kuličky, svislé dvojice
-    { name: 'VIPER', maxHp: 55, w: 75, h: 32, speed: 2.5,
-      movePattern: 'sweep', color: '#556B2F', shape: 'chevron',
-      phases: makePhases([
-        { shootInterval: 45, gapShift: 0, gapStep: 0, shots: [
-          { angle: 0, xOff: 0, speed: 3.0, size: 4, shape: 'circle' }
-        ]},
-        { shootInterval: 35, gapShift: 0, gapStep: 0, shots: [
-          { angle: 0, xOff: -12, speed: 3.2, size: 4, shape: 'circle' },
-          { angle: 0, xOff: 12, speed: 3.2, size: 4, shape: 'circle' }
-        ]}
-      ]) },
-    // 5 FORTRESS — wide stationary, salva barů + diagonály, mezera putuje
-    { name: 'FORTRESS', maxHp: 100, w: 380, h: 55, speed: 0,
-      movePattern: 'stationary', color: '#800020', shape: 'trapezoid',
-      phases: makePhases([
-        { shootInterval: 50, gapShift: 5, gapStep: 16, shots: [
-          { angle: 0, xOff: -140, speed: 2.5, size: 8, shape: 'bar' },
-          { angle: 0, xOff: -60, speed: 2.5, size: 8, shape: 'bar' },
-          { angle: 0, xOff: 60, speed: 2.5, size: 8, shape: 'bar' },
-          { angle: 0, xOff: 140, speed: 2.5, size: 8, shape: 'bar' }
-        ]},
-        { shootInterval: 40, gapShift: 5, gapStep: 16, shots: [
-          { angle: -0.08, xOff: -120, speed: 2.8, size: 5, shape: 'circle' },
-          { angle: 0.08, xOff: -120, speed: 2.8, size: 5, shape: 'circle' },
-          { angle: -0.08, xOff: -40, speed: 2.8, size: 5, shape: 'circle' },
-          { angle: 0.08, xOff: -40, speed: 2.8, size: 5, shape: 'circle' },
-          { angle: -0.08, xOff: 40, speed: 2.8, size: 5, shape: 'circle' },
-          { angle: 0.08, xOff: 40, speed: 2.8, size: 5, shape: 'circle' },
-          { angle: -0.08, xOff: 120, speed: 2.8, size: 5, shape: 'circle' },
-          { angle: 0.08, xOff: 120, speed: 2.8, size: 5, shape: 'circle' }
-        ]},
-        { shootInterval: 30, gapShift: 5, gapStep: 16, shots: [
-          { angle: -0.15, xOff: -120, speed: 3.0, size: 5, shape: 'circle' },
-          { angle: 0.15, xOff: -120, speed: 3.0, size: 5, shape: 'circle' },
-          { angle: -0.15, xOff: -40, speed: 3.0, size: 5, shape: 'circle' },
-          { angle: 0.15, xOff: -40, speed: 3.0, size: 5, shape: 'circle' },
-          { angle: -0.15, xOff: 40, speed: 3.0, size: 5, shape: 'circle' },
-          { angle: 0.15, xOff: 40, speed: 3.0, size: 5, shape: 'circle' },
-          { angle: -0.15, xOff: 120, speed: 3.0, size: 5, shape: 'circle' },
-          { angle: 0.15, xOff: 120, speed: 3.0, size: 5, shape: 'circle' }
-        ]}
-      ]) },
-    // 6 PHANTOM — sweep, jen diagonály
-    { name: 'PHANTOM', maxHp: 75, w: 80, h: 35, speed: 2.2,
-      movePattern: 'sweep', color: '#4B0082', shape: 'oval',
-      phases: makePhases([
-        { shootInterval: 40, gapShift: 0, gapStep: 0, shots: [
-          { angle: -0.12, xOff: 0, speed: 3.2, size: 4, shape: 'circle' },
-          { angle: 0.12, xOff: 0, speed: 3.2, size: 4, shape: 'circle' }
-        ]},
-        { shootInterval: 34, gapShift: 0, gapStep: 0, shots: [
-          { angle: -0.25, xOff: 0, speed: 3.5, size: 4, shape: 'circle' },
-          { angle: 0.25, xOff: 0, speed: 3.5, size: 4, shape: 'circle' }
-        ]},
-        { shootInterval: 28, gapShift: 0, gapStep: 0, shots: [
-          { angle: -0.25, xOff: -10, speed: 3.8, size: 4, shape: 'circle' },
-          { angle: 0.25, xOff: 10, speed: 3.8, size: 4, shape: 'circle' },
-          { angle: -0.40, xOff: 0, speed: 3.8, size: 3, shape: 'circle' },
-          { angle: 0.40, xOff: 0, speed: 3.8, size: 3, shape: 'circle' }
-        ]}
-      ]) },
-    // 7 INFERNO — široký sweep, 2 bary + rychlé diagonály
-    { name: 'INFERNO', maxHp: 130, w: 360, h: 50, speed: 0.8,
-      movePattern: 'sweep', color: '#B22222', shape: 'pentagon',
-      phases: makePhases([
-        { shootInterval: 42, gapShift: 4, gapStep: 14, shots: [
-          { angle: 0, xOff: -100, speed: 2.8, size: 6, shape: 'bar' },
-          { angle: 0, xOff: 100, speed: 2.8, size: 6, shape: 'bar' }
-        ]},
-        { shootInterval: 35, gapShift: 4, gapStep: 14, shots: [
-          { angle: -0.08, xOff: -80, speed: 3.2, size: 5, shape: 'circle' },
-          { angle: 0.08, xOff: -80, speed: 3.2, size: 5, shape: 'circle' },
-          { angle: -0.08, xOff: 80, speed: 3.2, size: 5, shape: 'circle' },
-          { angle: 0.08, xOff: 80, speed: 3.2, size: 5, shape: 'circle' }
-        ]},
-        { shootInterval: 26, gapShift: 4, gapStep: 14, shots: [
-          { angle: -0.15, xOff: -80, speed: 3.5, size: 5, shape: 'circle' },
-          { angle: 0.15, xOff: -80, speed: 3.5, size: 5, shape: 'circle' },
-          { angle: -0.15, xOff: 0, speed: 3.5, size: 5, shape: 'circle' },
-          { angle: 0.15, xOff: 0, speed: 3.5, size: 5, shape: 'circle' },
-          { angle: -0.15, xOff: 80, speed: 3.5, size: 5, shape: 'circle' },
-          { angle: 0.15, xOff: 80, speed: 3.5, size: 5, shape: 'circle' }
-        ]}
-      ]) },
-    // 8 BLITZ — nejrychlejší sweep, 2.5× rychlejší než VIPER
-    { name: 'BLITZ', maxHp: 110, w: 70, h: 30, speed: 4.0,
-      movePattern: 'sweep', color: '#2F4F4F', shape: 'arrow',
-      phases: makePhases([
-        { shootInterval: 35, gapShift: 0, gapStep: 0, shots: [
-          { angle: 0, xOff: 0, speed: 3.8, size: 3, shape: 'circle' }
-        ]},
-        { shootInterval: 26, gapShift: 0, gapStep: 0, shots: [
-          { angle: -0.15, xOff: -8, speed: 4.2, size: 3, shape: 'circle' },
-          { angle: 0.15, xOff: 8, speed: 4.2, size: 3, shape: 'circle' }
-        ]},
-        { shootInterval: 18, gapShift: 0, gapStep: 0, shots: [
-          { angle: -0.20, xOff: 0, speed: 4.8, size: 3, shape: 'circle' },
-          { angle: 0.20, xOff: 0, speed: 4.8, size: 3, shape: 'circle' },
-          { angle: -0.40, xOff: 0, speed: 5.0, size: 2, shape: 'circle' },
-          { angle: 0.40, xOff: 0, speed: 5.0, size: 2, shape: 'circle' }
-        ]}
-      ]) },
-    // 9 TITAN — velký pomalý sweep, víc střel, vyšší zranění
-    { name: 'TITAN', maxHp: 200, w: 380, h: 60, speed: 0.4,
-      movePattern: 'sweep', color: '#5B0000', shape: 'octagon',
-      phases: makePhases([
-        { shootInterval: 48, gapShift: 5, gapStep: 14, shots: [
-          { angle: 0, xOff: -140, speed: 3.2, size: 8, shape: 'bar' },
-          { angle: 0, xOff: -60, speed: 3.2, size: 8, shape: 'bar' },
-          { angle: 0, xOff: 60, speed: 3.2, size: 8, shape: 'bar' },
-          { angle: 0, xOff: 140, speed: 3.2, size: 8, shape: 'bar' }
-        ]},
-        { shootInterval: 38, gapShift: 5, gapStep: 14, shots: [
-          { angle: -0.10, xOff: -120, speed: 3.5, size: 6, shape: 'circle' },
-          { angle: 0.10, xOff: -120, speed: 3.5, size: 6, shape: 'circle' },
-          { angle: -0.10, xOff: -40, speed: 3.5, size: 6, shape: 'circle' },
-          { angle: 0.10, xOff: -40, speed: 3.5, size: 6, shape: 'circle' },
-          { angle: -0.10, xOff: 40, speed: 3.5, size: 6, shape: 'circle' },
-          { angle: 0.10, xOff: 40, speed: 3.5, size: 6, shape: 'circle' },
-          { angle: -0.10, xOff: 120, speed: 3.5, size: 6, shape: 'circle' },
-          { angle: 0.10, xOff: 120, speed: 3.5, size: 6, shape: 'circle' }
-        ]},
-        { shootInterval: 30, gapShift: 5, gapStep: 14, shots: [
-          { angle: -0.15, xOff: -120, speed: 3.8, size: 5, shape: 'circle' },
-          { angle: 0.15, xOff: -120, speed: 3.8, size: 5, shape: 'circle' },
-          { angle: -0.15, xOff: -40, speed: 3.8, size: 5, shape: 'circle' },
-          { angle: 0.15, xOff: -40, speed: 3.8, size: 5, shape: 'circle' },
-          { angle: -0.15, xOff: 40, speed: 3.8, size: 5, shape: 'circle' },
-          { angle: 0.15, xOff: 40, speed: 3.8, size: 5, shape: 'circle' },
-          { angle: -0.15, xOff: 120, speed: 3.8, size: 5, shape: 'circle' },
-          { angle: 0.15, xOff: 120, speed: 3.8, size: 5, shape: 'circle' }
-        ]},
-        { shootInterval: 24, gapShift: 5, gapStep: 14, shots: [
-          { angle: -0.22, xOff: -120, speed: 4.2, size: 5, shape: 'circle' },
-          { angle: 0.22, xOff: -120, speed: 4.2, size: 5, shape: 'circle' },
-          { angle: -0.22, xOff: -40, speed: 4.2, size: 5, shape: 'circle' },
-          { angle: 0.22, xOff: -40, speed: 4.2, size: 5, shape: 'circle' },
-          { angle: -0.22, xOff: 40, speed: 4.2, size: 5, shape: 'circle' },
-          { angle: 0.22, xOff: 40, speed: 4.2, size: 5, shape: 'circle' },
-          { angle: -0.22, xOff: 120, speed: 4.2, size: 5, shape: 'circle' },
-          { angle: 0.22, xOff: 120, speed: 4.2, size: 5, shape: 'circle' }
-        ]}
-      ]) },
-    // 10 OBLIVION — finální boss, nejvíc střel, nejrychlejší
-    { name: 'OBLIVION', maxHp: 280, w: 380, h: 55, speed: 1.8,
-      movePattern: 'sweep', color: '#1a0030', shape: 'star',
-      phases: makePhases([
-        { shootInterval: 30, gapShift: 5, gapStep: 12, shots: [
-          { angle: 0, xOff: -140, speed: 3.8, size: 6, shape: 'bar' },
-          { angle: 0, xOff: -60, speed: 3.8, size: 6, shape: 'bar' },
-          { angle: 0, xOff: 60, speed: 3.8, size: 6, shape: 'bar' },
-          { angle: 0, xOff: 140, speed: 3.8, size: 6, shape: 'bar' }
-        ]},
-        { shootInterval: 24, gapShift: 5, gapStep: 12, shots: [
-          { angle: -0.10, xOff: -120, speed: 4.2, size: 5, shape: 'circle' },
-          { angle: 0.10, xOff: -120, speed: 4.2, size: 5, shape: 'circle' },
-          { angle: -0.10, xOff: -40, speed: 4.2, size: 5, shape: 'circle' },
-          { angle: 0.10, xOff: -40, speed: 4.2, size: 5, shape: 'circle' },
-          { angle: -0.10, xOff: 40, speed: 4.2, size: 5, shape: 'circle' },
-          { angle: 0.10, xOff: 40, speed: 4.2, size: 5, shape: 'circle' },
-          { angle: -0.10, xOff: 120, speed: 4.2, size: 5, shape: 'circle' },
-          { angle: 0.10, xOff: 120, speed: 4.2, size: 5, shape: 'circle' }
-        ]},
-        { shootInterval: 18, gapShift: 5, gapStep: 12, shots: [
-          { angle: -0.18, xOff: -120, speed: 4.5, size: 5, shape: 'circle' },
-          { angle: 0.18, xOff: -120, speed: 4.5, size: 5, shape: 'circle' },
-          { angle: -0.18, xOff: -40, speed: 4.5, size: 5, shape: 'circle' },
-          { angle: 0.18, xOff: -40, speed: 4.5, size: 5, shape: 'circle' },
-          { angle: -0.18, xOff: 40, speed: 4.5, size: 5, shape: 'circle' },
-          { angle: 0.18, xOff: 40, speed: 4.5, size: 5, shape: 'circle' },
-          { angle: -0.18, xOff: 120, speed: 4.5, size: 5, shape: 'circle' },
-          { angle: 0.18, xOff: 120, speed: 4.5, size: 5, shape: 'circle' }
-        ]},
-        { shootInterval: 14, gapShift: 5, gapStep: 12, shots: [
-          { angle: -0.25, xOff: -120, speed: 4.8, size: 4, shape: 'circle' },
-          { angle: 0.25, xOff: -120, speed: 4.8, size: 4, shape: 'circle' },
-          { angle: -0.25, xOff: -40, speed: 4.8, size: 4, shape: 'circle' },
-          { angle: 0.25, xOff: -40, speed: 4.8, size: 4, shape: 'circle' },
-          { angle: -0.25, xOff: 40, speed: 4.8, size: 4, shape: 'circle' },
-          { angle: 0.25, xOff: 40, speed: 4.8, size: 4, shape: 'circle' },
-          { angle: -0.25, xOff: 120, speed: 4.8, size: 4, shape: 'circle' },
-          { angle: 0.25, xOff: 120, speed: 4.8, size: 4, shape: 'circle' }
-        ]}
-      ]) }
+  // ===== EQUIPMENT =====
+  const ALL_WEAPONS = [
+    { id: 'fists', name: '✊ Pěsti', dmgMult: 1.0, cost: 0 },
+    { id: 'dagger', name: '🗡️ Dýka', dmgMult: 1.3, cost: 20 },
+    { id: 'sword', name: '⚔️ Meč', dmgMult: 1.6, cost: 50 },
+    { id: 'flameSword', name: '🔥 Ohnivý meč', dmgMult: 2.0, cost: 120 }
+  ];
+  const ALL_ARMORS = [
+    { id: 'rags', name: '🧥 Hadry', armor: 0, cost: 0 },
+    { id: 'leather', name: '🦺 Kožené', armor: 1, cost: 30 },
+    { id: 'chainmail', name: '⛓️ Kroužková', armor: 2, cost: 80 },
+    { id: 'plate', name: '🛡️ Plátová', armor: 3, cost: 150 }
+  ];
+  const ALL_SHIELDS = [
+    { id: 'none', name: '—', block: 0, cost: 0 },
+    { id: 'wooden', name: '🪵 Dřevěný', block: 10, cost: 25 },
+    { id: 'iron', name: '⚙️ Železný', block: 20, cost: 70 },
+    { id: 'tower', name: '🏰 Pavéza', block: 35, cost: 140 }
   ];
 
-  // ===== Stav =====
+  // ===== RARITY =====
+  const RARITIES = [
+    { id: 'common', name: 'Common',  mult: 1.0, weight: 50, color: '#aaaaaa', icon: '⬜' },
+    { id: 'uncommon', name: 'Uncommon', mult: 1.3, weight: 30, color: '#2ecc71', icon: '🟢' },
+    { id: 'rare', name: 'Rare',  mult: 1.7, weight: 15, color: '#4a7dff', icon: '🔵' },
+    { id: 'epic', name: 'Epic',  mult: 2.2, weight: 5, color: '#9b59b6', icon: '🟣' }
+  ];
+  function rollRarity() {
+    const total = RARITIES.reduce((s, r) => s + r.weight, 0);
+    let roll = Math.random() * total;
+    for (const r of RARITIES) {
+      roll -= r.weight;
+      if (roll <= 0) return r.id;
+    }
+    return 'common';
+  }
+  function getRarity(id) { return RARITIES.find(r => r.id === id) || RARITIES[0]; }
+
+  const SPELL_COOLDOWNS = {
+    fire: 8, ice: 12, heal: 15, shield: 12
+  };
+  const SPELL_NAMES = {
+    fire: '🔥 Oheň', ice: '❄️ Mráz', heal: '💚 Léčení', shield: '🛡️ Bariéra'
+  };
+
+  // ===== STATE =====
   let state = {};
   let gameLoop = null;
+  let battleState = {};
+  let simonState = {};
+  let colorState = {};
+  let gridState = {};
 
-  // ===== Pomocné =====
-  function rand(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
-  function randF(min, max) { return Math.random() * (max - min) + min; }
+  // ===== SAVE SLOTS =====
+  const SAVE_SLOTS = [1, 2, 3];
+  const CURRENT_SLOT_KEY = 'dungeonRecallActiveSlot';
+  const SAVE_PREFIX = 'dungeonRecallSave_';
+  let currentSlot = 1;
 
-  // ===== Save =====
-  function loadSave() {
+  // ===== SAVE SLOTS =====
+  function getSaveKey(slot) { return SAVE_PREFIX + slot; }
+  function getActiveSlot() {
+    try { return parseInt(localStorage.getItem(CURRENT_SLOT_KEY), 10) || 1; } catch { return 1; }
+  }
+  function setActiveSlot(slot) {
+    currentSlot = slot;
+    try { localStorage.setItem(CURRENT_SLOT_KEY, String(slot)); } catch {}
+  }
+  function getSlotInfo(slot) {
     try {
-      const s = JSON.parse(localStorage.getItem('bossSlayerSave'));
-      if (s && s.upgrades) return s;
+      const raw = localStorage.getItem(getSaveKey(slot));
+      if (!raw) return null;
+      const s = JSON.parse(raw);
+      if (!s || !s.hero) return null;
+      return {
+        level: s.hero.level || 1,
+        gold: s.hero.gold || 0,
+        completed: (s.completedDungeons || []).length,
+        name: s.hero.name || 'Dobrodruh'
+      };
+    } catch { return null; }
+  }
+
+  function loadSave() {
+    currentSlot = getActiveSlot();
+    // Migrace starého single-save (před zavedením slotů)
+    try {
+      const oldRaw = localStorage.getItem('dungeonRecallSave');
+      if (oldRaw) {
+        const oldSave = JSON.parse(oldRaw);
+        if (oldSave && oldSave.hero) {
+          // Ulož jako slot 1 a smaž starý
+          localStorage.setItem(getSaveKey(1), oldRaw);
+          localStorage.removeItem('dungeonRecallSave');
+        }
+      }
     } catch {}
-    return { money: 0, bossIndex: 0, upgrades: {} };
+
+    try {
+      const s = JSON.parse(localStorage.getItem(getSaveKey(currentSlot)));
+      if (s && s.hero) return s;
+    } catch {}
+    return {
+      hero: {
+        level: 1, xp: 0, hp: 3, maxHp: 3, baseDmg: 2,
+        weapon: 'fists', armor: 'rags', shield: 'none',
+        gold: 0, permaMaxHp: 0, permaDmg: 0, permaArmor: 0, permaBlock: 0,
+        inventory: [],
+        weaponRarity: 'common', armorRarity: 'common', shieldRarity: 'common',
+        name: 'Dobrodruh'
+      },
+      completedDungeons: []
+    };
   }
   function saveGame() {
-    localStorage.setItem('bossSlayerSave', JSON.stringify({
-      money: state.money, bossIndex: state.bossIndex, upgrades: state.upgrades
+    localStorage.setItem(getSaveKey(currentSlot), JSON.stringify({
+      hero: state.hero,
+      completedDungeons: state.completedDungeons
     }));
   }
-
-  // ===== Player =====
-  function createPlayer() {
-    const u = state.upgrades;
-    return {
-      x: W / 2, y: H - 60, w: 24, h: 26,
-      maxHp: 3 + (u.maxHp || 0),
-      hp: 3 + (u.maxHp || 0),
-      speed: 3.0 + (u.speed || 0) * 0.5,
-      fireRate: Math.max(5, 20 - (u.fireRate || 0) * 3),
-      damage: 1 + (u.damage || 0),
-      multishot: Math.min(3, Math.floor((u.multishot || 0))),
-      crit: Math.min(3, Math.floor((u.crit || 0))),
-      shield: Math.min(1, Math.floor((u.shield || 0))),
-      shieldHp: Math.min(1, Math.floor((u.shield || 0))),
-      fireCooldown: 0, invincible: 0, temp: {}
-    };
-  }
-
-  function createBullet(x, y, vx, vy, size, dmg, color, shape) {
-    return { x, y, vx, vy, origVx: vx, origVy: vy, size, dmg, color, shape: shape || 'circle', alive: true };
-  }
-
-  function createBoss(cfg) {
-    const phase = cfg.phases[0];
-    return {
-      cfg, name: cfg.name, x: W / 2, y: 55,
-      w: cfg.w, h: cfg.h,
-      hp: cfg.maxHp, maxHp: cfg.maxHp,
-      dir: -1,
-      shootCooldown: phase.shootInterval,
-      alive: true,
-      currentPhase: 0, phaseFlash: 0,
-      burstIndex: 0, burstTimer: 0
-    };
-  }
-
-  // ===== Kolize =====
-  function rectCollide(a, b) {
-    return a.x - a.w/2 < b.x + b.w/2 &&
-           a.x + a.w/2 > b.x - b.w/2 &&
-           a.y - a.h/2 < b.y + b.h/2 &&
-           a.y + a.h/2 > b.y - b.h/2;
-  }
-  function circleRectCollide(cx, cy, cr, rx, ry, rw, rh) {
-    const nx = Math.max(rx - rw/2, Math.min(cx, rx + rw/2));
-    const ny = Math.max(ry - rh/2, Math.min(cy, ry + rh/2));
-    const dx = cx - nx, dy = cy - ny;
-    return dx * dx + dy * dy < cr * cr;
-  }
-
-  // ===== Boss update =====
-  function updateBoss(boss) {
-    if (!boss.alive) return;
-    const cfg = boss.cfg;
-
-    // === Fáze podle HP ===
-    const hpPct = boss.hp / boss.maxHp;
-    let newPhase = 0;
-    for (let i = cfg.phases.length - 1; i >= 0; i--) {
-      if (hpPct <= cfg.phases[i].hpThreshold) { newPhase = i; break; }
-    }
-    if (newPhase !== boss.currentPhase) {
-      boss.currentPhase = newPhase;
-      boss.phaseFlash = 15; // bliknutí při změně fáze
-    }
-
-    // === Fixní pohyb (vždy, nezávisle na střelbě) ===
-    if (cfg.movePattern === 'sweep') {
-      boss.x += cfg.speed * boss.dir;
-      if (boss.x < boss.w/2) { boss.dir = 1; }
-      if (boss.x > W - boss.w/2) { boss.dir = -1; }
-    }
-
-    // === Střelba — všechny shoty najednou, pak cooldown ===
-    if (boss.shootCooldown > 0) { boss.shootCooldown--; }
-    else {
-      const curPhase = cfg.phases[boss.currentPhase];
-      // Sesbíráme shoty ze všech fází 0..currentPhase
-      const allShots = [];
-      for (let f = 0; f <= boss.currentPhase; f++) {
-        const ph = cfg.phases[f];
-        if (ph.shots) {
-          for (const s of ph.shots) {
-            allShots.push(s);
-          }
-        }
-      }
-      // Vystřelíme všechny najednou
-      for (const s of allShots) {
-        fireShot(boss, s, cfg);
-      }
-      boss.shootCooldown = curPhase.shootInterval;
-      boss.gapOffset = (boss.gapOffset || 0) + 1;
-    }
-
-    // gapOffset se cyklicky resetuje, aby nepřetekl
-    if (boss.gapOffset > 1000) boss.gapOffset = 0;
-  }
-
-  function fireShot(boss, s, cfg) {
-    const curPhase = cfg.phases[boss.currentPhase];
-    const gapShift = curPhase.gapShift || 0;
-    const gapStep = curPhase.gapStep || 10;
-    // Posun celé salvy: všechny shoty se posunou o stejný offset
-    const gapAdd = gapShift > 0 ? ((boss.gapOffset || 0) % gapShift) * gapStep : 0;
-
-    let xOff;
-    if (typeof s.xOff === 'number' && Math.abs(s.xOff) >= 1) {
-      xOff = s.xOff + gapAdd;
-    } else if (typeof s.xOff === 'number') {
-      xOff = s.xOff * cfg.w + gapAdd;
-    } else {
-      xOff = 0 + gapAdd;
-    }
-
-    const angle = Math.PI / 2 + s.angle;
-    state.bulletsEnemy.push(createBullet(
-      boss.x + xOff, boss.y + cfg.h / 2,
-      Math.cos(angle) * s.speed,
-      Math.sin(angle) * s.speed,
-      s.size, 1, '#ff4444', s.shape
-    ));
-  }
-
-  // ===== Game loop =====
-  let gameFrame = 0;
-
-  function update() {
-    gameFrame++;
-    const p = state.player;
-
-    // Auto-attack
-    p.fireCooldown--;
-    if (p.fireCooldown <= 0) {
-      p.fireCooldown = p.fireRate;
-      const count = 1 + p.multishot;
-      for (let i = 0; i < count; i++) {
-        const spread = (i - (count - 1) / 2) * 0.08;
-        state.bulletsPlayer.push(createBullet(
-          p.x + i * 3 - (count - 1) * 1.5, p.y - p.h/2,
-          spread, -6.5, 3, p.damage, '#4affff'
-        ));
-      }
-      sfxShoot();
-    }
-
-    // Pohyb hráče
-    if (state.playerTarget) {
-      const dx = state.playerTarget.x - p.x;
-      const dy = state.playerTarget.y - p.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist > 2) {
-        const move = Math.min(p.speed, dist);
-        p.x += (dx / dist) * move;
-        p.y += (dy / dist) * move;
-      }
-    }
-    p.x = Math.max(p.w/2, Math.min(W - p.w/2, p.x));
-    p.y = Math.max(p.h/2, Math.min(H - p.h/2, p.y));
-    if (p.invincible > 0) p.invincible--;
-
-    // Boss update
-    if (state.boss && state.boss.alive) updateBoss(state.boss);
-
-    // Střely hráče
-    for (const b of state.bulletsPlayer) {
-      if (!b.alive) continue;
-      b.x += b.vx; b.y += b.vy;
-      if (b.y < -10 || b.x < -10 || b.x > W + 10) b.alive = false;
-      if (state.boss && state.boss.alive && rectCollide(
-        { x: b.x, y: b.y, w: b.size * 2, h: b.size * 2 },
-        { x: state.boss.x, y: state.boss.y, w: state.boss.w, h: state.boss.h }
-      )) {
-        let dmgDealt = b.dmg;
-        const p = state.player;
-        if ((p.temp.critChance || p.crit > 0) && Math.random() < (0.1 * p.crit + (p.temp.critChance || 0))) {
-          dmgDealt *= 3;
-        }
-        state.boss.hp -= dmgDealt;
-        b.alive = false;
-        state.combo++;
-        if (state.boss.hp <= 0) {
-          state.boss.hp = 0;
-          state.boss.alive = false;
-          const bonus = 12 + state.bossIndex * 5;
-          state.money += bonus;
-          state.combo = 0;
-          sfxBossKill();
-        } else {
-          sfxHit();
-        }
-      }
-    }
-
-    // Nepřátelské střely
-    for (const b of state.bulletsEnemy) {
-      if (!b.alive) continue;
-      b.x += b.vx; b.y += b.vy;
-      if (b.y > H + 10 || b.x < -10 || b.x > W + 10) b.alive = false;
-      if (p.invincible <= 0 && circleRectCollide(b.x, b.y, b.size, p.x, p.y, p.w, p.h)) {
-        b.alive = false;
-        if (p.shieldHp > 0) {
-          p.shieldHp--;
-          sfxHit();
-        } else {
-          p.hp--;
-          p.invincible = 40;
-          state.combo = 0;
-          sfxPlayerHit();
-        }
-        if (p.hp <= 0) {
-          if (p.temp.hasExtraLife) {
-            p.temp.hasExtraLife = false;
-            p.hp = 1;
-            p.invincible = 60;
-            sfxHit();
-          } else {
-            p.hp = 0;
-            endGame(false);
-            return;
-          }
-        }
-      }
-    }
-
-    // Cleanup
-    state.bulletsPlayer = state.bulletsPlayer.filter(b => b.alive);
-    state.bulletsEnemy = state.bulletsEnemy.filter(b => b.alive);
-
-    // Boss dead → pozastavit a ukázat pickup (pouze po lichém bossovi)
-    if (state.boss && !state.boss.alive && !state.waveTransition && !state.pickupActive) {
-      // Okamžitě smažeme všechny nepřátelské projektily
-      state.bulletsEnemy = [];
-      state.waveTransition = 20;
-    }
-    if (state.waveTransition > 0) {
-      state.waveTransition--;
-      if (state.waveTransition <= 0 && state.boss && !state.boss.alive) {
-        if (state.bossIndex < BOSSES.length - 1) {
-          stopMusic();
-          if (gameLoop) cancelAnimationFrame(gameLoop);
-          // Pickup jen po každém druhém bossovi (1, 3, 5, 7, 9)
-          if (state.bossIndex % 2 === 1) {
-            showPickup();
-          } else {
-            $('pickup').classList.add('hidden');
-            state.pickupActive = false;
-            state.ended = true;
-            // Defer restart do příštího ticku, aby se starý loop čistě ukončil
-            setTimeout(() => applyPerkAndContinue(null), 0);
-          }
-          return;
-        } else {
-          state.bossIndex++;
-          endGame(true);
-          return;
-        }
-      }
-    }
-
-    // Dočasné efekty
-    applyTempEffects();
-    updateUI();
-  }
-
-  function draw() {
-    const p = state.player;
-
-    // Pozadí
-    ctx.fillStyle = '#0a0a1a';
-    ctx.fillRect(0, 0, W, H);
-
-    // Hvězdy
-    ctx.fillStyle = 'rgba(255,255,255,0.4)';
-    for (let i = 0; i < 50; i++) {
-      const sx = (i * 113.7 + 40) % W;
-      const sy = ((i * 89.3 + gameFrame * 0.2) % H);
-      ctx.beginPath();
-      ctx.arc(sx, sy, i % 3 === 0 ? 1.5 : 0.8, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    // Boss
-    if (state.boss && state.boss.alive) {
-      const b = state.boss;
-      const cfg = b.cfg;
-
-      // Blikání při změně fáze
-      if (b.phaseFlash > 0) b.phaseFlash--;
-
-      // Barva těla podle fáze
-      const phaseColors = ['#8b1a1a', '#cc0000', '#ff3333', '#ff6666'];
-      const pIdx = Math.min(b.currentPhase, phaseColors.length - 1);
-      ctx.fillStyle = phaseColors[pIdx];
-
-      // === Tvar podle cfg.shape ===
-      const drawShape = (cx, cy, cw, ch, shape) => {
-        ctx.beginPath();
-        switch (shape) {
-          case 'triangle':
-            ctx.moveTo(cx, cy - ch/2);
-            ctx.lineTo(cx - cw/2, cy + ch/2);
-            ctx.lineTo(cx + cw/2, cy + ch/2);
-            break;
-          case 'diamond':
-            ctx.moveTo(cx, cy - ch/2);
-            ctx.lineTo(cx + cw/2, cy);
-            ctx.lineTo(cx, cy + ch/2);
-            ctx.lineTo(cx - cw/2, cy);
-            break;
-          case 'hexagon':
-            for (let i = 0; i < 6; i++) {
-              const a = (i / 6) * Math.PI * 2 - Math.PI/2;
-              const px = cx + (cw/2) * Math.cos(a);
-              const py = cy + (ch/2) * Math.sin(a);
-              i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
-            }
-            break;
-          case 'chevron':
-            ctx.moveTo(cx - cw/2, cy + ch/2);
-            ctx.lineTo(cx, cy);
-            ctx.lineTo(cx + cw/2, cy + ch/2);
-            ctx.lineTo(cx, cy + ch/4);
-            break;
-          case 'trapezoid':
-            ctx.moveTo(cx - cw/3, cy - ch/2);
-            ctx.lineTo(cx + cw/3, cy - ch/2);
-            ctx.lineTo(cx + cw/2, cy + ch/2);
-            ctx.lineTo(cx - cw/2, cy + ch/2);
-            break;
-          case 'oval':
-            ctx.ellipse(cx, cy, cw/2, ch/2, 0, 0, Math.PI * 2);
-            break;
-          case 'pentagon':
-            for (let i = 0; i < 5; i++) {
-              const a = (i / 5) * Math.PI * 2 - Math.PI/2;
-              const px = cx + (cw/2) * Math.cos(a);
-              const py = cy + (ch/2) * Math.sin(a);
-              i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
-            }
-            break;
-          case 'arrow':
-            ctx.moveTo(cx - cw/2, cy + ch/2);
-            ctx.lineTo(cx, cy - ch/2);
-            ctx.lineTo(cx + cw/2, cy + ch/2);
-            ctx.lineTo(cx, cy + ch/4);
-            break;
-          case 'octagon':
-            for (let i = 0; i < 8; i++) {
-              const a = (i / 8) * Math.PI * 2 - Math.PI/2;
-              const px = cx + (cw/2) * Math.cos(a);
-              const py = cy + (ch/2) * Math.sin(a);
-              i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
-            }
-            break;
-          case 'star':
-            for (let i = 0; i < 10; i++) {
-              const a = (i / 10) * Math.PI * 2 - Math.PI/2;
-              const r = i % 2 === 0 ? cw/2 : cw/4;
-              const px = cx + r * Math.cos(a);
-              const py = cy + r * Math.sin(a);
-              i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
-            }
-            break;
-          default:
-            ctx.rect(cx - cw/2, cy - ch/2, cw, ch);
-        }
-        ctx.closePath();
-        ctx.fill();
+  function deleteSlot(slot) {
+    try { localStorage.removeItem(getSaveKey(slot)); } catch {}
+    if (slot === currentSlot) {
+      // Načti prázdný
+      state = {
+        hero: {
+          level: 1, xp: 0, hp: 3, maxHp: 3, baseDmg: 2,
+          weapon: 'fists', armor: 'rags', shield: 'none',
+          gold: 0, permaMaxHp: 0, permaDmg: 0, permaArmor: 0, permaBlock: 0,
+          inventory: [],
+          weaponRarity: 'common', armorRarity: 'common', shieldRarity: 'common',
+          name: 'Dobrodruh'
+        },
+        completedDungeons: []
       };
-
-      drawShape(b.x, b.y, b.w, b.h, cfg.shape || 'rect');
-
-      // Zářivý okraj při změně fáze
-      if (b.phaseFlash > 0 && b.phaseFlash % 3 < 2) {
-        ctx.strokeStyle = '#ffff00';
-        ctx.lineWidth = 3;
-        ctx.strokeRect(b.x - b.w/2 - 2, b.y - b.h/2 - 2, b.w + 4, b.h + 4);
-      }
-
-      // Kokpit
-      ctx.fillStyle = 'rgba(255,255,255,0.15)';
-      ctx.beginPath();
-      ctx.ellipse(b.x, b.y - b.h/4, b.w * 0.15, b.h * 0.2, 0, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Kanóny (podle počtu shotů v aktuální fázi)
-      ctx.fillStyle = '#555';
-      const curPhase = cfg.phases[b.currentPhase];
-      const totalShots = curPhase.shots.length;
-      const canons = totalShots > 1 ? Math.min(totalShots, 5) : 1;
-      for (let i = 0; i < canons; i++) {
-        const cx = b.x - b.w/4 + i * (b.w / Math.max(canons, 1));
-        ctx.fillRect(cx - 3, b.y + b.h/2 - 2, 6, 6);
-      }
-
-      // Ozdobné pruhy (podle % HP)
-      const pct = b.hp / b.maxHp;
-      if (pct < 0.3) {
-        ctx.fillStyle = '#ff444488';
-        ctx.fillRect(b.x - b.w/2, b.y - b.h/2, b.w, 3);
-      }
+      saveGame();
     }
-    // Střely hráče
-    for (const b of state.bulletsPlayer) {
-      ctx.fillStyle = b.color;
-      ctx.fillRect(b.x - 2, b.y - 5, 4, 10);
-    }
-
-    // Nepřátelské střely — tvar podle b.shape
-    for (const b of state.bulletsEnemy) {
-      ctx.fillStyle = b.color;
-      if (b.shape === 'bar') {
-        // Plochý obdélník (široký, nízký)
-        const bw = b.size * 5;
-        ctx.fillRect(b.x - bw/2, b.y - b.size/2, bw, b.size);
-        ctx.fillStyle = 'rgba(255,100,100,0.3)';
-        ctx.fillRect(b.x - bw/2 - 1, b.y - b.size/2 - 1, bw + 2, b.size + 2);
-      } else {
-        // Kulička
-        ctx.beginPath();
-        ctx.arc(b.x, b.y, b.size * 1.8, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = 'rgba(255,100,100,0.3)';
-        ctx.beginPath();
-        ctx.arc(b.x, b.y, b.size * 1.8 + 2, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
-
-    // Hráč
-    if (!(p.invincible > 0 && Math.floor(p.invincible / 4) % 2 === 0)) {
-      // Extra life indikace — zlatá pulzující záře
-      if (p.temp.hasExtraLife) {
-        ctx.strokeStyle = `rgba(255, 215, 0, ${0.3 + Math.sin(gameFrame * 0.08) * 0.2})`;
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.w * 0.8, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.strokeStyle = `rgba(255, 215, 0, ${0.1 + Math.sin(gameFrame * 0.08) * 0.08})`;
-        ctx.lineWidth = 4;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.w * 1.1, 0, Math.PI * 2);
-        ctx.stroke();
-      }
-      ctx.fillStyle = '#4a7dff';
-      ctx.beginPath();
-      ctx.moveTo(p.x, p.y - p.h/2);
-      ctx.lineTo(p.x - p.w/2, p.y + p.h/2);
-      ctx.lineTo(p.x - p.w/4, p.y + p.h/3);
-      ctx.lineTo(p.x, p.y + p.h/2.5);
-      ctx.lineTo(p.x + p.w/4, p.y + p.h/3);
-      ctx.lineTo(p.x + p.w/2, p.y + p.h/2);
-      ctx.closePath();
-      ctx.fill();
-      ctx.fillStyle = '#6b9fff';
-      ctx.beginPath();
-      ctx.ellipse(p.x, p.y - p.h/6, p.w * 0.2, p.h * 0.2, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = `rgba(255,${150 + Math.sin(gameFrame * 0.3) * 50},0,0.8)`;
-      ctx.beginPath();
-      ctx.moveTo(p.x - 3, p.y + p.h/2.5);
-      ctx.lineTo(p.x, p.y + p.h/2.5 + 7 + Math.sin(gameFrame * 0.5) * 3);
-      ctx.lineTo(p.x + 3, p.y + p.h/2.5);
-      ctx.fill();
-    }
-
-    // Srdíčka (životy hráče) — kreslí se do canvasu dole
-    ctx.font = '16px sans-serif';
-    ctx.textAlign = 'left';
-    let hpText = '';
-    for (let i = 0; i < p.maxHp; i++) {
-      hpText += (i < p.hp) ? '❤️' : '🖤';
-    }
-    ctx.fillStyle = '#fff';
-    ctx.font = '14px sans-serif';
-    ctx.fillText(hpText, 10, H - 8);
-
-    // Štít indikace
-    if (p.shieldHp > 0) {
-      ctx.fillStyle = '#4affff';
-      ctx.font = '12px sans-serif';
-      ctx.fillText(`🛡 ${'■'.repeat(p.shieldHp)}`, 10, H - 24);
-    }
-
-    // Dron — krouží kolem hráče
-    if (p.temp && p.temp.droneCount > 0) {
-      const angle = gameFrame * 0.05;
-      for (let i = 0; i < p.temp.droneCount; i++) {
-        const da = angle + i * Math.PI * 2 / p.temp.droneCount;
-        const dx = p.x + Math.cos(da) * 30;
-        const dy = p.y + Math.sin(da) * 30;
-        ctx.fillStyle = '#4affff';
-        ctx.beginPath();
-        ctx.arc(dx, dy, 5, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = 'rgba(74,255,255,0.3)';
-        ctx.lineWidth = 1;
-        ctx.stroke();
-      }
-    }
+    renderHero();
   }
-
-  // ===== UI =====
-  function updateUI() {
-    const p = state.player;
-    const b = state.boss;
-
-    // Boss HP bar nahoře
-    if (b && b.alive) {
-      const bhPct = Math.max(0, (b.hp / b.maxHp) * 100);
-      $('bossHpOutside').style.width = bhPct + '%';
-      $('bossNameHud').textContent = b.name;
-
-      // Separátory fází v HP baru
-      const phases = b.cfg.phases;
-      const sepContainer = $('bossPhaseSeparators');
-      let sepHTML = '';
-      for (let i = 1; i < phases.length; i++) {
-        const pct = phases[i].hpThreshold * 100;
-        sepHTML += `<div class="phase-sep" style="left: ${pct}%"></div>`;
-      }
-      sepContainer.innerHTML = sepHTML;
-
-      // Indikátor fáze
-      const phaseText = ['F1', 'F2', 'F3', 'F4'];
-      const pIdx = Math.min(b.currentPhase, phaseText.length - 1);
-      $('bossPhaseIndicator').textContent = phaseText[pIdx];
-      $('bossPhaseIndicator').style.color = ['#4a7dff', '#4ecca3', '#ffd700', '#e94560'][pIdx] || '#ffd700';
-    } else {
-      $('bossHpOutside').style.width = '0%';
-      $('bossNameHud').textContent = state.waveTransition > 0 ? 'Příprava...' : '???';
-      $('bossPhaseSeparators').innerHTML = '';
-      $('bossPhaseIndicator').textContent = '--';
-    }
-
-    $('gameMoney').textContent = state.money;
-    $('gameCombo').textContent = state.combo;
-    $('waveInfo').textContent = state.boss && state.boss.alive
-      ? `Boss #${state.bossIndex + 1}`
-      : state.waveTransition > 0
-        ? `Další boss za chvíli...`
-        : 'Vítězství!';
-  }
-
-  // ===== Spawn =====
-  function spawnBoss() {
-    const cfg = BOSSES[state.bossIndex] || BOSSES[BOSSES.length - 1];
-    state.boss = createBoss(cfg);
-    state.bulletsEnemy = [];
-    state.waveTransition = 0;
-    state.combo = 0;
-  }
-
-  // ===== Input =====
-  function setupInput() {
-    const getPos = (e) => {
-      const rect = canvas.getBoundingClientRect();
-      const scaleX = canvas.width / rect.width;
-      const scaleY = canvas.height / rect.height;
-      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-      return {
-        x: (clientX - rect.left) * scaleX,
-        y: (clientY - rect.top) * scaleY
-      };
-    };
-    const onStart = (e) => {
-      e.preventDefault();
-      if (state.ended) return;
-      const pos = getPos(e);
-      state.playerTarget = { x: pos.x, y: pos.y - 70 };
-    };
-    const onMove = (e) => {
-      e.preventDefault();
-      if (state.ended) return;
-      const pos = getPos(e);
-      // Posun cíle o 70px nahoru, aby loď nebyla pod prstem
-      state.playerTarget = { x: pos.x, y: pos.y - 70 };
-    };
-    const onEnd = (e) => { e.preventDefault(); state.playerTarget = null; };
-
-    canvas.addEventListener('touchstart', onStart, { passive: false });
-    canvas.addEventListener('touchmove', onMove, { passive: false });
-    canvas.addEventListener('touchend', onEnd, { passive: false });
-    canvas.addEventListener('mousedown', onStart);
-    canvas.addEventListener('mousemove', onMove);
-    canvas.addEventListener('mouseup', onEnd);
-    canvas.addEventListener('mouseleave', onEnd);
-  }
-
-  // ===== Game loop =====
-  function gameLoopFn() {
-    if (state.ended) return;
-    // Ochrana proti paralelním loopům
-    const thisLoopId = gameLoop;
-    update();
-    draw();
-    if (!state.pickupActive && !state.ended && gameLoop === thisLoopId) {
-      gameLoop = requestAnimationFrame(gameLoopFn);
-    }
-  }
-
-  // ===== Konec =====
-  function endGame(won) {
-    state.ended = true;
-    stopMusic();
-    if (gameLoop) cancelAnimationFrame(gameLoop);
-    // Uložit index pro zprávu
-    const diedOnBoss = state.bossIndex;
-    // Reset při smrti i při výhře (další run od #1)
-    state.bossIndex = 0;
+  function switchSlot(slot) {
+    if (slot === currentSlot) return;
+    saveGame(); // ulož aktuální
+    setActiveSlot(slot);
+    state = loadSave();
+    state.completedDungeons = state.completedDungeons || [];
+    migrateState();
     saveGame();
-
-    // Zavřít pickup okno, pokud bylo otevřené
-    $('pickup').classList.add('hidden');
-    state.pickupActive = false;
-
-    $('menu').classList.add('hidden');
-    $('game').classList.add('hidden');
-    $('shop').classList.add('hidden');
-    $('result').classList.remove('hidden');
-
-    if (won) {
-      $('resultTitle').textContent = '🎉 VYHRÁL JSI! 🎉';
-      $('resultTitle').style.color = '#ffd700';
-      $('resultMsg').textContent = 'Porazil jsi všechny bosse!';
-    } else {
-      $('resultTitle').textContent = '💀 ZNIČEN 💀';
-      $('resultTitle').style.color = '#e94560';
-      $('resultMsg').textContent = state.boss
-        ? `Zastavil tě ${state.boss.name} (#${diedOnBoss + 1})`
-        : 'Hra skončila';
-      sfxGameOver();
-    }
-    $('resultMoney').textContent = `💰 ${state.money} coinů`;
+    showScreen('hero');
+  }
+  function migrateState() {
+    if (!state.hero) return;
+    if (!state.hero.inventory) state.hero.inventory = [];
+    state.hero.inventory = state.hero.inventory.map(i => {
+      if (!i.rarity) i.rarity = 'common';
+      return i;
+    });
+    if (!state.hero.weaponRarity) state.hero.weaponRarity = 'common';
+    if (!state.hero.armorRarity) state.hero.armorRarity = 'common';
+    if (!state.hero.shieldRarity) state.hero.shieldRarity = 'common';
+    if (!state.hero.name) state.hero.name = 'Dobrodruh';
   }
 
-  // ===== START =====
-  function initState() {
-    const save = loadSave();
-    const defUpg = {};
-    ['maxHp','speed','fireRate','damage','multishot','shield','crit'].forEach(k => defUpg[k] = save.upgrades[k] || 0);
-    state = {
-      money: save.money, bossIndex: save.bossIndex, upgrades: defUpg,
-      player: null, boss: null,
-      bulletsPlayer: [], bulletsEnemy: [],
-      playerTarget: null, combo: 0,
-      waveTransition: 0, ended: false, pickupActive: false,
-      chosenPerks: []
+  // ===== HERO STATS =====
+  function getHeroStats() {
+    const h = state.hero;
+    const wpn = ALL_WEAPONS.find(w => w.id === h.weapon) || ALL_WEAPONS[0];
+    const arm = ALL_ARMORS.find(a => a.id === h.armor) || ALL_ARMORS[0];
+    const shd = ALL_SHIELDS.find(s => s.id === h.shield) || ALL_SHIELDS[0];
+    const wpnRar = getRarity(h.weaponRarity || 'common');
+    const armRar = getRarity(h.armorRarity || 'common');
+    const shdRar = getRarity(h.shieldRarity || 'common');
+    return {
+      maxHp: h.permaMaxHp + 3,
+      damage: Math.round((h.permaDmg + h.baseDmg) * wpn.dmgMult * wpnRar.mult),
+      armor: Math.round((h.permaArmor + arm.armor) * armRar.mult),
+      block: Math.min(50, Math.round((h.permaBlock + shd.block) * shdRar.mult)),
+      weapon: wpn, armorItem: arm, shield: shd,
+      weaponRarity: wpnRar, armorRarity: armRar, shieldRarity: shdRar
     };
-    state.player = createPlayer();
-    if (gameLoop) cancelAnimationFrame(gameLoop);
   }
 
-  function start() {
-    initAudio();
-    initState();
-    spawnBoss();
-    $('menu').classList.add('hidden');
-    $('result').classList.add('hidden');
-    $('shop').classList.add('hidden');
-    $('game').classList.remove('hidden');
-    updateUI();
-    state.ended = false;
-    startMusic();
-    gameLoop = requestAnimationFrame(gameLoopFn);
+  function getXpToLevel(level) {
+    return XP_PER_LEVEL[Math.min(level - 1, XP_PER_LEVEL.length - 1)] || 100;
   }
 
-  function quit() {
-    stopMusic();
-    if (gameLoop) cancelAnimationFrame(gameLoop);
-    const save = loadSave();
-    $('menuMoney').textContent = save.money;
-    $('menuBossCount').textContent = `Boss #${Math.min(save.bossIndex + 1, BOSSES.length)}`;
-    $('menu').classList.remove('hidden');
-    $('game').classList.add('hidden');
-    $('result').classList.add('hidden');
-    $('shop').classList.add('hidden');
+  // ===== SAVE SLOT UI =====
+  function renderSaveSlots() {
+    const container = $('saveSlotArea');
+    if (!container) return;
+    const slotsHtml = SAVE_SLOTS.map(slot => {
+      const info = getSlotInfo(slot);
+      const active = slot === currentSlot ? 'save-slot-active' : '';
+      if (!info) {
+        // Prázdný slot - jen tlačítko vytvořit
+        return `<div class="save-slot ${active}" onclick="game.switchSlot(${slot})">
+          <div class="slot-label">Slot ${slot}</div>
+          <div class="slot-state" style="color:#666">Prázdný</div>
+          <button class="save-slot-btn" onclick="event.stopPropagation();game.deleteSlot(${slot})">🗑️</button>
+        </div>`;
+      }
+      return `<div class="save-slot ${active}" onclick="game.switchSlot(${slot})">
+        <div class="slot-label">Slot ${slot}</div>
+        <div class="slot-state">${info.name} · Lv.${info.level} · 💰${info.gold} · 🏆${info.completed}</div>
+        <button class="save-slot-btn" onclick="event.stopPropagation();game.deleteSlot(${slot})">🗑️</button>
+      </div>`;
+    }).join('');
+    container.innerHTML = `<div class="section-title">💾 Save Sloty</div><div class="save-grid">${slotsHtml}</div>`;
   }
 
-  function restart() { start(); }
+  // ===== DUNGEON LOGIC =====
+  function getDungeon(id) { return DUNGEONS[id]; }
+  function isDungeonUnlocked(id) {
+    if (id === 0) return true;
+    const d = DUNGEONS[id];
+    if (!d) return false;
+    return state.completedDungeons.includes(d.unlockReq);
+  }
+  function hasCompletedDungeon(id) {
+    return state.completedDungeons.includes(id);
+  }
 
-  // ===== OBCHOD =====
-  const SHOP_ITEMS = [
-    { id: 'maxHp', name: '🛡 Pevnější štít', desc: '+1 max HP', baseCost: 15, costMult: 1.6, maxLevel: 5 },
-    { id: 'damage', name: '⚔ Silnější střely', desc: '+1 poškození', baseCost: 12, costMult: 1.7, maxLevel: 5 },
-    { id: 'fireRate', name: '🔫 Rychlejší palba', desc: 'Zkracuje pauzu mezi výstřely', baseCost: 20, costMult: 1.8, maxLevel: 4 },
-    { id: 'speed', name: '⚡ Rychlejší loď', desc: '+0.5 rychlosti pohybu', baseCost: 10, costMult: 1.5, maxLevel: 5 },
-    { id: 'multishot', name: '💥 Vícenásobná střela', desc: '+1 střela na výstřel', baseCost: 30, costMult: 2.0, maxLevel: 3 },
-    { id: 'shield', name: '🛡 Štít', desc: 'Absorbuje 1 zásah', baseCost: 20, costMult: 2.0, maxLevel: 1 },
-    { id: 'crit', name: '⚡ Kritický zásah', desc: '10% šance na 3× damage', baseCost: 25, costMult: 2.0, maxLevel: 3 }
+  // ===== NAVIGATION =====
+  let currentScreen = 'hero';
+
+  function showScreen(name) {
+    ['heroScreen','adventureScreen','shopScreen','battleScreen','resultScreen'].forEach(id => {
+      $('battleScreen').classList.remove('active');
+      $(id).classList.add('hidden');
+    });
+    $('battleScreen').classList.add('hidden');
+    currentScreen = name;
+    if (name === 'hero') { $('heroScreen').classList.remove('hidden'); renderHero(); }
+    else if (name === 'adventure') { $('adventureScreen').classList.remove('hidden'); renderDungeons(); }
+    else if (name === 'shop') { $('shopScreen').classList.remove('hidden'); renderShop(); }
+    else if (name === 'battle') { $('battleScreen').classList.remove('hidden'); $('battleScreen').classList.add('active'); }
+    else if (name === 'result') { $('resultScreen').classList.remove('hidden'); }
+    document.querySelectorAll('.nav-bar a').forEach(a => {
+      a.classList.toggle('active', a.dataset.screen === name);
+    });
+  }
+
+  // ===== RENDER HERO =====
+  function renderHero() {
+    const h = state.hero;
+    const s = getHeroStats();
+    $('heroName').textContent = h.name || 'Dobrodruh';
+    $('heroGold').textContent = `💰 ${h.gold}`;
+    $('heroLevel').textContent = h.level;
+    $('heroXp').textContent = h.xp;
+    $('heroXpNext').textContent = getXpToLevel(h.level);
+    // Save slot přepínač
+    renderSaveSlots();
+    $('statHp').textContent = s.maxHp;
+    $('statDmg').textContent = s.damage;
+    $('statArmor').textContent = s.armor;
+    $('statBlock').textContent = s.block + '%';
+    $('equipWeapon').textContent = `${s.weapon.name} (×${s.weapon.dmgMult})`;
+    $('equipWeapon').style.color = s.weaponRarity.color;
+    $('equipArmor').textContent = `${s.armorItem.name} (${s.armorItem.armor})`;
+    $('equipArmor').style.color = s.armorRarity.color;
+    $('equipShield').textContent = `${s.shield.name} (${s.shield.block}%)`;
+    $('equipShield').style.color = s.shieldRarity.color;
+
+    // Inventář
+    const inv = h.inventory || [];
+    const allItems = [
+      ...ALL_WEAPONS.map(w => ({ type: 'weapon', id: w.id, name: w.name, detail: `×${w.dmgMult}` })),
+      ...ALL_ARMORS.map(a => ({ type: 'armor', id: a.id, name: a.name, detail: `+${a.armor}` })),
+      ...ALL_SHIELDS.map(s => ({ type: 'shield', id: s.id, name: s.name, detail: `${s.block}%` }))
+    ];
+
+    // Co má aktuálně vybaveno
+    const equipped = [
+      { type: 'weapon', id: h.weapon },
+      { type: 'armor', id: h.armor },
+      { type: 'shield', id: h.shield }
+    ];
+
+    // V inventáři máme jen to, co není aktuálně equipnuté a není základní
+    const baseItems = ['fists', 'rags', 'none'];
+    const invItems = inv.filter(i => {
+      const isEquipped = equipped.some(e => e.type === i.type && e.id === i.id);
+      return !isEquipped && !baseItems.includes(i.id);
+    });
+
+    const invContainer = $('inventoryList');
+    if (invItems.length === 0) {
+      invContainer.innerHTML = '<div class="card-subtitle" style="padding:8px">📦 Inventář je prázdný</div>';
+    } else {
+      invContainer.innerHTML = invItems.map(item => {
+        const info = allItems.find(a => a.type === item.type && a.id === item.id);
+        if (!info) return '';
+        const slotLabel = { weapon: 'Zbraň', armor: 'Brnění', shield: 'Štít' }[item.type] || '';
+        const iRar = getRarity(item.rarity || 'common');
+        return `<div class="equip-slot">
+          <div>
+            <span class="slot-item" style="color:${iRar.color}">${iRar.icon} ${info.name}</span>
+            <span style="font-size:11px;color:#8888aa;margin-left:4px">${slotLabel} ${info.detail}</span>
+            <span style="font-size:10px;color:${iRar.color};margin-left:4px">${iRar.name}</span>
+          </div>
+          <button class="btn btn-secondary" style="padding:4px 12px;width:auto;margin:0;font-size:12px"
+                  onclick="game.equipItem('${item.type}','${item.id}','${item.rarity || 'common'}')">Vybavit</button>
+        </div>`;
+      }).join('');
+    }
+  }
+
+  function equipItem(type, id, rarity = 'common') {
+    const h = state.hero;
+    // Aktuálně vybavený item vrať do inventáře i s jeho raritou
+    const currentId = h[type];
+    const currentRarityKey = type + 'Rarity';
+    const currentRarity = h[currentRarityKey] || 'common';
+    if (currentId && !['fists','rags','none'].includes(currentId)) {
+      if (!h.inventory) h.inventory = [];
+      // Pouze pokud už není v inventáři
+      if (!h.inventory.some(i => i.type === type && i.id === currentId)) {
+        h.inventory.push({ type, id: currentId, rarity: currentRarity });
+      }
+    }
+    // Vybav nový
+    h[type] = id;
+    h[currentRarityKey] = rarity;
+    // Odeber z inventáře
+    h.inventory = (h.inventory || []).filter(i => !(i.type === type && i.id === id));
+    saveGame();
+    renderHero();
+  }
+
+  // ===== RENDER DUNGEONS =====
+  function renderDungeons() {
+    $('dungeonList').innerHTML = DUNGEONS.map((d, i) => {
+      const unlocked = isDungeonUnlocked(i);
+      const completed = hasCompletedDungeon(i);
+      const floorsLabel = `${d.floors.length} pater`;
+      return `<div class="dungeon-card ${unlocked ? '' : 'locked'}"
+                   onclick="${unlocked ? `game.startDungeon(${i})` : ''}">
+        <div class="flex-between">
+          <div class="dungeon-name">${unlocked ? '' : '🔒 '}${d.name}</div>
+          ${completed ? '<span class="win-badge">✅ Vyhráno</span>' : ''}
+        </div>
+        <div class="dungeon-info">${floorsLabel} • ${unlocked ? 'Klikni pro vstup' : 'Dokonči předchozí dungeon'}</div>
+      </div>`;
+    }).join('');
+  }
+
+  // ===== SHOP =====
+  const SHOP_UPGRADES = [
+    { id: 'permaMaxHp', name: '🛡️ Pevnější štít', desc: '+1 max HP', baseCost: 15, costMult: 1.8, maxLevel: 5 },
+    { id: 'permaDmg', name: '⚔️ Silnější útok', desc: '+1 základní damage', baseCost: 12, costMult: 1.7, maxLevel: 5 },
+    { id: 'permaArmor', name: '🦺 Odolnější zbroj', desc: '+1 brnění', baseCost: 20, costMult: 1.9, maxLevel: 3 },
+    { id: 'permaBlock', name: '🏰 Lepší blok', desc: '+5% šance na blok', baseCost: 18, costMult: 1.8, maxLevel: 3 }
   ];
 
-  function afterDeathShop() {
-    // Z result obrazovky rovnou do shopu
-    $('result').classList.add('hidden');
-    $('shop').classList.remove('hidden');
-    const save = loadSave();
-    state.money = save.money;
-    state.upgrades = save.upgrades;
-    renderShop();
-  }
-
-  function openShop() {
-    $('menu').classList.add('hidden');
-    $('shop').classList.remove('hidden');
-    const save = loadSave();
-    state.money = save.money;
-    state.upgrades = save.upgrades;
-    renderShop();
-  }
-
-  function closeShop() { saveGame(); quit(); }
-
   function renderShop() {
-    $('shopMoney').textContent = state.money;
-    $('shopItems').innerHTML = SHOP_ITEMS.map(item => {
-      const level = state.upgrades[item.id] || 0;
-      const maxed = level >= item.maxLevel;
-      const cost = maxed ? 'MAX' : Math.floor(item.baseCost * Math.pow(item.costMult, level));
-      const canBuy = !maxed && state.money >= cost;
-      return `
-        <div class="shop-item">
-          <div class="shop-item-info">
-            <span class="shop-item-name">${item.name}</span>
-            <span class="shop-item-desc">${item.desc}</span>
-            <span class="shop-item-level">Úroveň ${level}/${item.maxLevel}</span>
-          </div>
-          <button class="shop-btn" ${canBuy ? '' : 'disabled'} onclick="game.buyUpgrade('${item.id}')">
-            ${maxed ? 'MAX' : `${cost}💰`}
-          </button>
+    const h = state.hero;
+    $('shopGold').textContent = `💰 ${h.gold}`;
+    $('shopItems').innerHTML = SHOP_UPGRADES.map(u => {
+      const level = h[u.id] || 0;
+      const cost = Math.floor(u.baseCost * Math.pow(u.costMult, level));
+      const canBuy = level < u.maxLevel && h.gold >= cost;
+      return `<div class="card">
+        <div class="flex-between">
+          <span class="card-title">${u.name}</span>
+          <span>Úroveň ${level}/${u.maxLevel}</span>
         </div>
-      `;
+        <div class="card-subtitle">${u.desc}</div>
+        <button class="btn btn-primary ${canBuy ? '' : 'btn:disabled'}"
+                onclick="game.buyUpgrade('${u.id}')" ${canBuy ? '' : 'disabled'}>
+          ${canBuy ? `🔨 Koupit (💰${cost})` : (level >= u.maxLevel ? '✅ Max' : `💰 ${cost} - máš ${h.gold}`)}
+        </button>
+      </div>`;
     }).join('');
   }
 
   function buyUpgrade(id) {
-    const item = SHOP_ITEMS.find(i => i.id === id);
-    if (!item) return;
-    const level = state.upgrades[id] || 0;
-    if (level >= item.maxLevel) return;
-    const cost = Math.floor(item.baseCost * Math.pow(item.costMult, level));
-    if (state.money < cost) return;
-    state.money -= cost;
-    state.upgrades[id] = (state.upgrades[id] || 0) + 1;
-    renderShop();
+    const h = state.hero;
+    const u = SHOP_UPGRADES.find(x => x.id === id);
+    if (!u) return;
+    const level = h[u.id] || 0;
+    if (level >= u.maxLevel) return;
+    const cost = Math.floor(u.baseCost * Math.pow(u.costMult, level));
+    if (h.gold < cost) return;
+    h.gold -= cost;
+    h[u.id] = (h[u.id] || 0) + 1;
     saveGame();
+    renderShop();
   }
 
-  // ===== DOČASNÉ UPGRADY (perky — po každém 2. bossovi, trvají do konce runu) =====
-  const PERK_LIST = [
-    { id: 'perkShield', name: '🛡 Štít', desc: 'Absorbuje 1 zásah (permanentně)' },
-    { id: 'perkHoming', name: '🧲 Navádění', desc: 'Střely letí za bossem (permanentně)' },
-    { id: 'perkExtraLife', name: '💖 Extra život', desc: 'Po smrti ožiješ s 1 HP' },
-    { id: 'perkDrone', name: '🌀 Dron', desc: 'Dron sestřeluje střely v okolí' }
-  ];
+  // ===== START DUNGEON =====
+  function startDungeon(dungeonId) {
+    const d = getDungeon(dungeonId);
+    if (!d || !isDungeonUnlocked(dungeonId)) return;
+    const s = getHeroStats();
+    battleState = {
+      dungeonId, floorIndex: 0, dungeon: d,
+      playerHp: s.maxHp, maxPlayerHp: s.maxHp,
+      ended: false, spells: {},
+      isBossFloor: false
+    };
+    // Inicializace kouzel
+    Object.keys(SPELL_COOLDOWNS).forEach(k => {
+      battleState.spells[k] = { ready: true, cooldown: 0, timer: 0 };
+    });
+    battleState.spells.shield.active = false;
+    showScreen('battle');
+    startFloor();
+  }
 
-  function showPickup() {
-    state.pickupActive = true;
-    $('game').classList.add('hidden');
-    $('pickup').classList.remove('hidden');
-
-    // Filtruj perky, které už hráč v tomto runu nemá
-    const available = PERK_LIST.filter(p => !state.chosenPerks.includes(p.id));
-    if (available.length === 0) {
-      // Všechny perky už jsou vybrané — přeskoč
-      $('pickup').classList.add('hidden');
-      $('game').classList.remove('hidden');
-      state.pickupActive = false;
-      applyPerkAndContinue(null);
+  function startFloor() {
+    if (battleState.ended) return;
+    const bs = battleState;
+    if (bs.floorIndex >= bs.dungeon.floors.length) {
+      endDungeon(true);
       return;
     }
-    // Vyber 2 náhodné (nebo míň)
-    const shuffled = [...available].sort(() => Math.random() - 0.5);
-    const choices = shuffled.slice(0, 2);
+    const floor = bs.dungeon.floors[bs.floorIndex];
+    bs.currentFloor = floor;
+    bs.isBossFloor = !!floor.boss;
+    const e = floor.enemy;
+    bs.enemy = { ...e, hp: e.hp, maxHp: e.hp };
+    bs.enemyAttackCount = 0;
 
-    $('pickupItems').innerHTML = choices.map(c => `
-      <div class="pickup-card" onclick="game.pickUpgrade('${c.id}')">
-        <div class="pickup-name">${c.name}</div>
-        <div class="pickup-desc">${c.desc}</div>
-      </div>
-    `).join('');
+    // Reset minigame stavů
+    simonState = {};
+    colorState = {};
+    gridState = {};
+
+    updateBattleUI();
+    hideAllMinigames();
+
+    // Animace příchodu nepřítele + floor zpráva
+    animateEnemyEnter();
+    const floorLabel = floor.boss ? `👹 Boss: ${floor.enemy.name}` : `👾 ${floor.enemy.name}`;
+    showFloorMessage(`Patro ${bs.floorIndex + 1}\n${floorLabel}`);
+
+    // Odpočet před začátkem kola
+    showCountdown(3, () => {
+      startMinigame(bs.enemy.type);
+    });
   }
 
-  function pickUpgrade(id) {
-    if (!state.pickupActive) return;
-    state.pickupActive = false;
-    $('pickup').classList.add('hidden');
-    $('game').classList.remove('hidden');
-
-    state.chosenPerks.push(id);
-    applyPerkAndContinue(id);
+  // ===== ANIMACE =====
+  function animateEnemyEnter() {
+    const face = $('enemyFace');
+    face.classList.remove('enemy-enter', 'enemy-idle', 'boss-idle', 'enemy-defeat');
+    // Force reflow
+    void face.offsetWidth;
+    face.classList.add('enemy-enter');
+    setTimeout(() => {
+      if (battleState.isBossFloor) {
+        face.classList.add('boss-idle');
+      } else {
+        face.classList.add('enemy-idle');
+      }
+    }, 500);
   }
 
-  function applyPerkAndContinue(id) {
-    const p = state.player;
-    if (id === 'perkShield') {
-      p.shieldHp = (p.shieldHp || 0) + 1;
-    } else if (id === 'perkHoming') {
-      p.temp.homing = true;
-    } else if (id === 'perkExtraLife') {
-      p.temp.hasExtraLife = true;
-    } else if (id === 'perkDrone') {
-      p.temp.droneCount = (p.temp.droneCount || 0) + 1;
+  function animateHit(target) {
+    if (target === 'enemy') {
+      $('battleScreen').classList.add('hit-flash-blue');
+      setTimeout(() => $('battleScreen').classList.remove('hit-flash-blue'), 300);
+    } else {
+      $('battleScreen').classList.add('screen-shake', 'hit-flash');
+      setTimeout(() => {
+        $('battleScreen').classList.remove('screen-shake', 'hit-flash');
+      }, 300);
+    }
+  }
+
+  function showDamageFloat(amount, side) {
+    const container = $('battleScreen').querySelector('.card');
+    if (!container) return;
+    const el = document.createElement('div');
+    el.className = 'dmg-float';
+    el.textContent = `-${amount}`;
+    el.style.color = side === 'player' ? '#e94560' : '#4a7dff';
+    el.style.left = side === 'player' ? '20%' : '70%';
+    el.style.top = '50%';
+    container.appendChild(el);
+    setTimeout(() => el.remove(), 800);
+  }
+
+  function animateEnemyDefeat() {
+    const face = $('enemyFace');
+    face.classList.remove('enemy-idle', 'boss-idle', 'enemy-enter');
+    face.classList.add('enemy-defeat');
+    // Po animaci schováme obličej
+    setTimeout(() => {
+      face.textContent = '💫';
+      face.classList.remove('enemy-defeat');
+    }, 600);
+  }
+
+  function showFloorMessage(text) {
+    const existing = document.querySelector('.floor-msg');
+    if (existing) existing.remove();
+    const el = document.createElement('div');
+    el.className = 'floor-msg';
+    el.textContent = text;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 2000);
+  }
+
+  // ===== COUNTDOWN =====
+  function showCountdown(seconds, callback) {
+    let remaining = seconds;
+    const el = $('countdownOverlay');
+    const numEl = $('countdownNumber');
+    el.classList.remove('hidden');
+    numEl.textContent = remaining;
+    const interval = setInterval(() => {
+      remaining--;
+      if (remaining <= 0) {
+        clearInterval(interval);
+        el.classList.add('hidden');
+        if (callback) callback();
+      } else {
+        numEl.textContent = remaining;
+        // Tón při každém tiknutí
+        playTone(440 + remaining * 60, 0.15, 'sine', 0.1);
+      }
+    }, 1000);
+    // První tón hned
+    playTone(440 + remaining * 60, 0.15, 'sine', 0.1);
+  }
+
+  function hideAllMinigames() {
+    $('simonArea').classList.add('hidden');
+    $('colorClashArea').classList.add('hidden');
+    $('gridDefenderArea').classList.add('hidden');
+  }
+
+  function startMinigame(type) {
+    if (type === 'phantom') startSimon();
+    else if (type === 'archer') startColorClash();
+    else startGridDefender();
+  }
+
+  // ===== UPDATE BATTLE UI =====
+  function updateBattleUI() {
+    const bs = battleState;
+    $('battleDungeon').textContent = bs.dungeon.name;
+    $('battleFloor').textContent = `Patro ${bs.floorIndex + 1}/${bs.dungeon.floors.length}`;
+    $('battlePlayerHpText').textContent = bs.playerHp;
+    $('battlePlayerMaxHp').textContent = bs.maxPlayerHp;
+    $('battlePlayerHpBar').style.width = (bs.playerHp / bs.maxPlayerHp * 100) + '%';
+    if (bs.enemy) {
+      $('enemyFace').textContent = bs.enemy.face;
+      $('enemyName').textContent = bs.enemy.name;
+      const typeLabel = { phantom: '👻 Simon', archer: '🏹 Barvy', tank: '🛡️ Karty' }[bs.enemy.type] || '';
+      $('enemyTypeBadge').textContent = typeLabel;
+      $('enemyTypeBadge').className = 'enemy-type-badge ' + (bs.enemy.type || 'phantom');
+      $('battleEnemyHpText').textContent = bs.enemy.hp;
+      $('battleEnemyMaxHp').textContent = bs.enemy.maxHp;
+      $('battleEnemyHpBar').style.width = (bs.enemy.hp / bs.enemy.maxHp * 100) + '%';
+    }
+  }
+
+  // ===== SIMON SAYS =====
+  const SIMON_SYMBOLS = ['⚡', '🔥', '💧', '🌿', '💎', '☀️'];
+  const SIMON_COLORS = ['#e94560', '#f1c40f', '#4a7dff', '#2ecc71', '#9b59b6', '#e67e22'];
+
+  function startSimon() {
+    $('simonArea').classList.remove('hidden');
+    const floor = battleState.currentFloor;
+    const level = floor.enemy.level || 1;
+    const seqLen = Math.min(2 + Math.floor(level / 2), 6);
+    const numCells = Math.min(3 + Math.floor(level / 3), 6);
+
+    // Vybereme symboly pro tuto hru
+    const symbols = shuffle([...SIMON_SYMBOLS]).slice(0, numCells);
+    simonState = {
+      sequence: [], playerIndex: 0, showing: true, inputEnabled: false,
+      symbols, numCells, seqLen, skipped: false
+    };
+
+    // Vygeneruj sekvenci
+    for (let i = 0; i < seqLen; i++) {
+      simonState.sequence.push(rand(0, numCells - 1));
     }
 
-    // Nastartuj další stage
-    state.bossIndex++;
-    if (state.bossIndex >= BOSSES.length) { endGame(true); return; }
-    spawnBoss();
-    state.ended = false;
-    startMusic();
+    // Vykresli grid se symboly
+    $('simonGrid').innerHTML = symbols.map((sym, i) =>
+      `<div class="simon-cell" data-idx="${i}" style="background:${SIMON_COLORS[i]}" onclick="game.simonClick(${i})"><span style="font-size:28px;pointer-events:none;display:flex;align-items:center;justify-content:center;height:100%">${sym}</span></div>`
+    ).join('');
+    $('simonPrompt').textContent = '👀 Zapamatuj si sekvenci!';
+    updateSimonProgress();
+
+    // Skip tlačítko
+    let skipBtn = $('simonSkip');
+    if (!skipBtn) {
+      skipBtn = document.createElement('button');
+      skipBtn.id = 'simonSkip';
+      skipBtn.className = 'btn btn-secondary';
+      skipBtn.textContent = '⏭ Přeskočit animaci';
+      skipBtn.addEventListener('click', () => skipSimonAnimation());
+      $('simonGrid').parentNode.insertBefore(skipBtn, $('simonGrid').nextSibling);
+    }
+    skipBtn.classList.remove('hidden');
+
+    // Přehrát sekvenci
+    let delay = Math.max(150, 300 - level * 15);
+    simonState.playing = true;
+    simonState.showing = true;
+    simonState.delay = delay;
+    playSimonSequence(0, delay);
+  }
+
+  function skipSimonAnimation() {
+    if (!simonState.showing) return;
+    simonState.showing = false;
+    simonState.inputEnabled = true;
+    simonState.skipped = true;
+    $('simonPrompt').textContent = '🎯 Zopakuj sekvenci!';
+    const skipBtn = $('simonSkip');
+    if (skipBtn) skipBtn.classList.add('hidden');
+    const cells = document.querySelectorAll('.simon-cell');
+    cells.forEach(c => c.classList.remove('lit'));
+  }
+
+  function playSimonSequence(idx, delay) {
+    if (!simonState.showing) return; // bylo přeskočeno
+    if (idx >= simonState.sequence.length) {
+      simonState.showing = false;
+      simonState.inputEnabled = true;
+      $('simonPrompt').textContent = '🎯 Zopakuj sekvenci!';
+      const skipBtn = $('simonSkip');
+      if (skipBtn) skipBtn.classList.add('hidden');
+      return;
+    }
+    initAudio();
+    const cells = document.querySelectorAll('.simon-cell');
+    const cellIdx = simonState.sequence[idx];
+    cells.forEach(c => c.classList.remove('lit'));
+    cells[cellIdx].classList.add('lit');
+    // Audio tón
+    const freq = SIMON_FREQS[cellIdx % SIMON_FREQS.length];
+    playTone(freq, 0.15, 'sine', 0.12);
+
+    setTimeout(() => {
+      cells.forEach(c => c.classList.remove('lit'));
+      setTimeout(() => playSimonSequence(idx + 1, delay), 80);
+    }, delay);
+  }
+
+  function simonClick(idx) {
+    if (!simonState.inputEnabled || simonState.showing) return;
+    initAudio();
+    const cells = document.querySelectorAll('.simon-cell');
+    cells[idx].classList.add('active');
+    setTimeout(() => cells[idx].classList.remove('active'), 150);
+    // Audio při ťuknutí
+    playTone(SIMON_FREQS[idx % SIMON_FREQS.length], 0.12, 'sine', 0.10);
+
+    if (idx !== simonState.sequence[simonState.playerIndex]) {
+      // Chyba
+      simonState.inputEnabled = false;
+      sfxPlayerHit();
+      enemyHitsPlayer();
+      return;
+    }
+    simonState.playerIndex++;
+    updateSimonProgress();
+    if (simonState.playerIndex >= simonState.sequence.length) {
+      // Úspěch
+      simonState.inputEnabled = false;
+      sfxSuccess();
+      playerHitsEnemy();
+    }
+  }
+
+  function updateSimonProgress() {
+    $('simonProgress').textContent = `${simonState.playerIndex}/${simonState.sequence.length}`;
+  }
+
+  // ===== COLOR CLASH =====
+  function startColorClash() {
+    $('colorClashArea').classList.remove('hidden');
+    const floor = battleState.currentFloor;
+    const level = floor.enemy.level || 1;
+    const speed = Math.max(0.8, 3.0 - level * 0.3);
+    const colors = ['red', 'blue', 'green', 'yellow'];
+
+    const arena = $('colorArena');
+    arena.innerHTML = '';
+
+    // Player zone na spodku
+    const playerZone = document.createElement('div');
+    playerZone.style.cssText = 'position:absolute;bottom:10px;left:10px;right:10px;height:30px;border:2px dashed #4a7dff;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#8888aa';
+    playerZone.textContent = '⬆️ Sem ťukej barvy!';
+    arena.appendChild(playerZone);
+
+    colorState = {
+      active: true, speed, colors, arena,
+      projectile: null, playerZone
+    };
+
+    spawnColorProjectile();
+  }
+
+  function spawnColorProjectile() {
+    if (!colorState.active) return;
+    const arena = colorState.arena;
+    const w = arena.offsetWidth || 200;
+    const col = colorState.colors[rand(0, 3)];
+    const x = rand(20, w - 56);
+    const y = -40;
+
+    // Smaž starý
+    if (colorState.projectile && colorState.projectile.parentNode) {
+      colorState.projectile.remove();
+    }
+
+    const el = document.createElement('div');
+    el.className = 'color-projectile ' + col;
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
+    el.dataset.color = col;
+    arena.appendChild(el);
+    colorState.projectile = el;
+    colorState.projectileY = y;
+    colorState.projectileSpeed = colorState.speed;
+    colorState.currentColor = col;
+  }
+
+  function updateColorClash() {
+    if (!colorState.active || !colorState.projectile) return;
+    const arenaH = colorState.arena.offsetHeight || 300;
+    colorState.projectileY += colorState.speed;
+    colorState.projectile.style.top = colorState.projectileY + 'px';
+
+    // Dorazil ke dnu?
+    if (colorState.projectileY > arenaH - 50) {
+      // Minul
+      colorState.active = false;
+      if (colorState.projectile && colorState.projectile.parentNode) {
+        colorState.projectile.remove();
+      }
+      enemyHitsPlayer();
+    }
+  }
+
+  function colorInput(color) {
+    if (!colorState.active) return;
+    if (color === colorState.currentColor) {
+      // Správně — exploze!
+      colorState.active = false;
+      if (colorState.projectile && colorState.projectile.parentNode) {
+        // Exploze
+        const el = colorState.projectile;
+        el.style.transition = 'transform 0.2s, opacity 0.2s';
+        el.style.transform = 'scale(2.5)';
+        el.style.opacity = '0';
+        el.style.border = '3px solid #fff';
+        setTimeout(() => el.remove(), 200);
+      }
+      sfxHit();
+      playerHitsEnemy();
+    }
+  }
+
+  // ===== GRID DEFENDER =====
+  function startGridDefender() {
+    $('gridDefenderArea').classList.remove('hidden');
+    const floor = battleState.currentFloor;
+    const level = floor.enemy.level || 1;
+    const numOptions = Math.min(2 + Math.floor(level / 2), 5);
+    const enemyPower = 2 + level + rand(0, level);
+
+    const myPower = 1 + Math.floor((getHeroStats().damage) / 2);
+    // Vygenerujeme možnosti pro hráče
+    const options = [];
+    for (let i = 0; i < numOptions; i++) {
+      let val = myPower + rand(-1, 2);
+      if (val < 1) val = 1;
+      options.push({ value: val, wins: val > enemyPower, label: val > enemyPower ? '⚔️' : '💀' });
+    }
+
+    gridState = { options, enemyPower, active: true };
+
+    $('gridArea').innerHTML = `
+      <div class="grid-card enemy-card">
+        <span>${enemyPower}</span>
+        <span class="card-sub">👹 Nepřítel</span>
+      </div>
+      ${options.map((o, i) =>
+        `<div class="grid-card" onclick="game.gridPick(${i})">
+           <span>${o.value}</span>
+           <span class="card-sub">${o.label}</span>
+         </div>`
+      ).join('')}
+    `;
+  }
+
+  function gridPick(idx) {
+    if (!gridState.active) return;
+    gridState.active = false;
+    const o = gridState.options[idx];
+    if (o.wins) {
+      sfxSuccess();
+      playerHitsEnemy();
+    } else {
+      sfxPlayerHit();
+      enemyHitsPlayer();
+    }
+  }
+
+  // ===== DAMAGE =====
+  function playerHitsEnemy() {
+    if (battleState.ended) return;
+    const bs = battleState;
+    const e = bs.enemy;
+    const stats = getHeroStats();
+    const dmg = Math.max(1, stats.damage + rand(-1, 1));
+    e.hp -= dmg;
+
+    // Animace
+    animateHit('enemy');
+    showDamageFloat(dmg, 'enemy');
+
+    if (e.hp <= 0) {
+      e.hp = 0;
+      updateBattleUI();
+      sfxEnemyDefeat();
+      animateEnemyDefeat();
+      // Počkáme na dokončení animace, pak reward
+      setTimeout(() => onEnemyDefeated(), 600);
+    } else {
+      updateBattleUI();
+      hideAllMinigames();
+      // Krátká pauza před dalším kolem
+      setTimeout(() => startMinigame(e.type), 300);
+    }
+  }
+
+  function enemyHitsPlayer() {
+    if (battleState.ended) return;
+    const bs = battleState;
+    const stats = getHeroStats();
+
+    // Shield spell blok?
+    if (bs.spells.shield.active) {
+      bs.spells.shield.active = false;
+      // Animace bloku
+      $('battleScreen').classList.add('hit-flash-blue');
+      setTimeout(() => $('battleScreen').classList.remove('hit-flash-blue'), 300);
+      showDamageFloat(0, 'player');
+      updateBattleUI();
+      hideAllMinigames();
+      startMinigame(bs.enemy.type);
+      return;
+    }
+
+    // Blok štítem?
+    if (stats.block > 0 && Math.random() * 100 < stats.block) {
+      // Blokováno štítem
+      $('battleScreen').classList.add('hit-flash-blue');
+      setTimeout(() => $('battleScreen').classList.remove('hit-flash-blue'), 300);
+      showDamageFloat(0, 'player');
+      updateBattleUI();
+      hideAllMinigames();
+      startMinigame(bs.enemy.type);
+      return;
+    }
+
+    const dmg = Math.max(1, battleState.enemy.level + rand(0, 1) - stats.armor);
+
+    // Animace zásahu na hráče
+    animateHit('player');
+    showDamageFloat(dmg, 'player');
+
+    bs.playerHp -= dmg;
+    if (bs.playerHp <= 0) {
+      bs.playerHp = 0;
+      updateBattleUI();
+      endDungeon(false);
+    } else {
+      updateBattleUI();
+      hideAllMinigames();
+      setTimeout(() => startMinigame(bs.enemy.type), 300);
+    }
+  }
+
+  function onEnemyDefeated() {
+    const bs = battleState;
+    const floor = bs.currentFloor;
+
+    // Goldy a XP vždy
+    state.hero.gold += floor.rewardGold;
+    if (floor.rewardXp) {
+      state.hero.xp += floor.rewardXp;
+      checkLevelUp();
+    }
+    saveGame();
+
+    if (floor.boss) {
+      // Boss = loot overlay s výběrem
+      showBossLoot(floor);
+    } else {
+      // Normální patro = instant odměna (už přičteno), pokračuj
+      bs.floorIndex++;
+      if (bs.floorIndex >= bs.dungeon.floors.length) {
+        endDungeon(true);
+      } else {
+        startFloor();
+      }
+    }
+  }
+
+  // ===== REWARDS =====
+  function hasWeapon(id) {
+    const h = state.hero;
+    if (h.weapon === id) return true;
+    return (h.inventory || []).some(i => i.type === 'weapon' && i.id === id);
+  }
+  function hasArmor(id) {
+    const h = state.hero;
+    if (h.armor === id) return true;
+    return (h.inventory || []).some(i => i.type === 'armor' && i.id === id);
+  }
+  function hasShield(id) {
+    const h = state.hero;
+    if (h.shield === id) return true;
+    return (h.inventory || []).some(i => i.type === 'shield' && i.id === id);
+  }
+
+  function showBossLoot(floor) {
+    // Sestav možnosti lootu
+    const choices = [];
+
+    // Zlato (vždy)
+    choices.push({
+      name: `💰 ${floor.rewardGold} zlata`,
+      desc: 'Peníze do obchodu',
+      action: () => {} // už přičteno
+    });
+
+    // XP (vždy, pokud je)
+    if (floor.rewardXp) {
+      choices.push({
+        name: `⭐ ${floor.rewardXp} XP`,
+        desc: 'Zkušenost pro hrdinu',
+        action: () => {}
+      });
+    }
+
+    // Item drop z bosse — 2 náhodné itemy s RNG raritou
+    const wpnPool = ALL_WEAPONS.filter(w => w.id !== 'fists');
+    const armPool = ALL_ARMORS.filter(a => a.id !== 'rags');
+    const shdPool = ALL_SHIELDS.filter(s => s.id !== 'none');
+    const allLoot = [
+      ...wpnPool.map(w => ({ type: 'weapon', item: w })),
+      ...armPool.map(a => ({ type: 'armor', item: a })),
+      ...shdPool.map(s => ({ type: 'shield', item: s }))
+    ];
+
+    const shuffled = shuffle([...allLoot]);
+    const picks = shuffled.slice(0, 2);
+    for (const pick of picks) {
+      const rarity = rollRarity();
+      const rar = getRarity(rarity);
+      choices.push({
+        name: `${rar.icon} ${pick.item.name}`,
+        type: pick.type,
+        itemId: pick.item.id,
+        rarity: rarity,
+        desc: `${rar.name} — ${pick.type === 'weapon' ? `Útok ×${pick.item.dmgMult}` :
+               pick.type === 'armor' ? `Brnění +${pick.item.armor}` :
+               `Blok ${pick.item.block}%`}`
+      });
+    }
+
+    // Zobraz overlay s výběrem
+    $('rewardTitle').textContent = `🎉 ${floor.enemy.name} poražen!`;
+    const goldXpItems = choices.filter(c => c.name.startsWith('💰') || c.name.startsWith('⭐'));
+    const lootItems = choices.filter(c => c.name.startsWith('🎁'));
+    $('rewardItems').innerHTML = `
+      ${goldXpItems.map(item => `<div class="pickup-card">
+        <div class="name">${item.name}</div>
+        <div class="desc">${item.desc}</div>
+      </div>`).join('')}
+      ${lootItems.length > 0 ? `<div class="card-subtitle" style="margin-top:6px">Vyber si odměnu (uloží se do inventáře):</div>
+        ${lootItems.map((item, i) => {
+          const rar = getRarity(item.rarity || 'common');
+          return `<div class="pickup-card" style="border:1px solid ${rar.color}" onclick="game.claimBossLoot(${i})">
+          <div class="name" style="color:${rar.color}">${rar.icon} ${item.name}</div>
+          <div class="desc" style="color:${rar.color}">${item.desc}</div>
+        </div>`;
+        }).join('')}
+        <button class="btn btn-primary mt-10" onclick="game.claimBossLoot(-1)">⏭ Přeskočit</button>`
+      : `<button class="btn btn-primary mt-10" onclick="game.claimBossLoot(-1)">Pokračovat</button>`}
+    `;
+    $('#rewardOverlay').classList.remove('hidden');
+    battleState.bossLootChoices = lootItems;
+  }
+
+  function claimBossLoot(idx) {
+    const choices = battleState.bossLootChoices;
+    $('#rewardOverlay').classList.add('hidden');
+    if (idx >= 0 && choices && choices[idx]) {
+      const pick = choices[idx];
+      // Ulož do inventáře i s raritou
+      if (!state.hero.inventory) state.hero.inventory = [];
+      // Neukládat duplicity (už vlastněný item)
+      const already = state.hero.inventory.some(i => i.type === pick.type && i.id === pick.itemId);
+      if (!already) {
+        state.hero.inventory.push({ type: pick.type, id: pick.itemId, rarity: pick.rarity || 'common' });
+      }
+    }
+    saveGame();
+    battleState.bossLootChoices = null;
+
+    // Pokračuj
+    battleState.floorIndex++;
+    if (battleState.floorIndex >= battleState.dungeon.floors.length) {
+      endDungeon(true);
+    } else {
+      startFloor();
+    }
+  }
+
+  function checkLevelUp() {
+    const h = state.hero;
+    const needed = getXpToLevel(h.level);
+    while (h.xp >= needed) {
+      h.xp -= needed;
+      h.level++;
+      h.maxHp += 1;
+      h.baseDmg += 1;
+      h.hp = h.maxHp;
+    }
+  }
+
+  // ===== END DUNGEON =====
+  function endDungeon(won) {
+    battleState.ended = true;
+    if (gameLoop) { cancelAnimationFrame(gameLoop); gameLoop = null; }
+
+    if (won) {
+      if (!state.completedDungeons.includes(battleState.dungeonId)) {
+        state.completedDungeons.push(battleState.dungeonId);
+      }
+      saveGame();
+      $('resultIcon').textContent = '🎉';
+      $('resultTitle').textContent = 'Dungeon dokončen!';
+      $('resultMsg').textContent = `${battleState.dungeon.name} byl pokořen!`;
+      $('resultGold').textContent = `💰 +${battleState.currentFloor ? battleState.currentFloor.rewardGold : 0} zlata`;
+    } else {
+      $('resultIcon').textContent = '💀';
+      $('resultTitle').textContent = 'Padl jsi v dungeonu';
+      $('resultMsg').textContent = `Prohrál jsi v ${battleState.dungeon.name} (patro ${battleState.floorIndex + 1})`;
+      $('resultGold').textContent = `💰 +0 zlata (vydržel jsi ${battleState.floorIndex} pater)`;
+    }
+    showScreen('result');
+  }
+
+  function afterDeath() {
+    showScreen('shop');
+  }
+
+  function retry() {
+    const dId = battleState.dungeonId;
+    startDungeon(dId);
+  }
+
+  // ===== SPELLS =====
+  function useSpell(id) {
+    const bs = battleState;
+    const spell = bs.spells[id];
+    if (!spell || !spell.ready || bs.ended) return;
+
+    spell.ready = false;
+    const cd = SPELL_COOLDOWNS[id];
+    spell.timer = cd;
+    updateSpellUI();
+
+    if (id === 'fire') {
+      // Přeskočí aktuální kolo - nepřítel nebere damage, ale ani hráč
+      hideAllMinigames();
+      simonState = {}; colorState = {}; gridState = {};
+      startMinigame(bs.enemy.type);
+    } else if (id === 'ice') {
+      // Zpomalí tempo na 5 vteřin
+      if (colorState.active) {
+        colorState.speed *= 0.4;
+        setTimeout(() => {
+          if (colorState.active) colorState.speed /= 0.4;
+        }, 5000);
+      }
+    } else if (id === 'heal') {
+      bs.playerHp = Math.min(bs.maxPlayerHp, bs.playerHp + 1);
+      updateBattleUI();
+    } else if (id === 'shield') {
+      bs.spells.shield.active = true;
+      setTimeout(() => { bs.spells.shield.active = false; }, 5000);
+    }
+  }
+
+  function updateSpellUI() {
+    Object.keys(SPELL_COOLDOWNS).forEach(id => {
+      const el = $('spellCd' + id.charAt(0).toUpperCase() + id.slice(1));
+      if (!el) return;
+      const spell = battleState.spells[id];
+      if (spell.ready) {
+        el.textContent = '✓';
+        document.querySelector(`[data-spell="${id}"]`).disabled = false;
+      } else {
+        el.textContent = `${Math.ceil(spell.timer)}s`;
+        document.querySelector(`[data-spell="${id}"]`).disabled = true;
+      }
+    });
+  }
+
+  // ===== GAME LOOP (pro animace kouzel a Color Clash) =====
+  function gameLoopFn() {
+    if (battleState.ended) { gameLoop = null; return; }
+    const bs = battleState;
+
+    // Spell cooldown tick (každou vteřinu)
+    // Běží v reálném čase - přibližně 60fps, tickujeme každých 60 snímků
+    let anyCooldown = false;
+    Object.keys(SPELL_COOLDOWNS).forEach(id => {
+      const spell = bs.spells[id];
+      if (!spell.ready) {
+        spell.timer -= 1/60;
+        if (spell.timer <= 0) {
+          spell.timer = 0;
+          spell.ready = true;
+        }
+        anyCooldown = true;
+      }
+    });
+    if (anyCooldown) updateSpellUI();
+
+    // Color Clash update
+    if (colorState.active) {
+      updateColorClash();
+    }
+
     gameLoop = requestAnimationFrame(gameLoopFn);
   }
 
-  // Aplikuj efekty — navádění a dron jsou permanentní
-  function applyTempEffects() {
-    const p = state.player;
+  // ===== INIT =====
+  function init() {
+    state = loadSave();
+    state.completedDungeons = state.completedDungeons || [];
+    migrateState();
 
-    // Navádění střel (permanentní, pokud vybrané)
-    if (p.temp.homing && state.boss && state.boss.alive) {
-      for (const b of state.bulletsPlayer) {
-        if (!b.alive) continue;
-        const dx = state.boss.x - b.x;
-        const dy = state.boss.y - b.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist > 10) {
-          b.vx = (dx / dist) * 6.5;
-          b.vy = (dy / dist) * 6.5;
-        }
-      }
-    }
+    // Navigation
+    document.querySelectorAll('.nav-bar a').forEach(a => {
+      a.addEventListener('click', (e) => {
+        e.preventDefault();
+        showScreen(a.dataset.screen);
+      });
+    });
 
-    // Dron — sestřelí nepřátelské střely
-    if (p.temp.droneCount > 0 && gameFrame % 60 === 0) {
-      let shots = p.temp.droneCount;
-      for (const b of state.bulletsEnemy) {
-        if (!b.alive || shots <= 0) continue;
-        const dx = b.x - p.x;
-        const dy = b.y - p.y;
-        if (Math.sqrt(dx * dx + dy * dy) < 120) {
-          b.alive = false;
-          shots--;
-        }
-      }
-    }
+    showScreen('hero');
+    gameLoop = requestAnimationFrame(gameLoopFn);
   }
 
-  // ===== Init =====
-  setupInput();
-  const save = loadSave();
-  $('menuMoney').textContent = save.money;
-  $('menuBossCount').textContent = `Boss #${Math.min(save.bossIndex + 1, BOSSES.length)}`;
+  // ===== EXPORTS =====
+  window.game = {
+    startDungeon,
+    afterDeath, retry,
+    buyUpgrade, claimBossLoot,
+    simonClick, colorInput, gridPick, useSpell,
+    equipItem,
+    switchSlot, deleteSlot
+  };
 
-  return { start, quit, restart, openShop, closeShop, buyUpgrade, pickUpgrade, afterDeathShop };
+  init();
 })();
-
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
-  });
-}

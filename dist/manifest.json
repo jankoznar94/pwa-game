@@ -1,13 +1,10 @@
 {
-  "name": "Boss Slayer",
-  "short_name": "Boss Slayer",
-  "description": "Bullet-hell soubojová hra proti bossům",
-  "start_url": "/",
+  "name": "Dungeon Recall",
+  "short_name": "DungeonRecall",
+  "description": "RPG s minihrami - Simon Says, Color Clash, Grid Defender",
+  "start_url": "index.html",
   "display": "standalone",
   "background_color": "#0a0a1a",
-  "theme_color": "#0a0a1a",
-  "icons": [
-    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
-  ]
+  "theme_color": "#12122a",
+  "icons": []
 }
