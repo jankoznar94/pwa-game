@@ -1154,13 +1154,13 @@
     saveGame();
     battleState.bossLootChoices = null;
 
-    // Pokračuj
-    battleState.floorIndex++;
-    if (battleState.floorIndex >= battleState.dungeon.floors.length) {
-      endDungeon(true);
-    } else {
-      startFloor();
+    // Boss je mrtvý — dungeon je hotový, rovnou na hrdinu
+    battleState.ended = true;
+    if (!state.completedDungeons.includes(battleState.dungeonId)) {
+      state.completedDungeons.push(battleState.dungeonId);
     }
+    saveGame();
+    showScreen('hero');
   }
 
   function checkLevelUp() {
