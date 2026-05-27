@@ -131,10 +131,53 @@
   let colorState = {};
   let gridState = {};
 
-  // ===== SAVE =====
-  function loadSave() {
+  // ===== SAVE SLOTS =====
+  const SAVE_SLOTS = [1, 2, 3];
+  const CURRENT_SLOT_KEY = 'dungeonRecallActiveSlot';
+  const SAVE_PREFIX = 'dungeonRecallSave_';
+  let currentSlot = 1;
+
+  // ===== SAVE SLOTS =====
+  function getSaveKey(slot) { return SAVE_PREFIX + slot; }
+  function getActiveSlot() {
+    try { return parseInt(localStorage.getItem(CURRENT_SLOT_KEY), 10) || 1; } catch { return 1; }
+  }
+  function setActiveSlot(slot) {
+    currentSlot = slot;
+    try { localStorage.setItem(CURRENT_SLOT_KEY, String(slot)); } catch {}
+  }
+  function getSlotInfo(slot) {
     try {
-      const s = JSON.parse(localStorage.getItem('dungeonRecallSave'));
+      const raw = localStorage.getItem(getSaveKey(slot));
+      if (!raw) return null;
+      const s = JSON.parse(raw);
+      if (!s || !s.hero) return null;
+      return {
+        level: s.hero.level || 1,
+        gold: s.hero.gold || 0,
+        completed: (s.completedDungeons || []).length,
+        name: s.hero.name || 'Dobrodruh'
+      };
+    } catch { return null; }
+  }
+
+  function loadSave() {
+    currentSlot = getActiveSlot();
+    // Migrace starého single-save (před zavedením slotů)
+    try {
+      const oldRaw = localStorage.getItem('dungeonRecallSave');
+      if (oldRaw) {
+        const oldSave = JSON.parse(oldRaw);
+        if (oldSave && oldSave.hero) {
+          // Ulož jako slot 1 a smaž starý
+          localStorage.setItem(getSaveKey(1), oldRaw);
+          localStorage.removeItem('dungeonRecallSave');
+        }
+      }
+    } catch {}
+
+    try {
+      const s = JSON.parse(localStorage.getItem(getSaveKey(currentSlot)));
       if (s && s.hero) return s;
     } catch {}
     return {
@@ -143,17 +186,58 @@
         weapon: 'fists', armor: 'rags', shield: 'none',
         gold: 0, permaMaxHp: 0, permaDmg: 0, permaArmor: 0, permaBlock: 0,
         inventory: [],
-        // Rarity pro vybavené itemy (default common)
-        weaponRarity: 'common', armorRarity: 'common', shieldRarity: 'common'
+        weaponRarity: 'common', armorRarity: 'common', shieldRarity: 'common',
+        name: 'Dobrodruh'
       },
       completedDungeons: []
     };
   }
   function saveGame() {
-    localStorage.setItem('dungeonRecallSave', JSON.stringify({
+    localStorage.setItem(getSaveKey(currentSlot), JSON.stringify({
       hero: state.hero,
       completedDungeons: state.completedDungeons
     }));
+  }
+  function deleteSlot(slot) {
+    try { localStorage.removeItem(getSaveKey(slot)); } catch {}
+    if (slot === currentSlot) {
+      // Načti prázdný
+      state = {
+        hero: {
+          level: 1, xp: 0, hp: 3, maxHp: 3, baseDmg: 2,
+          weapon: 'fists', armor: 'rags', shield: 'none',
+          gold: 0, permaMaxHp: 0, permaDmg: 0, permaArmor: 0, permaBlock: 0,
+          inventory: [],
+          weaponRarity: 'common', armorRarity: 'common', shieldRarity: 'common',
+          name: 'Dobrodruh'
+        },
+        completedDungeons: []
+      };
+      saveGame();
+    }
+    renderHero();
+  }
+  function switchSlot(slot) {
+    if (slot === currentSlot) return;
+    saveGame(); // ulož aktuální
+    setActiveSlot(slot);
+    state = loadSave();
+    state.completedDungeons = state.completedDungeons || [];
+    migrateState();
+    saveGame();
+    showScreen('hero');
+  }
+  function migrateState() {
+    if (!state.hero) return;
+    if (!state.hero.inventory) state.hero.inventory = [];
+    state.hero.inventory = state.hero.inventory.map(i => {
+      if (!i.rarity) i.rarity = 'common';
+      return i;
+    });
+    if (!state.hero.weaponRarity) state.hero.weaponRarity = 'common';
+    if (!state.hero.armorRarity) state.hero.armorRarity = 'common';
+    if (!state.hero.shieldRarity) state.hero.shieldRarity = 'common';
+    if (!state.hero.name) state.hero.name = 'Dobrodruh';
   }
 
   // ===== HERO STATS =====
@@ -177,6 +261,30 @@
 
   function getXpToLevel(level) {
     return XP_PER_LEVEL[Math.min(level - 1, XP_PER_LEVEL.length - 1)] || 100;
+  }
+
+  // ===== SAVE SLOT UI =====
+  function renderSaveSlots() {
+    const container = $('saveSlotArea');
+    if (!container) return;
+    const slotsHtml = SAVE_SLOTS.map(slot => {
+      const info = getSlotInfo(slot);
+      const active = slot === currentSlot ? 'save-slot-active' : '';
+      if (!info) {
+        // Prázdný slot - jen tlačítko vytvořit
+        return `<div class="save-slot ${active}" onclick="game.switchSlot(${slot})">
+          <div class="slot-label">Slot ${slot}</div>
+          <div class="slot-state" style="color:#666">Prázdný</div>
+          <button class="save-slot-btn" onclick="event.stopPropagation();game.deleteSlot(${slot})">🗑️</button>
+        </div>`;
+      }
+      return `<div class="save-slot ${active}" onclick="game.switchSlot(${slot})">
+        <div class="slot-label">Slot ${slot}</div>
+        <div class="slot-state">${info.name} · Lv.${info.level} · 💰${info.gold} · 🏆${info.completed}</div>
+        <button class="save-slot-btn" onclick="event.stopPropagation();game.deleteSlot(${slot})">🗑️</button>
+      </div>`;
+    }).join('');
+    container.innerHTML = `<div class="section-title">💾 Save Sloty</div><div class="save-grid">${slotsHtml}</div>`;
   }
 
   // ===== DUNGEON LOGIC =====
@@ -220,6 +328,8 @@
     $('heroLevel').textContent = h.level;
     $('heroXp').textContent = h.xp;
     $('heroXpNext').textContent = getXpToLevel(h.level);
+    // Save slot přepínač
+    renderSaveSlots();
     $('statHp').textContent = s.maxHp;
     $('statDmg').textContent = s.damage;
     $('statArmor').textContent = s.armor;
@@ -1002,23 +1112,7 @@
   function init() {
     state = loadSave();
     state.completedDungeons = state.completedDungeons || [];
-    if (!state.hero) {
-      state.hero = {
-        level: 1, xp: 0, hp: 3, maxHp: 3, baseDmg: 2,
-        weapon: 'fists', armor: 'rags', shield: 'none',
-        gold: 0, permaMaxHp: 0, permaDmg: 0, permaArmor: 0, permaBlock: 0,
-        inventory: []
-      };
-    }
-    // Migrace starých save — doplnit raritu
-    if (!state.hero.inventory) state.hero.inventory = [];
-    state.hero.inventory = state.hero.inventory.map(i => {
-      if (!i.rarity) i.rarity = 'common';
-      return i;
-    });
-    if (!state.hero.weaponRarity) state.hero.weaponRarity = 'common';
-    if (!state.hero.armorRarity) state.hero.armorRarity = 'common';
-    if (!state.hero.shieldRarity) state.hero.shieldRarity = 'common';
+    migrateState();
 
     // Navigation
     document.querySelectorAll('.nav-bar a').forEach(a => {
@@ -1038,7 +1132,8 @@
     afterDeath, retry,
     buyUpgrade, claimBossLoot,
     simonClick, colorInput, gridPick, useSpell,
-    equipItem
+    equipItem,
+    switchSlot, deleteSlot
   };
 
   init();

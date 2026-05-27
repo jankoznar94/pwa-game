@@ -191,6 +191,22 @@ body {
 .spell-btn.shield { background: #f1c40f; color: #222; }
 
 /* === Misc === */
+.save-grid { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
+.save-slot {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px; background: #1a1a3a; border: 1px solid #2a2a4a;
+  border-radius: 8px; cursor: pointer; transition: 0.2s;
+}
+.save-slot:hover { border-color: #4a7dff; }
+.save-slot-active { border-color: #4affff; background: #1a2a4a; }
+.slot-label { font-size: 12px; font-weight: bold; color: #8888aa; white-space: nowrap; }
+.slot-state { flex: 1; font-size: 12px; color: #ccc; }
+.save-slot-btn {
+  background: none; border: none; color: #e94560; cursor: pointer;
+  font-size: 16px; padding: 2px 6px; border-radius: 4px; transition: 0.2s;
+}
+.save-slot-btn:hover { background: #3a1a2a; }
+
 .hidden { display: none !important; }
 .text-center { text-align: center; }
 .text-gold { color: #ffd700; }
