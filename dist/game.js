@@ -559,7 +559,8 @@ const game = (() => {
             $('pickup').classList.add('hidden');
             state.pickupActive = false;
             state.ended = true;
-            applyPerkAndContinue(null);
+            // Defer restart do příštího ticku, aby se starý loop čistě ukončil
+            setTimeout(() => applyPerkAndContinue(null), 0);
           }
           return;
         } else {
