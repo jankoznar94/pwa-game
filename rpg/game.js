@@ -699,12 +699,16 @@
   }
 
   function hideAllMinigames() {
-    $('simonArea').classList.add('hidden');
-    $('colorClashArea').classList.add('hidden');
-    $('gridDefenderArea').classList.add('hidden');
+    $('simonArea').classList.add('minigame-hide');
+    $('colorClashArea').classList.add('minigame-hide');
+    $('gridDefenderArea').classList.add('minigame-hide');
   }
 
   function startMinigame(type) {
+    // Nejprv ukážeme
+    $('simonArea').classList.remove('minigame-hide');
+    $('colorClashArea').classList.remove('minigame-hide');
+    $('gridDefenderArea').classList.remove('minigame-hide');
     if (type === 'phantom') startSimon();
     else if (type === 'archer') startColorClash();
     else startGridDefender();
@@ -824,7 +828,7 @@
 
   // ===== COLOR CLASH =====
   function startColorClash() {
-    $('colorClashArea').classList.remove('hidden');
+    $('colorClashArea').classList.remove('minigame-hide');
     const floor = battleState.currentFloor;
     const level = floor.enemy.level || 1;
     const speed = Math.max(0.8, 3.0 - level * 0.3);
@@ -832,12 +836,19 @@
 
     const arena = $('colorArena');
     arena.innerHTML = '';
-    // Nastav arénu viditelně
     arena.style.height = '300px';
+    arena.style.position = 'relative';
+
+    // Vykresli 4 sloupce — každý nad svým tlačítkem
+    const colsHtml = colors.map(c => {
+      const label = { red: '🔴', blue: '🔵', green: '🟢', yellow: '🟡' }[c] || c;
+      return `<div class="color-lane" data-color="${c}">${label}</div>`;
+    }).join('');
+    arena.innerHTML = colsHtml;
 
     colorState = {
       active: true, speed, colors, arena,
-      projectile: null
+      projectile: null, currentColor: null, laneEl: null
     };
 
     spawnColorProjectile();
@@ -846,49 +857,54 @@
   function spawnColorProjectile() {
     if (!colorState.active) return;
     const arena = colorState.arena;
-    const w = arena.offsetWidth || 200;
     const col = colorState.colors[rand(0, 3)];
-    const x = rand(20, w - 56);
-    const y = -40;
 
     // Smaž starý
     if (colorState.projectile && colorState.projectile.parentNode) {
       colorState.projectile.remove();
     }
 
+    // Najdi lane podle barvy
+    const lanes = arena.querySelectorAll('.color-lane');
+    const laneIdx = colorState.colors.indexOf(col);
+    const lane = lanes[laneIdx];
+    if (!lane) { setTimeout(() => spawnColorProjectile(), 100); return; }
+    const laneRect = lane.getBoundingClientRect();
+    const arenaRect = arena.getBoundingClientRect();
+    const laneX = laneRect.left - arenaRect.left + laneRect.width / 2 - 18;
+
     const el = document.createElement('div');
-    el.className = 'color-projectile ' + col;
-    el.style.left = x + 'px';
+    el.className = 'color-projectile';
+    el.style.left = laneX + 'px';
     el.style.top = '0px';
     el.style.background = col === 'red' ? '#e94560' : col === 'blue' ? '#4a7dff' : col === 'green' ? '#2ecc71' : '#f1c40f';
-    el.style.width = '40px';
-    el.style.height = '40px';
+    el.style.width = '36px';
+    el.style.height = '36px';
     el.style.borderRadius = '50%';
     el.style.border = '2px solid #fff';
     el.style.position = 'absolute';
+    el.style.transition = `top ${1 / colorState.speed}s linear`;
     el.dataset.color = col;
+    // Když doletí ke dnu — zranění
+    el.addEventListener('transitionend', () => {
+      if (colorState.active && colorState.projectile === el) {
+        colorState.active = false;
+        el.remove();
+        enemyHitsPlayer();
+      }
+    });
     arena.appendChild(el);
     colorState.projectile = el;
-    colorState.projectileY = 0;
-    colorState.projectileSpeed = colorState.speed;
     colorState.currentColor = col;
+
+    // Animace pádu pomocí transition (plynulejší)
+    requestAnimationFrame(() => {
+      el.style.top = '260px';
+    });
   }
 
   function updateColorClash() {
-    if (!colorState.active || !colorState.projectile) return;
-    const arenaH = colorState.arena.offsetHeight || 300;
-    colorState.projectileY += colorState.speed;
-    colorState.projectile.style.top = colorState.projectileY + 'px';
-
-    // Dorazil ke dnu?
-    if (colorState.projectileY > arenaH - 50) {
-      // Minul
-      colorState.active = false;
-      if (colorState.projectile && colorState.projectile.parentNode) {
-        colorState.projectile.remove();
-      }
-      enemyHitsPlayer();
-    }
+    // Nepotřebujeme — projectile pád řeší CSS transition + transitionend
   }
 
   function colorInput(color) {
@@ -897,7 +913,6 @@
       // Správně — exploze!
       colorState.active = false;
       if (colorState.projectile && colorState.projectile.parentNode) {
-        // Exploze
         const el = colorState.projectile;
         el.style.transition = 'transform 0.2s, opacity 0.2s';
         el.style.transform = 'scale(2.5)';
@@ -910,36 +925,69 @@
     }
   }
 
-  // ===== GRID DEFENDER =====
+  // ===== GRID DEFENDER (matematické příklady) =====
   function startGridDefender() {
-    $('gridDefenderArea').classList.remove('hidden');
+    $('gridDefenderArea').classList.remove('minigame-hide');
     const floor = battleState.currentFloor;
     const level = floor.enemy.level || 1;
-    const numOptions = Math.min(2 + Math.floor(level / 2), 5);
-    const enemyPower = 2 + level + rand(0, level);
+    const numOptions = Math.min(3 + Math.floor(level / 2), 6);
+    const maxNum = 5 + level * 2;
 
-    const myPower = 1 + Math.floor((getHeroStats().damage) / 2);
-    // Vygenerujeme možnosti pro hráče
+    // Boss ukáže náhodný výsledek
+    const target = rand(3, maxNum);
+    const ops = ['+', '-', '×'];
     const options = [];
-    for (let i = 0; i < numOptions; i++) {
-      let val = myPower + rand(-1, 2);
-      if (val < 1) val = 1;
-      options.push({ value: val, wins: val > enemyPower, label: val > enemyPower ? '⚔️' : '💀' });
+    const usedExprs = new Set();
+
+    // Správná odpověď
+    const correctOp = ops[rand(0, 2)];
+    let a, b, expr, result;
+    for (let tries = 0; tries < 50; tries++) {
+      if (correctOp === '+') { a = rand(1, target - 1); b = target - a; expr = `${a}+${b}`; result = a + b; }
+      else if (correctOp === '-') { a = rand(target + 1, target + maxNum); b = a - target; expr = `${a}-${b}`; result = a - b; }
+      else { // ×
+        const factors = [];
+        for (let f = 1; f <= Math.sqrt(target); f++) { if (target % f === 0) factors.push(f); }
+        if (factors.length > 1) {
+          a = factors[rand(1, factors.length - 1)]; b = target / a; expr = `${a}×${b}`; result = a * b;
+        } else { a = rand(1, 3); b = target; expr = `${a}×${b}`; result = a * b; } // fallback
+      }
+      if (!usedExprs.has(expr) && result === target) { usedExprs.add(expr); break; }
+    }
+    options.push({ value: result, expr, wins: true });
+
+    // Špatné odpovědi
+    for (let i = 1; i < numOptions; i++) {
+      for (let tries = 0; tries < 50; tries++) {
+        const op = ops[rand(0, 2)];
+        let ba, bb, bexpr, bres;
+        if (op === '+') { ba = rand(1, maxNum); bb = rand(1, maxNum); bexpr = `${ba}+${bb}`; bres = ba + bb; }
+        else if (op === '-') { ba = rand(1, maxNum * 2); bb = rand(1, ba - 1); bexpr = `${ba}-${bb}`; bres = ba - bb; }
+        else { ba = rand(1, 5); bb = rand(1, 5); bexpr = `${ba}×${bb}`; bres = ba * bb; }
+        if (!usedExprs.has(bexpr) && bres !== target) {
+          usedExprs.add(bexpr);
+          options.push({ value: bres, expr: bexpr, wins: false });
+          break;
+        }
+      }
     }
 
-    gridState = { options, enemyPower, active: true };
+    shuffle(options);
+    gridState = { options, target, active: true };
 
     $('gridArea').innerHTML = `
-      <div class="grid-card enemy-card">
-        <span>${enemyPower}</span>
-        <span class="card-sub">👹 Nepřítel</span>
+      <div class="grid-enemy-target">
+        <span class="target-label">👹 Boss hledá:</span>
+        <span class="target-number">${target}</span>
       </div>
-      ${options.map((o, i) =>
-        `<div class="grid-card" onclick="game.gridPick(${i})">
-           <span>${o.value}</span>
-           <span class="card-sub">${o.label}</span>
-         </div>`
-      ).join('')}
+      <div class="grid-cards">
+        ${options.map((o, i) =>
+          `<div class="grid-card" onclick="game.gridPick(${i})">
+             <span class="expr">${o.expr}</span>
+             <span class="card-sub">${o.wins ? '✅' : '❌'}</span>
+           </div>`
+        ).join('')}
+      </div>
     `;
   }
 
@@ -1124,7 +1172,7 @@
     // Zobraz overlay s výběrem
     $('rewardTitle').textContent = `🎉 ${floor.enemy.name} poražen!`;
     const goldXpItems = choices.filter(c => c.name.startsWith('💰') || c.name.startsWith('⭐'));
-    const lootItems = choices.filter(c => c.name.startsWith('🎁'));
+    const lootItems = choices.filter(c => c.itemId);
     $('rewardItems').innerHTML = `
       ${goldXpItems.map(item => `<div class="pickup-card">
         <div class="name">${item.name}</div>
