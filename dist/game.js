@@ -858,11 +858,18 @@
 
     const el = document.createElement('div');
     el.className = 'color-projectile ' + col;
-    el.style.cssText = `left:${x}px;top:${y}px;background:${col === 'red' ? '#e94560' : col === 'blue' ? '#4a7dff' : col === 'green' ? '#2ecc71' : '#f1c40f'};width:40px;height:40px;border-radius:50%;border:2px solid #fff;position:absolute`;
+    el.style.left = x + 'px';
+    el.style.top = '0px';
+    el.style.background = col === 'red' ? '#e94560' : col === 'blue' ? '#4a7dff' : col === 'green' ? '#2ecc71' : '#f1c40f';
+    el.style.width = '40px';
+    el.style.height = '40px';
+    el.style.borderRadius = '50%';
+    el.style.border = '2px solid #fff';
+    el.style.position = 'absolute';
     el.dataset.color = col;
     arena.appendChild(el);
     colorState.projectile = el;
-    colorState.projectileY = y;
+    colorState.projectileY = 0;
     colorState.projectileSpeed = colorState.speed;
     colorState.currentColor = col;
   }
@@ -1134,13 +1141,13 @@
         <button class="btn btn-primary mt-10" onclick="game.claimBossLoot(-1)">⏭ Přeskočit</button>`
       : `<button class="btn btn-primary mt-10" onclick="game.claimBossLoot(-1)">Pokračovat</button>`}
     `;
-    $('#rewardOverlay').classList.remove('hidden');
+    $('rewardOverlay').classList.remove('hidden');
     battleState.bossLootChoices = lootItems;
   }
 
   function claimBossLoot(idx) {
     const choices = battleState.bossLootChoices;
-    $('#rewardOverlay').classList.add('hidden');
+    $('rewardOverlay').classList.add('hidden');
     if (idx >= 0 && choices && choices[idx]) {
       const pick = choices[idx];
       // Ulož do inventáře i s raritou
