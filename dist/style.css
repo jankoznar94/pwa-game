@@ -58,6 +58,7 @@ body {
 .boss-type-badge.simon { background: #8e44ad; }
 .boss-type-badge.color { background: #e67e22; }
 .boss-type-badge.grid { background: #c0392b; }
+.boss-type-badge.judge { background: #2c3e50; border: 1px solid #f1c40f; }
 
 /* === Battle === */
 #battleScreen { display: none; }
@@ -139,6 +140,26 @@ body {
 }
 .grid-card:hover { border-color: #4a7dff; transform: scale(1.05); }
 .grid-card .expr { font-size: 20px; }
+
+/* === Judge === */
+.judge-statement {
+  font-size: 22px; font-weight: bold; text-align: center;
+  padding: 24px 16px; margin: 16px 0;
+  background: #1a1a3a; border: 2px solid #f1c40f; border-radius: 12px;
+  color: #ffd700;
+}
+.judge-buttons {
+  display: flex; gap: 12px; justify-content: center; margin: 20px 0;
+}
+.judge-btn {
+  flex: 1; max-width: 160px; padding: 18px; border-radius: 10px;
+  font-size: 18px; font-weight: bold; text-align: center;
+  cursor: pointer; transition: 0.15s;
+}
+.judge-true { background: #2ecc71; color: #fff; }
+.judge-true:hover { background: #3ddc81; }
+.judge-false { background: #e94560; color: #fff; }
+.judge-false:hover { background: #f95570; }
 
 /* === Countdown === */
 .countdown-overlay {

@@ -47,13 +47,14 @@
     { id: 0, name: 'Stínový pán', face: '👹', type: 'simon', hp: 3, level: 1, dungeonName: '🌲 Les stínů', dungeonMobs: 9 },
     { id: 1, name: 'Věžový démon', face: '👹', type: 'simon', hp: 4, level: 2, dungeonName: '🗼 Prokletá věž', dungeonMobs: 9 },
     { id: 2, name: 'Duch pralesa', face: '🌳', type: 'simon', hp: 4, level: 3, dungeonName: '🌴 Prales krve', dungeonMobs: 9 },
-    { id: 3, name: 'Sněžný král', face: '🧊', type: 'simon', hp: 5, level: 4, dungeonName: '❄️ Ledová propast', dungeonMobs: 9 },
+    // Judge
+    { id: 3, name: 'Soudce pekel', face: '⚖️', type: 'judge', hp: 3, level: 4, dungeonName: '⚖️ Pekelný tribunál', dungeonMobs: 9 },
+    { id: 4, name: 'Vládce lží', face: '🎭', type: 'judge', hp: 4, level: 5, dungeonName: '🎭 Sín klamu', dungeonMobs: 9 },
     // Color Clash (archer)
-    { id: 4, name: 'Faraonova kletba', face: '🐍', type: 'color', hp: 3, level: 5, dungeonName: '🏜️ Pouštní nekropole', dungeonMobs: 9 },
-    { id: 5, name: 'Král bažin', face: '🐊', type: 'color', hp: 4, level: 6, dungeonName: '🌿 Bažiny zapomnění', dungeonMobs: 9 },
-    { id: 6, name: 'Magma behemot', face: '🐲', type: 'color', hp: 5, level: 7, dungeonName: '🌋 Lávové údolí', dungeonMobs: 9 },
+    { id: 5, name: 'Faraonova kletba', face: '🐍', type: 'color', hp: 3, level: 5, dungeonName: '🏜️ Pouštní nekropole', dungeonMobs: 9 },
+    { id: 6, name: 'Král bažin', face: '🐊', type: 'color', hp: 4, level: 6, dungeonName: '🌿 Bažiny zapomnění', dungeonMobs: 9 },
+    { id: 7, name: 'Magma behemot', face: '🐲', type: 'color', hp: 5, level: 7, dungeonName: '🌋 Lávové údolí', dungeonMobs: 9 },
     // Math Grid (tank)
-    { id: 7, name: 'Archivář zhouby', face: '👹', type: 'grid', hp: 3, level: 8, dungeonName: '🔥 Hořící katakomby', dungeonMobs: 9 },
     { id: 8, name: 'Nebeský drak', face: '🐉', type: 'grid', hp: 4, level: 9, dungeonName: '☁️ Nebeská pevnost', dungeonMobs: 9 },
     { id: 9, name: 'Architekt času', face: '⌛', type: 'grid', hp: 5, level: 10, dungeonName: '⏳ Zřícenina času', dungeonMobs: 9 },
   ];
@@ -62,12 +63,14 @@
   const MOB_FACES = {
     simon: ['👻', '👾', '💀', '🎃', '🕳️', '🦇', '👺', '⚰️', '☠️'],
     color: ['🏹', '🐺', '🦅', '🐗', '🦂', '🐍', '🐪', '🦎', '🐙'],
-    grid: ['🛡️', '🗿', '🧟', '🤖', '🦾', '🧱', '⛓️', '⚙️', '🪨']
+    grid: ['🛡️', '🗿', '🧟', '🤖', '🦾', '🧱', '⛓️', '⚙️', '🪨'],
+    judge: ['📜', '🔮', '🗝️', '👁️', '🕯️', '📖', '⚗️', '🔔', '🧿']
   };
   const MOB_NAMES = {
     simon: ['Přízrak', 'Stín', 'Duch', 'Noční můra', 'Fantom', 'Netvor', 'Mlžný duch', 'Kostlivec', 'Spektrum'],
     color: ['Lovec', 'Střelec', 'Lučištník', 'Šelma', 'Šílenec', 'Berserker', 'Lovkyně', 'Plaz', 'Dravý střelec'],
-    grid: ['Strážce', 'Tank', 'Obr', 'Hlídka', 'Golem', 'Valibuk', 'Hromotluk', 'Mechanik', 'Krutý obr']
+    grid: ['Strážce', 'Tank', 'Obr', 'Hlídka', 'Golem', 'Valibuk', 'Hromotluk', 'Mechanik', 'Krutý obr'],
+    judge: ['Scriba', 'Kacíř', 'Inkvizitor', 'Soudce stínů', 'Žalobce', 'Kat', 'Svědek', 'Písař', 'Zrádce']
   };
 
   // ===== STATE =====
@@ -131,7 +134,7 @@
           <span style="font-size:36px">${b.face}</span>
           <span class="boss-name">${b.name}</span>
           <span class="boss-hp">${hpHearts}</span>
-          <span class="boss-type-badge ${b.type}">${b.type === 'simon' ? '🧠 Simon' : b.type === 'color' ? '🎨 Barvy' : '🧮 Matika'}</span>
+          <span class="boss-type-badge ${b.type}">${b.type === 'simon' ? '🧠 Simon' : b.type === 'color' ? '🎨 Barvy' : b.type === 'judge' ? '⚖️ Soudce' : '🧮 Matika'}</span>
         </div>
       </div>`;
     }).join('');
@@ -197,6 +200,7 @@
   function showMinigame(type) {
     if (type === 'simon') { $('simonArea').classList.remove('minigame-hide'); startSimon(); }
     else if (type === 'color') { $('colorClashArea').classList.remove('minigame-hide'); startColorClash(); }
+    else if (type === 'judge') { $('judgeArea').classList.remove('minigame-hide'); startJudge(); }
     else { $('gridDefenderArea').classList.remove('minigame-hide'); startGridDefender(); }
   }
 
@@ -204,6 +208,7 @@
     $('simonArea').classList.add('minigame-hide');
     $('colorClashArea').classList.add('minigame-hide');
     $('gridDefenderArea').classList.add('minigame-hide');
+    $('judgeArea').classList.add('minigame-hide');
   }
 
   // ===== COUNTDOWN =====
@@ -643,6 +648,113 @@
     else { sfxPlayerHit(); playerLosesRound(); }
   }
 
+  // ===== JUDGE (True or False) =====
+  const JUDGE_STATEMENTS = {
+    easy: [
+      { text: '6 × 7 = 42', answer: true },
+      { text: 'Voda se vaří při 100 °C', answer: true },
+      { text: 'Země je plochá', answer: false },
+      { text: 'Člověk má 32 zubů', answer: true },
+      { text: 'Rybník je větší než oceán', answer: false },
+      { text: '12 je dělitelné 3', answer: true },
+      { text: 'Čtverec má 5 stran', answer: false },
+      { text: 'Tři a čtyři je sedm', answer: true },
+      { text: 'Žralok je savec', answer: false },
+      { text: 'Slunce vychází na východě', answer: true },
+      { text: '8 + 4 = 11', answer: false },
+      { text: 'Týden má 7 dní', answer: true },
+      { text: 'Měsíc je větší než Země', answer: false },
+      { text: 'Kočka má 9 životů', answer: false },
+      { text: '5 × 5 = 25', answer: true },
+    ],
+    medium: [
+      { text: 'Délka úhlopříčky čtverce o straně 1 je √2', answer: true },
+      { text: '24 je dělitelné 7', answer: false },
+      { text: 'Součet vnitřních úhlů trojúhelníku je 180°', answer: true },
+      { text: '0 je sudé číslo', answer: true },
+      { text: 'Krychle má 8 vrcholů', answer: true },
+      { text: '1 + 2 × 3 = 9', answer: false },
+      { text: 'Hodina má 3600 sekund', answer: true },
+      { text: 'Každý obdélník je čtverec', answer: false },
+      { text: '15 × 3 = 45', answer: true },
+      { text: 'Praha je hlavní město Polska', answer: false },
+      { text: 'Všechna prvočísla jsou lichá', answer: false },
+      { text: '2 + 3 × 4 = 20', answer: false },
+      { text: 'Antarktida je poušť', answer: true },
+      { text: 'Delfín je ryba', answer: false },
+      { text: '9 × 8 = 72', answer: true },
+    ],
+    hard: [
+      { text: '3² + 4² = 5²', answer: true },
+      { text: '0,5 × 20 = 12', answer: false },
+      { text: 'Sudé číslo krát liché je vždy sudé', answer: true },
+      { text: 'Každý lichoběžník je rovnoběžník', answer: false },
+      { text: '15 − 3 × 4 = 48', answer: false },
+      { text: 'Vídeň je hlavní město Rakouska', answer: true },
+      { text: 'Průměr 2, 8 a 14 je 8', answer: true },
+      { text: '48 / 6 = 8', answer: true },
+      { text: 'Číslo 121 je prvočíslo', answer: false },
+      { text: 'Dva zápory dají klad', answer: true },
+      { text: '(8 − 3) × 2 = 10', answer: true },
+      { text: 'Kilogram je jednotka síly', answer: false },
+      { text: 'Hlemýžď má přibližně 25 000 zubů', answer: true },
+      { text: '12 × 11 = 131', answer: false },
+      { text: 'Rtuť je kapalná při pokojové teplotě', answer: true },
+    ]
+  };
+
+  function startJudge() {
+    const level = bossBattle.boss.level;
+    let filtered;
+    if (level <= 3) {
+      filtered = JUDGE_STATEMENTS.easy;
+    } else if (level <= 6) {
+      filtered = [...JUDGE_STATEMENTS.easy, ...JUDGE_STATEMENTS.medium];
+    } else {
+      filtered = [...JUDGE_STATEMENTS.medium, ...JUDGE_STATEMENTS.hard];
+    }
+
+    const statement = filtered[rand(0, filtered.length - 1)];
+    const timerDuration = Math.max(3, 6 - Math.floor(level / 3));
+
+    minigameState = {
+      active: true,
+      statement: statement,
+      timer: timerDuration
+    };
+
+    $('judgePrompt').textContent = '⚖️ Je tento výrok pravdivý?';
+    $('judgeStatement').textContent = statement.text;
+    $('judgeTimer').textContent = timerDuration + 's';
+
+    if (minigameState.timerInterval) clearInterval(minigameState.timerInterval);
+    minigameState.timerInterval = setInterval(() => {
+      minigameState.timer--;
+      $('judgeTimer').textContent = minigameState.timer + 's';
+      if (minigameState.timer <= 0) {
+        clearInterval(minigameState.timerInterval);
+        if (minigameState.active) {
+          minigameState.active = false;
+          playerLosesRound();
+        }
+      }
+    }, 1000);
+  }
+
+  function judgeAnswer(playerAnswer) {
+    if (!minigameState.active) return;
+    minigameState.active = false;
+    if (minigameState.timerInterval) clearInterval(minigameState.timerInterval);
+
+    if (playerAnswer === minigameState.statement.answer) {
+      sfxSuccess();
+      playerWinsRound();
+    } else {
+      sfxPlayerHit();
+      playerLosesRound();
+    }
+  }
+
   // ===================================================================
   //  INIT
   // ===================================================================
@@ -666,7 +778,7 @@
 
   window.game = {
     showScreen, startBoss, retry,
-    simonClick, colorInput, gridPick
+    simonClick, colorInput, gridPick, judgeAnswer
   };
 
   init();

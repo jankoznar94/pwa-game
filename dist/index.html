@@ -55,6 +55,19 @@
       </div>
     </div>
 
+    <!-- ===== JUDGE ===== -->
+    <div id="judgeArea" class="minigame-hide">
+      <div class="card-subtitle text-center mt-10" id="judgePrompt">Je následující výrok pravdivý?</div>
+      <div class="judge-statement" id="judgeStatement">2 + 2 = 4</div>
+      <div class="judge-buttons">
+        <div class="judge-btn judge-true" onclick="game.judgeAnswer(true)">✅ Pravda</div>
+        <div class="judge-btn judge-false" onclick="game.judgeAnswer(false)">❌ Nepravda</div>
+      </div>
+      <div class="text-center">
+        <span id="judgeTimer" style="font-size:13px;color:#ffd700">5s</span>
+      </div>
+    </div>
+
     <!-- ===== COLOR CLASH ===== -->
     <div id="colorClashArea" class="minigame-hide">
       <div class="card-subtitle text-center mt-10">Ťukni na správnou barvu!</div>
