@@ -533,7 +533,7 @@
   // ===================================================================
   function startGridDefender() {
     const level = bossBattle.boss.level;
-    const numOptions = Math.min(3 + Math.floor(level / 2), 6);
+    const numOptions = 3;
     const maxNum = 5 + level * 2;
     const target = rand(3, maxNum);
     const ops = ['+', '-', '×'];
@@ -555,17 +555,44 @@
     }
     options.push({ value: result, expr, wins: true });
 
+    // Špatné odpovědi blízko správnému výsledku (±1, ±2)
+    const closeValues = [];
+    for (let d = 1; d <= 3; d++) {
+      if (result - d >= 1) closeValues.push(result - d);
+      if (result + d !== target) closeValues.push(result + d);
+    }
+    shuffle(closeValues);
+
     for (let i = 1; i < numOptions; i++) {
-      for (let tries = 0; tries < 50; tries++) {
+      const fakeResult = closeValues.length > 0 ? closeValues.shift() : rand(1, maxNum + 5);
+      // Vytvoř podobně vypadající výraz
+      let fakeExpr;
+      for (let tries = 0; tries < 30; tries++) {
         const op = ops[rand(0, 2)];
         let ba, bb, bexpr, bres;
         if (op === '+') { ba = rand(1, maxNum); bb = rand(1, maxNum); bexpr = `${ba}+${bb}`; bres = ba + bb; }
         else if (op === '-') { ba = rand(1, maxNum * 2); bb = rand(1, ba - 1); bexpr = `${ba}-${bb}`; bres = ba - bb; }
         else { ba = rand(1, 5); bb = rand(1, 5); bexpr = `${ba}×${bb}`; bres = ba * bb; }
-        if (!usedExprs.has(bexpr) && bres !== target) {
+        if (!usedExprs.has(bexpr) && bres === fakeResult) {
           usedExprs.add(bexpr);
           options.push({ value: bres, expr: bexpr, wins: false });
+          fakeExpr = true;
           break;
+        }
+      }
+      // Pokud se nepodařilo najít výraz pro přesnou hodnotu, použij co nejbližší
+      if (!fakeExpr) {
+        for (let tries = 0; tries < 50; tries++) {
+          const op = ops[rand(0, 2)];
+          let ba, bb, bexpr, bres;
+          if (op === '+') { ba = rand(1, maxNum); bb = rand(1, maxNum); bexpr = `${ba}+${bb}`; bres = ba + bb; }
+          else if (op === '-') { ba = rand(1, maxNum * 2); bb = rand(1, ba - 1); bexpr = `${ba}-${bb}`; bres = ba - bb; }
+          else { ba = rand(1, 5); bb = rand(1, 5); bexpr = `${ba}×${bb}`; bres = ba * bb; }
+          if (!usedExprs.has(bexpr) && Math.abs(bres - fakeResult) <= 1) {
+            usedExprs.add(bexpr);
+            options.push({ value: bres, expr: bexpr, wins: false });
+            break;
+          }
         }
       }
     }
