@@ -44,19 +44,31 @@
   // Každý boss má: jméno, obličej, typ minihry, životy, obtížnost 1-10
   const BOSSES = [
     // Simon (phantom)
-    { id: 0, name: 'Stínový pán', face: '👹', type: 'simon', hp: 3, level: 1, dungeonName: '🌲 Les stínů' },
-    { id: 1, name: 'Věžový démon', face: '👹', type: 'simon', hp: 4, level: 3, dungeonName: '🗼 Prokletá věž' },
-    { id: 2, name: 'Duch pralesa', face: '🌳', type: 'simon', hp: 4, level: 5, dungeonName: '🌴 Prales krve' },
-    { id: 3, name: 'Sněžný král', face: '🧊', type: 'simon', hp: 5, level: 7, dungeonName: '❄️ Ledová propast' },
+    { id: 0, name: 'Stínový pán', face: '👹', type: 'simon', hp: 3, level: 1, dungeonName: '🌲 Les stínů', dungeonMobs: 2 },
+    { id: 1, name: 'Věžový démon', face: '👹', type: 'simon', hp: 4, level: 3, dungeonName: '🗼 Prokletá věž', dungeonMobs: 3 },
+    { id: 2, name: 'Duch pralesa', face: '🌳', type: 'simon', hp: 4, level: 5, dungeonName: '🌴 Prales krve', dungeonMobs: 3 },
+    { id: 3, name: 'Sněžný král', face: '🧊', type: 'simon', hp: 5, level: 7, dungeonName: '❄️ Ledová propast', dungeonMobs: 4 },
     // Color Clash (archer)
-    { id: 4, name: 'Faraonova kletba', face: '🐍', type: 'color', hp: 3, level: 2, dungeonName: '🏜️ Pouštní nekropole' },
-    { id: 5, name: 'Král bažin', face: '🐊', type: 'color', hp: 4, level: 4, dungeonName: '🌿 Bažiny zapomnění' },
-    { id: 6, name: 'Magma behemot', face: '🐲', type: 'color', hp: 5, level: 6, dungeonName: '🌋 Lávové údolí' },
+    { id: 4, name: 'Faraonova kletba', face: '🐍', type: 'color', hp: 3, level: 2, dungeonName: '🏜️ Pouštní nekropole', dungeonMobs: 2 },
+    { id: 5, name: 'Král bažin', face: '🐊', type: 'color', hp: 4, level: 4, dungeonName: '🌿 Bažiny zapomnění', dungeonMobs: 3 },
+    { id: 6, name: 'Magma behemot', face: '🐲', type: 'color', hp: 5, level: 6, dungeonName: '🌋 Lávové údolí', dungeonMobs: 4 },
     // Math Grid (tank)
-    { id: 7, name: 'Archivář zhouby', face: '👹', type: 'grid', hp: 3, level: 2, dungeonName: '🔥 Hořící katakomby' },
-    { id: 8, name: 'Nebeský drak', face: '🐉', type: 'grid', hp: 4, level: 5, dungeonName: '☁️ Nebeská pevnost' },
-    { id: 9, name: 'Architekt času', face: '⌛', type: 'grid', hp: 5, level: 8, dungeonName: '⏳ Zřícenina času' },
+    { id: 7, name: 'Archivář zhouby', face: '👹', type: 'grid', hp: 3, level: 2, dungeonName: '🔥 Hořící katakomby', dungeonMobs: 2 },
+    { id: 8, name: 'Nebeský drak', face: '🐉', type: 'grid', hp: 4, level: 5, dungeonName: '☁️ Nebeská pevnost', dungeonMobs: 3 },
+    { id: 9, name: 'Architekt času', face: '⌛', type: 'grid', hp: 5, level: 8, dungeonName: '⏳ Zřícenina času', dungeonMobs: 4 },
   ];
+
+  // ===== MOBS (dungeon fodder) =====
+  const MOB_FACES = {
+    simon: ['👻', '👾', '💀'],
+    color: ['🏹', '🐺', '🦅'],
+    grid: ['🛡️', '🗿', '🧟']
+  };
+  const MOB_NAMES = {
+    simon: ['Přízrak', 'Stín', 'Mlžný duch'],
+    color: ['Lovec', 'Střelec', 'Lučištník'],
+    grid: ['Strážce', 'Tank', 'Obr']
+  };
 
   // ===== STATE =====
   let state = {};
@@ -105,10 +117,10 @@
   // ===== BOSS SELECT =====
   function showBossSelect() {
     const list = $('bossList');
+    const wins = state.wins;
+    const deaths = state.deaths;
     list.innerHTML = BOSSES.map((b, i) => {
       const completed = state.completed.includes(i);
-      const deaths = state.deaths;
-      const wins = state.wins;
       const hpHearts = '❤️'.repeat(b.hp);
       return `<div class="dungeon-card ${completed ? 'completed' : ''}" onclick="game.startBoss(${i})">
         <div class="flex-between">
@@ -131,12 +143,17 @@
   function startBoss(id) {
     const b = BOSSES[id];
     if (!b) return;
+    const hasMobs = b.dungeonMobs > 0;
     bossBattle = {
       bossId: id,
       boss: { ...b, hp: b.hp, maxHp: b.hp },
       playerHp: 3,
       round: 0,
-      ended: false
+      ended: false,
+      dungeonPhase: hasMobs ? 'mobs' : 'boss',
+      mobsRemaining: b.dungeonMobs || 0,
+      currentMobIndex: 0,
+      firstRound: true
     };
     showScreen('battleScreen');
     updateBattleUI();
@@ -146,6 +163,18 @@
   function startRound() {
     if (bossBattle.ended) return;
     const bb = bossBattle;
+
+    // Check phase transitions
+    if (bb.dungeonPhase === 'mobs') {
+      if (bb.mobsRemaining <= 0) {
+        bb.dungeonPhase = 'boss';
+        bb.firstRound = true;
+        // Boss intro
+      } else {
+        bb.currentMobIndex = (bb.boss.dungeonMobs - bb.mobsRemaining);
+      }
+    }
+
     if (bb.boss.hp <= 0) { endBattle(true); return; }
     if (bb.playerHp <= 0) { endBattle(false); return; }
 
@@ -153,16 +182,22 @@
     minigameState = {};
     const type = bb.boss.type;
     hideAllMinigames();
-    $('simonArea').classList.add('minigame-hide');
-    $('colorClashArea').classList.add('minigame-hide');
-    $('gridDefenderArea').classList.add('minigame-hide');
 
-    // Odpočet
-    showCountdown(2, () => {
-      if (type === 'simon') { $('simonArea').classList.remove('minigame-hide'); startSimon(); }
-      else if (type === 'color') { $('colorClashArea').classList.remove('minigame-hide'); startColorClash(); }
-      else { $('gridDefenderArea').classList.remove('minigame-hide'); startGridDefender(); }
-    });
+    // Odpočet jen na začátku fáze (první round battlu nebo přechod fáze)
+    if (bb.firstRound) {
+      bb.firstRound = false;
+      showCountdown(2, () => {
+        showMinigame(type);
+      });
+    } else {
+      showMinigame(type);
+    }
+  }
+
+  function showMinigame(type) {
+    if (type === 'simon') { $('simonArea').classList.remove('minigame-hide'); startSimon(); }
+    else if (type === 'color') { $('colorClashArea').classList.remove('minigame-hide'); startColorClash(); }
+    else { $('gridDefenderArea').classList.remove('minigame-hide'); startGridDefender(); }
   }
 
   function hideAllMinigames() {
@@ -194,14 +229,31 @@
 
   // ===== BATTLE UI =====
   function updateBattleUI() {
-    $('bossName').textContent = bossBattle.boss.name;
-    $('bossFace').textContent = bossBattle.boss.face;
-    $('bossHpHearts').textContent = '❤️'.repeat(bossBattle.boss.hp);
-    $('bossHpMax').textContent = '🖤'.repeat(bossBattle.boss.maxHp - bossBattle.boss.hp);
-    $('playerHearts').textContent = '❤️'.repeat(bossBattle.playerHp);
-    $('playerHeartsLost').textContent = '🖤'.repeat(3 - bossBattle.playerHp);
-    $('roundNum').textContent = `Kolo ${bossBattle.round}`;
-    const typeLabel = { simon: '🧠 Simon Says', color: '🎨 Color Clash', grid: '🧮 Matika' }[bossBattle.boss.type] || '';
+    const bb = bossBattle;
+    const isMobPhase = bb.dungeonPhase === 'mobs' && bb.mobsRemaining > 0;
+
+    if (isMobPhase) {
+      const mobIdx = bb.boss.dungeonMobs - bb.mobsRemaining;
+      const faces = MOB_FACES[bb.boss.type] || ['👾'];
+      const names = MOB_NAMES[bb.boss.type] || ['Nestvůra'];
+      const mobFace = faces[mobIdx % faces.length];
+      const mobName = names[mobIdx % names.length];
+      $('bossName').textContent = `${mobName} (${bb.mobsRemaining} zbývá)`;
+      $('bossFace').textContent = mobFace;
+      $('bossHpHearts').textContent = '👾'.repeat(bb.mobsRemaining);
+      $('bossHpMax').textContent = '';
+      $('roundNum').textContent = `Patro ${bb.round} · 👹 potvora ${bb.currentMobIndex + 1}/${bb.boss.dungeonMobs}`;
+    } else {
+      $('bossName').textContent = bb.boss.name;
+      $('bossFace').textContent = bb.boss.face;
+      $('bossHpHearts').textContent = '❤️'.repeat(bb.boss.hp);
+      $('bossHpMax').textContent = '🖤'.repeat(bb.boss.maxHp - bb.boss.hp);
+      $('roundNum').textContent = `Kolo ${bb.round}`;
+    }
+
+    $('playerHearts').textContent = '❤️'.repeat(bb.playerHp);
+    $('playerHeartsLost').textContent = '🖤'.repeat(3 - bb.playerHp);
+    const typeLabel = { simon: '🧠 Simon Says', color: '🎨 Color Clash', grid: '🧮 Matika' }[bb.boss.type] || '';
     $('gameTypeBadge').textContent = typeLabel;
 
     // Animace příchodu
@@ -215,7 +267,24 @@
   // ===== ROUND RESULT =====
   function playerWinsRound() {
     if (bossBattle.ended) return;
-    bossBattle.boss.hp--;
+    const bb = bossBattle;
+    if (bb.dungeonPhase === 'mobs') {
+      bb.mobsRemaining--;
+      sfxEnemyDefeat();
+      animateHit('enemy');
+      if (bb.mobsRemaining <= 0) {
+        // Přejít na bosse
+        bb.dungeonPhase = 'boss';
+        bb.firstRound = true;
+        updateBattleUI();
+        setTimeout(() => startRound(), 600);
+      } else {
+        updateBattleUI();
+        setTimeout(() => startRound(), 400);
+      }
+      return;
+    }
+    bb.boss.hp--;
     sfxSuccess();
     animateHit('enemy');
     updateBattleUI();
