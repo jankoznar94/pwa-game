@@ -5,6 +5,7 @@
   const $ = id => document.getElementById(id);
   const rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
   const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = rand(0, i); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
   // ===== AUDIO =====
   let audioCtx = null;
@@ -39,70 +40,89 @@
     setTimeout(() => playTone(330, 0.08, 'square', 0.1), 80);
     setTimeout(() => playTone(220, 0.15, 'square', 0.08), 160);
   }
+  function sfxBossDefeat() {
+    playTone(523, 0.15, 'sine', 0.14);
+    setTimeout(() => playTone(659, 0.15, 'sine', 0.14), 100);
+    setTimeout(() => playTone(784, 0.15, 'sine', 0.16), 200);
+    setTimeout(() => playTone(1047, 0.3, 'sine', 0.18), 300);
+  }
 
-  // ===== BOSSES =====
-  // Každý boss má: jméno, obličej, typ minihry, životy, obtížnost 1-10
-  const BOSSES = [
-    // Simon (phantom)
-    { id: 0, name: 'Stínový pán', face: '👹', type: 'simon', hp: 3, level: 1, dungeonName: '🌲 Les stínů', dungeonMobs: 9 },
-    { id: 1, name: 'Věžový démon', face: '👹', type: 'simon', hp: 4, level: 2, dungeonName: '🗼 Prokletá věž', dungeonMobs: 9 },
-    { id: 2, name: 'Duch pralesa', face: '🌳', type: 'simon', hp: 4, level: 3, dungeonName: '🌴 Prales krve', dungeonMobs: 9 },
-    // Judge
-    { id: 3, name: 'Soudce pekel', face: '⚖️', type: 'judge', hp: 3, level: 4, dungeonName: '⚖️ Pekelný tribunál', dungeonMobs: 9 },
-    { id: 4, name: 'Vládce lží', face: '🎭', type: 'judge', hp: 4, level: 5, dungeonName: '🎭 Sín klamu', dungeonMobs: 9 },
-    // Color Clash (archer)
-    { id: 5, name: 'Faraonova kletba', face: '🐍', type: 'color', hp: 3, level: 5, dungeonName: '🏜️ Pouštní nekropole', dungeonMobs: 9 },
-    { id: 6, name: 'Král bažin', face: '🐊', type: 'color', hp: 4, level: 6, dungeonName: '🌿 Bažiny zapomnění', dungeonMobs: 9 },
-    { id: 7, name: 'Magma behemot', face: '🐲', type: 'color', hp: 5, level: 7, dungeonName: '🌋 Lávové údolí', dungeonMobs: 9 },
-    // Math Grid (tank)
-    { id: 8, name: 'Nebeský drak', face: '🐉', type: 'grid', hp: 4, level: 9, dungeonName: '☁️ Nebeská pevnost', dungeonMobs: 9 },
-    { id: 9, name: 'Architekt času', face: '⌛', type: 'grid', hp: 5, level: 10, dungeonName: '⏳ Zřícenina času', dungeonMobs: 9 },
+  // ===== DUNGEONS =====
+  const TOTAL_FLOORS = 50;
+  const BOSS_INTERVAL = 10;
+
+  const DUNGEONS = [
+    {
+      id: 0, name: '🌲 Les stínů', type: 'simon',
+      face: '👹', bossName: 'Stínový pán',
+      tag: '🧠 Simon', badge: 'simon',
+      mobs: ['👻', '👾', '💀', '🎃', '🕳️', '🦇', '👺', '⚰️', '☠️'],
+      mobNames: ['Přízrak', 'Stín', 'Duch', 'Noční můra', 'Fantom', 'Netvor', 'Mlžný duch', 'Kostlivec', 'Spektrum']
+    },
+    {
+      id: 1, name: '⚖️ Pekelný tribunál', type: 'judge',
+      face: '⚖️', bossName: 'Soudce pekel',
+      tag: '⚖️ Soudce', badge: 'judge',
+      mobs: ['📜', '🔮', '🗝️', '👁️', '🕯️', '📖', '⚗️', '🔔', '🧿'],
+      mobNames: ['Scriba', 'Kacíř', 'Inkvizitor', 'Soudce stínů', 'Žalobce', 'Kat', 'Svědek', 'Písař', 'Zrádce']
+    },
+    {
+      id: 2, name: '🏜️ Pouštní nekropole', type: 'color',
+      face: '🐍', bossName: 'Faraonova kletba',
+      tag: '🎨 Barvy', badge: 'color',
+      mobs: ['🏹', '🐺', '🦅', '🐗', '🦂', '🐍', '🐪', '🦎', '🐙'],
+      mobNames: ['Lovec', 'Střelec', 'Lučištník', 'Šelma', 'Šílenec', 'Berserker', 'Lovkyně', 'Plaz', 'Dravý střelec']
+    },
+    {
+      id: 3, name: '⏳ Zřícenina času', type: 'grid',
+      face: '⌛', bossName: 'Architekt času',
+      tag: '🧮 Matika', badge: 'grid',
+      mobs: ['🛡️', '🗿', '🧟', '🤖', '🦾', '🧱', '⛓️', '⚙️', '🪨'],
+      mobNames: ['Strážce', 'Tank', 'Obr', 'Hlídka', 'Golem', 'Valibuk', 'Hromotluk', 'Mechanik', 'Krutý obr']
+    }
   ];
 
-  // ===== MOBS (dungeon fodder) =====
-  const MOB_FACES = {
-    simon: ['👻', '👾', '💀', '🎃', '🕳️', '🦇', '👺', '⚰️', '☠️'],
-    color: ['🏹', '🐺', '🦅', '🐗', '🦂', '🐍', '🐪', '🦎', '🐙'],
-    grid: ['🛡️', '🗿', '🧟', '🤖', '🦾', '🧱', '⛓️', '⚙️', '🪨'],
-    judge: ['📜', '🔮', '🗝️', '👁️', '🕯️', '📖', '⚗️', '🔔', '🧿']
-  };
-  const MOB_NAMES = {
-    simon: ['Přízrak', 'Stín', 'Duch', 'Noční můra', 'Fantom', 'Netvor', 'Mlžný duch', 'Kostlivec', 'Spektrum'],
-    color: ['Lovec', 'Střelec', 'Lučištník', 'Šelma', 'Šílenec', 'Berserker', 'Lovkyně', 'Plaz', 'Dravý střelec'],
-    grid: ['Strážce', 'Tank', 'Obr', 'Hlídka', 'Golem', 'Valibuk', 'Hromotluk', 'Mechanik', 'Krutý obr'],
-    judge: ['Scriba', 'Kacíř', 'Inkvizitor', 'Soudce stínů', 'Žalobce', 'Kat', 'Svědek', 'Písař', 'Zrádce']
-  };
+  // ===== LEVEL z patra =====
+  function floorToLevel(floor) {
+    return clamp(Math.floor(floor / 5) + 1, 1, 10);
+  }
+  function isBossFloor(floor) {
+    return floor % BOSS_INTERVAL === 0;
+  }
+  function getBossHp(floor) {
+    // Boss HP roste: 3 při 10, až 7 při 50
+    return clamp(Math.floor(floor / 10) + 2, 3, 7);
+  }
 
   // ===== STATE =====
   let state = {};
-  let gameLoop = null;
-  let bossBattle = {};
+  let battleState = {};  // aktuální dungeon run
   let minigameState = {};
 
   // ===== SAVE =====
-  const SAVE_KEY = 'dungeonRecallPure';
+  const SAVE_KEY = 'dungeonRecallV2';
   function loadSave() {
     try {
       const s = JSON.parse(localStorage.getItem(SAVE_KEY));
-      if (s && s.completed) return s;
+      if (s && s.dungeons) return s;
     } catch {}
-    return { completed: [], deaths: 0, wins: 0 };
+    return { dungeons: [0, 0, 0, 0], deaths: 0, wins: 0 };
   }
   function saveGame() {
     localStorage.setItem(SAVE_KEY, JSON.stringify({
-      completed: state.completed,
+      dungeons: state.dungeons,
       deaths: state.deaths,
       wins: state.wins
     }));
   }
   function resetGame() {
-    state = { completed: [], deaths: 0, wins: 0 };
+    state = { dungeons: [0, 0, 0, 0], deaths: 0, wins: 0 };
     saveGame();
-    showBossSelect();
+    showDungeonSelect();
   }
 
   // ===== SCREENS =====
-  const SCREEN_NAMES = ['bossSelect', 'battleScreen', 'resultScreen'];
+  const SCREEN_NAMES = ['dungeonSelect', 'battleScreen', 'resultScreen'];
   function showScreen(name) {
     SCREEN_NAMES.forEach(id => {
       const el = $(id);
@@ -114,86 +134,90 @@
         if (id === 'battleScreen') el.classList.remove('active');
       }
     });
-    if (name === 'bossSelect') showBossSelect();
+    if (name === 'dungeonSelect') showDungeonSelect();
   }
 
-  // ===== BOSS SELECT =====
-  function showBossSelect() {
-    const list = $('bossList');
+  // ===== DUNGEON SELECT =====
+  function showDungeonSelect() {
     const wins = state.wins;
     const deaths = state.deaths;
-    list.innerHTML = BOSSES.map((b, i) => {
-      const completed = state.completed.includes(i);
-      const hpHearts = '❤️'.repeat(b.hp);
-      return `<div class="dungeon-card ${completed ? 'completed' : ''}" onclick="game.startBoss(${i})">
+    $('statsLine').textContent = `🏆 ${wins} výher · 💀 ${deaths} proher`;
+
+    const list = $('dungeonList');
+    list.innerHTML = DUNGEONS.map((d, i) => {
+      const progress = state.dungeons[i];
+      const pct = Math.min(progress / TOTAL_FLOORS * 100, 100);
+      const completed = progress >= TOTAL_FLOORS;
+      return `<div class="dungeon-card ${completed ? 'completed' : ''}" onclick="game.enterDungeon(${i})">
         <div class="flex-between">
-          <div class="dungeon-name">${b.dungeonName} ${completed ? '✅' : ''}</div>
-          <span style="font-size:13px;color:#8888aa">Lv.${b.level}</span>
+          <div class="dungeon-name">${d.name}</div>
+          <span class="boss-type-badge ${d.badge}">${d.tag}</span>
         </div>
-        <div class="boss-preview">
-          <span style="font-size:36px">${b.face}</span>
-          <span class="boss-name">${b.name}</span>
-          <span class="boss-hp">${hpHearts}</span>
-          <span class="boss-type-badge ${b.type}">${b.type === 'simon' ? '🧠 Simon' : b.type === 'color' ? '🎨 Barvy' : b.type === 'judge' ? '⚖️ Soudce' : '🧮 Matika'}</span>
+        <div class="dungeon-progress-wrap">
+          <div class="dungeon-progress-bar" style="width:${pct}%"></div>
+        </div>
+        <div class="flex-between" style="margin-top:4px">
+          <span style="font-size:12px;color:#8888aa">${completed ? '✅ Dokončeno' : `🏚️ ${Math.min(progress, TOTAL_FLOORS)}/${TOTAL_FLOORS} pater`}</span>
         </div>
       </div>`;
     }).join('');
-    $('statsLine').textContent = `🏆 ${wins} výher · 💀 ${deaths} proher`;
-    document.querySelectorAll('.nav-bar a').forEach(a => a.classList.toggle('active', a.dataset.screen === 'bossSelect'));
+    document.querySelectorAll('.nav-bar a').forEach(a => a.classList.toggle('active', a.dataset.screen === 'dungeonSelect'));
   }
 
-  // ===== START BOSS =====
-  function startBoss(id) {
-    const b = BOSSES[id];
-    if (!b) return;
-    const hasMobs = b.dungeonMobs > 0;
-    bossBattle = {
-      bossId: id,
-      boss: { ...b, hp: b.hp, maxHp: b.hp },
+  // ===== ENTER DUNGEON =====
+  function enterDungeon(id) {
+    const d = DUNGEONS[id];
+    if (!d) return;
+    const progress = state.dungeons[id] || 0;
+    const nextFloor = progress < TOTAL_FLOORS ? progress + 1 : progress;
+
+    // Boss HP at this floor
+    const isBoss = isBossFloor(nextFloor);
+    const bossHp = isBoss ? getBossHp(nextFloor) : 1; // mobs have 1 "hp" (1 round)
+    const level = floorToLevel(nextFloor);
+
+    battleState = {
+      dungeonId: id,
+      dungeon: d,
+      floor: nextFloor,
+      totalFloors: TOTAL_FLOORS,
+      bossHp: bossHp,
+      maxBossHp: bossHp,
       playerHp: 3,
+      level: level,
       round: 0,
       ended: false,
-      dungeonPhase: hasMobs ? 'mobs' : 'boss',
-      mobsRemaining: b.dungeonMobs || 0,
-      currentMobIndex: 0,
-      firstRound: true
+      isBossFloor: isBoss,
+      firstRound: true,
+      phase: isBoss ? 'boss' : 'mob',  // mob = 1 round, boss = multi-round
+      mobDefeated: false
     };
+
     showScreen('battleScreen');
     updateBattleUI();
     startRound();
   }
 
+  // ===== START ROUND =====
   function startRound() {
-    if (bossBattle.ended) return;
-    const bb = bossBattle;
+    if (battleState.ended) return;
+    const bs = battleState;
 
-    // Check phase transitions
-    if (bb.dungeonPhase === 'mobs') {
-      if (bb.mobsRemaining <= 0) {
-        bb.dungeonPhase = 'boss';
-        bb.firstRound = true;
-        // Boss intro
-      } else {
-        bb.currentMobIndex = (bb.boss.dungeonMobs - bb.mobsRemaining);
-      }
-    }
+    if (bs.bossHp <= 0) { endBattle(true); return; }
+    if (bs.playerHp <= 0) { endBattle(false); return; }
 
-    if (bb.boss.hp <= 0) { endBattle(true); return; }
-    if (bb.playerHp <= 0) { endBattle(false); return; }
-
-    bb.round++;
+    bs.round++;
     minigameState = {};
-    const type = bb.boss.type;
     hideAllMinigames();
 
-    // Odpočet jen na začátku fáze (první round battlu nebo přechod fáze)
-    if (bb.firstRound) {
-      bb.firstRound = false;
-      showCountdown(2, () => {
-        showMinigame(type);
+    // Odpočet jen první kolo v tomto patře
+    if (bs.firstRound) {
+      bs.firstRound = false;
+      showCountdown(1, () => {
+        showMinigame(bs.dungeon.type);
       });
     } else {
-      showMinigame(type);
+      showMinigame(bs.dungeon.type);
     }
   }
 
@@ -234,34 +258,30 @@
 
   // ===== BATTLE UI =====
   function updateBattleUI() {
-    const bb = bossBattle;
-    const isMobPhase = bb.dungeonPhase === 'mobs' && bb.mobsRemaining > 0;
+    const bs = battleState;
+    const d = bs.dungeon;
 
-    if (isMobPhase) {
-      const mobIdx = bb.boss.dungeonMobs - bb.mobsRemaining;
-      const faces = MOB_FACES[bb.boss.type] || ['👾'];
-      const names = MOB_NAMES[bb.boss.type] || ['Nestvůra'];
-      const mobFace = faces[mobIdx % faces.length];
-      const mobName = names[mobIdx % names.length];
-      $('bossName').textContent = `${mobName} (${bb.mobsRemaining} zbývá)`;
-      $('bossFace').textContent = mobFace;
-      $('bossHpHearts').textContent = '👾'.repeat(bb.mobsRemaining);
-      $('bossHpMax').textContent = '';
-      $('roundNum').textContent = `Patro ${bb.round} · 👹 potvora ${bb.currentMobIndex + 1}/${bb.boss.dungeonMobs}`;
+    if (bs.isBossFloor) {
+      $('bossName').textContent = `${d.bossName} (Patro ${bs.floor})`;
+      $('bossFace').textContent = d.face;
+      $('bossHpHearts').textContent = '❤️'.repeat(bs.bossHp);
+      $('bossHpMax').textContent = '🖤'.repeat(bs.maxBossHp - bs.bossHp);
+      $('roundNum').textContent = `BOSS · Kolo ${bs.round}`;
     } else {
-      $('bossName').textContent = bb.boss.name;
-      $('bossFace').textContent = bb.boss.face;
-      $('bossHpHearts').textContent = '❤️'.repeat(bb.boss.hp);
-      $('bossHpMax').textContent = '🖤'.repeat(bb.boss.maxHp - bb.boss.hp);
-      $('roundNum').textContent = `Kolo ${bb.round}`;
+      const mobIdx = (bs.floor - 1) % d.mobs.length;
+      $('bossName').textContent = `${d.mobNames[mobIdx]} (Patro ${bs.floor})`;
+      $('bossFace').textContent = d.mobs[mobIdx];
+      $('bossHpHearts').textContent = '👾';
+      $('bossHpMax').textContent = '';
+      $('roundNum').textContent = `Patro ${bs.floor}/${bs.totalFloors}`;
     }
 
-    $('playerHearts').textContent = '❤️'.repeat(bb.playerHp);
-    $('playerHeartsLost').textContent = '🖤'.repeat(3 - bb.playerHp);
-    const typeLabel = { simon: '🧠 Simon Says', color: '🎨 Color Clash', grid: '🧮 Matika' }[bb.boss.type] || '';
+    $('playerHearts').textContent = '❤️'.repeat(bs.playerHp);
+    $('playerHeartsLost').textContent = '🖤'.repeat(3 - bs.playerHp);
+    const typeLabel = { simon: '🧠 Simon Says', color: '🎨 Color Clash', grid: '🧮 Matika', judge: '⚖️ Soudce' }[bs.dungeon.type] || '';
     $('gameTypeBadge').textContent = typeLabel;
 
-    // Animace příchodu
+    // Animace
     const face = $('bossFace');
     face.classList.remove('enemy-enter', 'enemy-idle', 'boss-idle', 'enemy-defeat');
     void face.offsetWidth;
@@ -271,76 +291,157 @@
 
   // ===== ROUND RESULT =====
   function playerWinsRound() {
-    if (bossBattle.ended) return;
-    const bb = bossBattle;
-    if (bb.dungeonPhase === 'mobs') {
-      bb.mobsRemaining--;
+    if (battleState.ended) return;
+    const bs = battleState;
+
+    if (!bs.isBossFloor) {
+      // Mob = one shot, postoupit na další patro
       sfxEnemyDefeat();
       animateHit('enemy');
-      if (bb.mobsRemaining <= 0) {
-        // Přejít na bosse
-        bb.dungeonPhase = 'boss';
-        bb.firstRound = true;
-        updateBattleUI();
-        setTimeout(() => startRound(), 600);
-      } else {
-        updateBattleUI();
-        setTimeout(() => startRound(), 400);
-      }
+      advanceFloor();
       return;
     }
-    bb.boss.hp--;
+
+    // Boss = uber HP
+    bs.bossHp--;
     sfxSuccess();
     animateHit('enemy');
     updateBattleUI();
-    if (bossBattle.boss.hp <= 0) {
+    if (bs.bossHp <= 0) {
       endBattle(true);
     } else {
-      setTimeout(() => startRound(), 600);
+      setTimeout(() => startRound(), 500);
     }
   }
 
   function playerLosesRound() {
-    if (bossBattle.ended) return;
-    bossBattle.playerHp--;
+    if (battleState.ended) return;
+    battleState.playerHp--;
     sfxPlayerHit();
     animateHit('player');
     updateBattleUI();
-    if (bossBattle.playerHp <= 0) {
+    if (battleState.playerHp <= 0) {
       endBattle(false);
     } else {
-      setTimeout(() => startRound(), 600);
+      setTimeout(() => startRound(), 500);
     }
+  }
+
+  function advanceFloor() {
+    const bs = battleState;
+    const next = bs.floor + 1;
+
+    if (next > TOTAL_FLOORS) {
+      endBattle(true);
+      return;
+    }
+
+    // Uložit progress
+    const dId = bs.dungeonId;
+    if (next > state.dungeons[dId]) {
+      state.dungeons[dId] = next;
+    }
+    saveGame();
+
+    // Připravit další patro
+    const isBoss = isBossFloor(next);
+    const bossHp = isBoss ? getBossHp(next) : 1;
+    const level = floorToLevel(next);
+
+    bs.floor = next;
+    bs.level = level;
+    bs.isBossFloor = isBoss;
+    bs.bossHp = bossHp;
+    bs.maxBossHp = bossHp;
+    bs.round = 0;
+    bs.firstRound = true;
+    bs.phase = isBoss ? 'boss' : 'mob';
+
+    updateBattleUI();
+    setTimeout(() => startRound(), 400);
   }
 
   // ===== END BATTLE =====
   function endBattle(won) {
-    bossBattle.ended = true;
+    battleState.ended = true;
+    const bs = battleState;
+    const dId = bs.dungeonId;
+
     if (won) {
-      if (!state.completed.includes(bossBattle.bossId)) {
-        state.completed.push(bossBattle.bossId);
+      // Označit aktuální patro (nebo celý dungeon) jako hotový
+      if (bs.floor > state.dungeons[dId]) {
+        state.dungeons[dId] = bs.floor;
       }
       state.wins = (state.wins || 0) + 1;
+      saveGame();
+
+      const completed = state.dungeons[dId] >= TOTAL_FLOORS;
+      sfxBossDefeat();
       $('resultIcon').textContent = '🎉';
-      $('resultTitle').textContent = `${bossBattle.boss.name} poražen!`;
-      $('resultMsg').textContent = `${bossBattle.boss.dungeonName} dobyt!`;
-      $('resultBtn').innerHTML = `<button class="btn btn-primary" onclick="game.showScreen('bossSelect')">🗺️ Zpět na výběr</button>`;
+      $('resultTitle').textContent = completed ? `${bs.dungeon.name} DOBYT!` : `Patro ${bs.floor} dobyto!`;
+      $('resultMsg').textContent = completed ? `Všech ${TOTAL_FLOORS} pater dokončeno!` : `Postup: ${Math.min(bs.floor, TOTAL_FLOORS)}/${TOTAL_FLOORS}`;
+      $('resultBtn').innerHTML = `
+        <button class="btn btn-primary" onclick="game.continueDungeon()">🚀 Další patro</button>
+        <button class="btn btn-secondary" onclick="game.showScreen('dungeonSelect')">🗺️ Zpět na výběr</button>
+      `;
     } else {
       state.deaths = (state.deaths || 0) + 1;
+      saveGame();
       $('resultIcon').textContent = '💀';
       $('resultTitle').textContent = 'Padl jsi';
-      $('resultMsg').textContent = `${bossBattle.boss.name} tě porazil`;
+      $('resultMsg').textContent = `Patro ${bs.floor} – ${bs.dungeon.name}`;
       $('resultBtn').innerHTML = `
-        <button class="btn btn-primary" onclick="game.retry()">🔄 Zkusit znovu</button>
-        <button class="btn btn-secondary" onclick="game.showScreen('bossSelect')">🗺️ Jiný boss</button>
+        <button class="btn btn-primary" onclick="game.retryFloor()">🔄 Znovu toto patro</button>
+        <button class="btn btn-secondary" onclick="game.showScreen('dungeonSelect')">🗺️ Jiný dungeon</button>
       `;
     }
-    saveGame();
     showScreen('resultScreen');
   }
 
-  function retry() {
-    startBoss(bossBattle.bossId);
+  function continueDungeon() {
+    const dId = battleState.dungeonId;
+    // Pokud je aktuální floor už dokončený, jdi o patro výš
+    if (battleState.floor >= state.dungeons[dId]) {
+      battleState.floor = state.dungeons[dId] + 1;
+    }
+    if (battleState.floor > TOTAL_FLOORS) {
+      showScreen('dungeonSelect');
+      return;
+    }
+    // Restart tohoto patra
+    const bs = battleState;
+    const isBoss = isBossFloor(bs.floor);
+    const bossHp = isBoss ? getBossHp(bs.floor) : 1;
+    const level = floorToLevel(bs.floor);
+    bs.bossHp = bossHp;
+    bs.maxBossHp = bossHp;
+    bs.playerHp = 3;
+    bs.round = 0;
+    bs.ended = false;
+    bs.isBossFloor = isBoss;
+    bs.firstRound = true;
+    bs.phase = isBoss ? 'boss' : 'mob';
+    showScreen('battleScreen');
+    updateBattleUI();
+    startRound();
+  }
+
+  function retryFloor() {
+    const bs = battleState;
+    const isBoss = isBossFloor(bs.floor);
+    const bossHp = isBoss ? getBossHp(bs.floor) : 1;
+    const level = floorToLevel(bs.floor);
+    bs.bossHp = bossHp;
+    bs.maxBossHp = bossHp;
+    bs.playerHp = 3;
+    bs.round = 0;
+    bs.ended = false;
+    bs.isBossFloor = isBoss;
+    bs.firstRound = true;
+    bs.phase = isBoss ? 'boss' : 'mob';
+    showScreen('battleScreen');
+    updateBattleUI();
+    startRound();
   }
 
   // ===== ANIMACE =====
@@ -366,8 +467,8 @@
                        220.0*2, 246.94*2];
 
   function startSimon() {
-    const level = bossBattle.boss.level;
-    const gridSize = Math.min(2 + Math.floor(level / 3), 4); // 2×2, 3×3, 4×4
+    const level = battleState.level;
+    const gridSize = Math.min(2 + Math.floor(level / 3), 4);
     const numCells = gridSize * gridSize;
     const seqLen = Math.min(3 + Math.floor(level * 0.8), 10);
 
@@ -384,7 +485,6 @@
       minigameState.sequence.push(rand(0, numCells - 1));
     }
 
-    // Grid
     const grid = $('simonGrid');
     grid.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
     grid.innerHTML = symbols.map((sym, i) =>
@@ -449,7 +549,7 @@
   //  COLOR CLASH
   // ===================================================================
   function startColorClash() {
-    const level = bossBattle.boss.level;
+    const level = battleState.level;
     const fallDuration = Math.max(0.8, 2.8 - level * 0.25).toFixed(2);
     const colors = ['red', 'blue', 'green', 'yellow'];
     const colLabels = { red: '🔴', blue: '🔵', green: '🟢', yellow: '🟡' };
@@ -460,7 +560,6 @@
     arena.style.display = 'flex';
     arena.style.flexDirection = 'column';
 
-    // Horní: sloupce
     const lanesDiv = document.createElement('div');
     lanesDiv.style.cssText = 'display:flex;flex:1;';
     lanesDiv.innerHTML = colors.map(c =>
@@ -468,7 +567,6 @@
     ).join('');
     arena.appendChild(lanesDiv);
 
-    // Dolní: tlačítka
     const btnRow = document.createElement('div');
     btnRow.style.cssText = 'display:flex;height:50px;';
     btnRow.innerHTML = colors.map(c => {
@@ -478,7 +576,6 @@
     arena.appendChild(btnRow);
 
     minigameState = { active: true, colors, arena, projectile: null, currentColor: null, fallDuration };
-
     spawnColorProjectile();
   }
 
@@ -537,7 +634,7 @@
   //  MATH GRID
   // ===================================================================
   function startGridDefender() {
-    const level = bossBattle.boss.level;
+    const level = battleState.level;
     const numOptions = 3;
     const maxNum = 5 + level * 2;
     const target = rand(3, maxNum);
@@ -560,7 +657,6 @@
     }
     options.push({ value: result, expr, wins: true });
 
-    // Špatné odpovědi blízko správnému výsledku (±1, ±2)
     const closeValues = [];
     for (let d = 1; d <= 3; d++) {
       if (result - d >= 1) closeValues.push(result - d);
@@ -570,7 +666,6 @@
 
     for (let i = 1; i < numOptions; i++) {
       const fakeResult = closeValues.length > 0 ? closeValues.shift() : rand(1, maxNum + 5);
-      // Vytvoř podobně vypadající výraz
       let fakeExpr;
       for (let tries = 0; tries < 30; tries++) {
         const op = ops[rand(0, 2)];
@@ -585,7 +680,6 @@
           break;
         }
       }
-      // Pokud se nepodařilo najít výraz pro přesnou hodnotu, použij co nejbližší
       if (!fakeExpr) {
         for (let tries = 0; tries < 50; tries++) {
           const op = ops[rand(0, 2)];
@@ -704,7 +798,7 @@
   };
 
   function startJudge() {
-    const level = bossBattle.boss.level;
+    const level = battleState.level;
     let filtered;
     if (level <= 3) {
       filtered = JUDGE_STATEMENTS.easy;
@@ -760,24 +854,23 @@
   // ===================================================================
   function init() {
     state = loadSave();
-    state.completed = state.completed || [];
+    state.dungeons = state.dungeons || [0, 0, 0, 0];
     state.deaths = state.deaths || 0;
     state.wins = state.wins || 0;
 
-    // Navigace
     document.querySelectorAll('.nav-bar a').forEach(a => {
       a.addEventListener('click', (e) => {
         e.preventDefault();
-        if (a.dataset.screen === 'bossSelect') showBossSelect();
-        else if (a.dataset.screen === 'reset') { resetGame(); showBossSelect(); }
+        if (a.dataset.screen === 'dungeonSelect') showDungeonSelect();
+        else if (a.dataset.screen === 'reset') { resetGame(); }
       });
     });
 
-    showScreen('bossSelect');
+    showScreen('dungeonSelect');
   }
 
   window.game = {
-    showScreen, startBoss, retry,
+    showScreen, enterDungeon, continueDungeon, retryFloor,
     simonClick, colorInput, gridPick, judgeAnswer
   };
 

@@ -11,39 +11,39 @@
 
 <!-- ===== NAVIGATION ===== -->
 <nav class="nav-bar">
-  <a href="#" data-screen="bossSelect" class="active">🗺️ Bossové</a>
+  <a href="#" data-screen="dungeonSelect" class="active">🗺️ Dungeony</a>
   <a href="#" data-screen="reset">🔄 Reset</a>
 </nav>
 
-<!-- ===== BOSS SELECT ===== -->
-<div id="bossSelect" class="container">
+<!-- ===== DUNGEON SELECT ===== -->
+<div id="dungeonSelect" class="container">
   <div class="card">
-    <div class="card-title">👹 Vyber bosse</div>
+    <div class="card-title">⚔️ Vyber dungeon</div>
     <div class="card-subtitle" id="statsLine">🏆 0 výher · 💀 0 proher</div>
   </div>
-  <div id="bossList"></div>
+  <div id="dungeonList"></div>
 </div>
 
 <!-- ===== BATTLE ===== -->
 <div id="battleScreen" class="container">
   <div class="card">
-    <!-- Boss info -->
+    <!-- Enemy info -->
     <div class="flex-between">
-      <span class="text-green" id="bossName">Boss</span>
+      <span class="text-green" id="bossName">Dungeon</span>
       <span id="gameTypeBadge" class="boss-type-badge simon">🧠 Simon</span>
     </div>
     <div class="flex-between" style="margin-top:6px">
-      <span id="roundNum">Kolo 1</span>
+      <span id="roundNum">Patro 1/50</span>
     </div>
 
     <!-- HP -->
     <div class="flex-between" style="margin-top:8px">
       <span id="playerHearts">❤️❤️❤️</span><span id="playerHeartsLost"></span>
-      <span id="bossHpHearts">❤️❤️</span><span id="bossHpMax"></span>
+      <span id="bossHpHearts">❤️</span><span id="bossHpMax"></span>
     </div>
 
-    <!-- Boss face -->
-    <div class="enemy-face" id="bossFace">👹</div>
+    <!-- Enemy face -->
+    <div class="enemy-face" id="bossFace">👻</div>
     <div class="enemy-name" id="bossName2"></div>
 
     <!-- ===== SIMON SAYS ===== -->
