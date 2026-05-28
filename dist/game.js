@@ -600,6 +600,9 @@
   }
   function showAchievementPopup(a){const p=document.createElement('div');p.style.cssText='position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:300;background:#12122a;border:2px solid #f1c40f;border-radius:12px;padding:16px 24px;text-align:center;animation:enemyEnter 0.5s ease-out;max-width:360px;width:90%';p.innerHTML=`<div style="font-size:24px;margin-bottom:4px">🏅</div><div style="font-size:14px;font-weight:bold;color:#f1c40f">${a.name}</div><div style="font-size:11px;color:#8888aa;margin-top:2px">${a.desc}</div>`;document.body.appendChild(p);setTimeout(()=>{p.style.transition='opacity 0.5s';p.style.opacity='0';setTimeout(()=>p.remove(),500);},2500);}
   function showMedals(){
+    // Odstranit starou medalScreen, aby se nehromadily
+    const old = $('medalScreen');
+    if (old) old.remove();
     let h='<div class="card"><div class="card-title">🏅 Úspěchy</div></div>';
     ACHIEVEMENTS.forEach(a=>{const e=state.achievements&&state.achievements[a.id];h+=`<div class="card" style="${e?'border-color:#2ecc71':'opacity:0.5'}"><div class="flex-between"><div><div style="font-size:14px;font-weight:bold">${e?a.name:'🔒 '+a.name}</div><div style="font-size:11px;color:#8888aa">${a.desc}</div></div><div style="font-size:20px">${e?'✅':'⏳'}</div></div></div>`;});
     h+='<button class="btn btn-secondary" onclick="game.showScreen(\'map\')">🌍 Zpět</button>';
