@@ -51,9 +51,8 @@
   function cleanupTimers() {
     _activeIntervals.forEach(id => { try { clearInterval(id); } catch {} }); _activeIntervals = [];
     if (minigameState.timerInterval) { clearInterval(minigameState.timerInterval); minigameState.timerInterval = null; }
-    if (minigameState.aimTimeout) { clearTimeout(minigameState.aimTimeout); minigameState.aimTimeout = null; }
     if (minigameState.countdownInterval) { clearInterval(minigameState.countdownInterval); minigameState.countdownInterval = null; }
-    ['simonTimeout','echoTimeout','reverseTimeout'].forEach(k => { if (minigameState[k]) { clearTimeout(minigameState[k]); delete minigameState[k]; } });
+    ['simonTimeout'].forEach(k => { if (minigameState[k]) { clearTimeout(minigameState[k]); delete minigameState[k]; } });
     if (mapBattleState && mapBattleState._attackTimer) { clearTimeout(mapBattleState._attackTimer); mapBattleState._attackTimer = null; }
   }
 
@@ -507,7 +506,7 @@
     $('gameTypeBadge').textContent = ts.skill.name;
     $('floorNum').textContent = `Lv.${Math.min(10,(state.skills[ts.skillId]||0)+1)}`;
     $('playerHearts').textContent = '❤️'.repeat(ts.playerHp);
-    const faces = { simon:'👻', color:'🏹', grid:'🗿', aim:'🎯', echo:'🔊', order:'🧩', reverse:'🔄' };
+    const faces = { simon:'👻', color:'🏹', grid:'🗿' };
     $('enemyFace').textContent = faces[ts.skill.dungeon] || '👾';
   }
 
@@ -523,14 +522,12 @@
 
   function showMinigame(type) {
     cleanupTimers();
-    const areas = { simon:'simonArea', color:'colorClashArea', grid:'gridDefenderArea', aim:'aimArea', echo:'echoArea', order:'orderArea', reverse:'reverseArea' };
-    const fns = { simon:startSimon, color:startColorClash, grid:startGridDefender, aim:startAim, echo:startEcho, order:startOrder, reverse:startReverse };
-    const el = $(areas[type]);
-    if (el && fns[type]) { el.classList.remove('minigame-hide'); fns[type](); }
+    const areas = { simon:'simonArea', color:'colorClashArea', grid:'gridDefenderArea' };
+    const fns = { simon:startSimon, color:startColorClash, grid:startGridDefender };
   }
 
   function hideAllMinigames() {
-    ['simonArea','colorClashArea','gridDefenderArea','aimArea','echoArea','orderArea','reverseArea'].forEach(id => $(id).classList.add('minigame-hide'));
+    ['simonArea','colorClashArea','gridDefenderArea'].forEach(id => $(id).classList.add('minigame-hide'));
   }
 
   function endTraining(won) {
@@ -630,7 +627,7 @@
 
   window.game = {
     showScreen, enterLocation, enterTraining,
-    simonClick, colorInput, gridPick,echoClick, orderPick, reverseInput, reverseAnswer
+    simonClick, colorInput, gridPick
   };
   init();
 })();
