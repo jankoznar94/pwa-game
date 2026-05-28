@@ -128,12 +128,12 @@
     cleanupTimers();
     const progress = state.locationProgress[locId] || 0;
     const isBoss = progress >= loc.monsters;
-    const bossHp = isBoss ? loc.boss.hp : 3;
+    const bossHp = isBoss ? loc.boss.hp * 2 : 30;
     const playerMaxHp = state.hero.maxHp || 3;
 
     mapBattleState = {
       locId, loc, isBoss, progress,
-      bossHp, maxBossHp: isBoss ? (loc.boss.hp + Math.floor(loc.boss.hp * 0.5)) : 3, // 3 kol pro monsters
+      bossHp, maxBossHp: isBoss ? Math.round(loc.boss.hp * 2) : 30, // 30 kol pro monstra, ~20-50 pro bossy podle hp
       playerHp: playerMaxHp, maxPlayerHp: playerMaxHp,
       ended: false, turn: 0, isAttacking: false,
       stunned: 0, frozen: 0, dot: 0, shieldActive: null,
