@@ -10,127 +10,87 @@
 <body>
 
 <nav class="nav-bar">
-  <a href="#" data-screen="hero" class="active">👤 Hrdina</a>
-  <a href="#" data-screen="dungeons">🗺️ Trénink</a>
+  <a href="#" data-screen="map" class="active">🌍 Mapa</a>
+  <a href="#" data-screen="tower">🔮 Věž magie</a>
+  <a href="#" data-screen="hero">👤 Hrdina</a>
   <a href="#" data-screen="medals">🏅 Úspěchy</a>
   <a href="#" data-screen="reset">🔄 Reset</a>
 </nav>
 
-<!-- HERO -->
-<div id="heroScreen" class="container">
+<!-- ===== MAP ===== -->
+<div id="mapScreen" class="container">
+  <div class="map-header card">
+    <div class="flex-between">
+      <span class="card-title">🌍 Svět</span>
+      <span id="mapPlayerInfo" style="font-size:12px;color:#8888aa">❤️3 ⚔️2 Lv.1</span>
+    </div>
+    <div class="card-subtitle" id="mapProgress">Postup: 0/8 lokací</div>
+  </div>
+  <div class="map-scroll" id="mapScroll">
+    <!-- Dynamically generated -->
+  </div>
+</div>
+
+<!-- ===== MAP BATTLE (swipe fight) ===== -->
+<div id="mapBattleScreen" class="container hidden">
+  <div class="card">
+    <div class="flex-between">
+      <span class="text-green" id="mbEnemyName">Nestvůra</span>
+      <span id="mbLocation" class="badge simon" style="font-size:11px">Lokace 1</span>
+    </div>
+    <div class="flex-between" style="margin-top:4px">
+      <span id="mbPlayerHp">❤️❤️❤️</span>
+      <span id="mbEnemyHp">❤️❤️❤️</span>
+    </div>
+    <div class="boss-fight-arena" id="mbArena">
+      <div class="boss-fight-boss" id="mbFigure">👾</div>
+      <div class="boss-fight-player" id="mbPlayerFigure">⚔️</div>
+      <div class="boss-attack-arrow hidden" id="mbArrow">⬇️</div>
+    </div>
+    <div class="boss-hint" id="mbHint">⬆️⬇️⬅️➡️ uhni! ťukni pro útok!</div>
+    <div class="mb-spells" id="mbSpells"></div>
+  </div>
+</div>
+
+<!-- ===== TOWER (training) ===== -->
+<div id="towerScreen" class="container hidden">
+  <div class="card">
+    <div class="card-title">🔮 Věž magie</div>
+    <div class="card-subtitle">Trénuj minihry pro vylepšení kouzel</div>
+  </div>
+  <div id="towerList"></div>
+</div>
+
+<!-- ===== HERO ===== -->
+<div id="heroScreen" class="container hidden">
   <div class="card">
     <div class="flex-between">
       <span class="card-title" id="heroName">Dobrodruh</span>
       <span id="heroLevel" style="color:#f1c40f;font-weight:bold">Lv.1</span>
     </div>
-    <div class="card-subtitle">💀 0 proher · 🏆 0 výher</div>
+    <div class="card-subtitle">💀 <span id="heroDeaths">0</span> proher · 🏆 <span id="heroWins">0</span> výher</div>
     <div class="hero-stats-row">
-      <span>❤️ <span id="heroHp">3</span></span>
+      <span>❤️ <span id="heroHp">3</span>/<span id="heroMaxHp">3</span></span>
       <span>⚔️ <span id="heroDmg">1</span></span>
       <span>🛡️ <span id="heroDef">0</span></span>
       <span>💰 <span id="heroGold">0</span></span>
     </div>
   </div>
-
-    <div class="card">
-      <div class="card-title">🧙 Kouzla</div>
-      <div id="skillGrid" class="skill-grid"></div>
-      <div class="card-subtitle" style="margin-top:6px">📊 Celkový level: <span id="totalSkillLevel">0</span></div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">👹 Bossové</div>
-      <div id="bossList" style="display:flex;flex-direction:column;gap:4px"></div>
-    </div>
-
-    <div class="card">
+  <div class="card">
+    <div class="card-title">🧙 Kouzla</div>
+    <div id="skillGrid" class="skill-grid"></div>
+    <div class="card-subtitle" style="margin-top:6px">📊 Celkový level: <span id="totalSkillLevel">0</span></div>
+  </div>
+  <div class="card">
     <div class="card-title">🎒 Vybavení</div>
     <div id="equipSlots">
       <div class="equip-row"><span>🔫 Zbraň:</span><span id="equipWeapon">Pěsti</span></div>
       <div class="equip-row"><span>🦺 Brnění:</span><span id="equipArmor">Hadry</span></div>
-      <div class="equip-row"><span>📜 Inventory:</span><span id="equipInventory">prázdný</span></div>
     </div>
   </div>
 </div>
 
-<!-- DUNGEONS / TRAINING -->
-<div id="dungeonsScreen" class="container hidden">
-  <div class="card">
-    <div class="card-title">🗺️ Trénink kouzel</div>
-    <div class="card-subtitle" id="totalProgress">Progress: 0/80</div>
-  </div>
-  <div id="dungeonList"></div>
-</div>
-
-<!-- BATTLE (training minigame) -->
-<div id="battleScreen" class="container hidden">
-  <div class="card">
-    <div class="flex-between">
-      <span class="text-green" id="enemyName">Nestvůra</span>
-      <span id="gameTypeBadge" class="badge simon">🧠 Simon</span>
-    </div>
-    <div class="flex-between" style="margin-top:6px">
-      <span id="floorNum">Patro 1</span>
-    </div>
-    <div class="flex-between" style="margin-top:8px">
-      <span id="playerHearts">❤️❤️❤️</span><span id="playerHeartsLost"></span>
-    </div>
-    <div class="enemy-face" id="enemyFace">👻</div>
-
-    <!-- SIMON -->
-    <div id="simonArea" class="minigame-hide"><div class="card-subtitle text-center mt-10" id="simonPrompt">Zapamatuj si sekvenci!</div><div class="simon-grid" id="simonGrid"></div><div class="text-center"><span id="simonProgress" style="font-size:13px;color:#8888aa">0/3</span></div></div>
-    <!-- JUDGE -->
-    <div id="judgeArea" class="minigame-hide"><div class="card-subtitle text-center mt-10">Je výrok pravdivý?</div><div class="judge-statement" id="judgeStatement">2+2=4</div><div class="judge-buttons"><div class="judge-btn judge-true" onclick="game.judgeAnswer(true)">✅ Pravda</div><div class="judge-btn judge-false" onclick="game.judgeAnswer(false)">❌ Nepravda</div></div><div class="text-center"><span id="judgeTimer" style="font-size:13px;color:#ffd700">5s</span></div></div>
-    <!-- COLOR -->
-    <div id="colorClashArea" class="minigame-hide"><div class="card-subtitle text-center mt-10">Ťukni na barvu!</div><div class="color-clash-area" id="colorArena"></div></div>
-    <!-- GRID -->
-    <div id="gridDefenderArea" class="minigame-hide"><div class="card-subtitle text-center mt-10">Najdi příklad!</div><div class="grid-defender-area" id="gridArea"></div></div>
-    <!-- AIM -->
-    <div id="aimArea" class="minigame-hide"><div class="card-subtitle text-center mt-10" id="aimPrompt">🎯 Ťukni na cíl!</div><div class="aim-area" id="aimArena"></div><div class="aim-stats"><span class="aim-hits" id="aimHits">🎯0</span><span class="aim-misses" id="aimMisses">❌0</span></div></div>
-    <!-- ECHO -->
-    <div id="echoArea" class="minigame-hide"><div class="card-subtitle text-center mt-10" id="echoPrompt">👂 Poslouchej</div><div class="echo-grid" id="echoGrid"></div><div class="text-center"><span id="echoProgress" style="font-size:13px;color:#8888aa">0/0</span></div></div>
-    <!-- ORDER -->
-    <div id="orderArea" class="minigame-hide"><div class="card-subtitle text-center mt-10">Seřaď</div><div class="order-area" id="orderAreaInner"></div><div class="text-center"><span id="orderProgress" style="font-size:13px;color:#8888aa">0/0</span></div></div>
-    <!-- REVERSE -->
-    <div id="reverseArea" class="minigame-hide"><div class="card-subtitle text-center mt-10" id="reversePrompt">Zahraj melodii</div><div class="reverse-area" id="reverseAreaInner"><div class="reverse-buttons" id="reverseButtons"></div><div id="reverseBossPlay" class="reverse-boss-play">👹 Přehrává…</div><div class="reverse-answer" id="reverseAnswerBtns"><div class="judge-btn judge-true" onclick="game.reverseAnswer(true)">✅ Ano</div><div class="judge-btn judge-false" onclick="game.reverseAnswer(false)">❌ Ne</div></div></div></div>
-  </div>
-  <div id="countdownOverlay" class="countdown-overlay hidden"><div class="countdown-number" id="countdownNumber">3</div></div>
-</div>
-
-<!-- BOSS FIGHT -->
-<div id="bossFightScreen" class="container hidden">
-  <div class="card">
-    <div class="flex-between">
-      <span class="text-green" id="bossName">Boss</span>
-      <span id="bossLevelBadge" class="badge simon">Boss</span>
-    </div>
-    <div class="flex-between" style="margin-top:6px">
-      <span id="bossFightFloor">Patro 5</span>
-    </div>
-    <div class="flex-between" style="margin-top:4px">
-      <span id="bossFightPlayerHp">❤️❤️❤️</span>
-      <span id="bossFightHp">❤️❤️❤️❤️</span>
-    </div>
-    <div class="boss-fight-arena" id="bossArena">
-      <div class="boss-fight-boss" id="bossFigure">👹</div>
-      <div class="boss-fight-player" id="playerFigure">⚔️</div>
-      <div class="boss-attack-arrow hidden" id="bossArrow">⬇️</div>
-    </div>
-    <div class="boss-hint" id="bossHint">⬅️ ➡️ ⬆️ – uhýbej před útoky!</div>
-    <div class="boss-spells" id="bossSpellBar">
-      <div class="spell-btn" data-spell="fireball" onclick="game.castSpell('fireball')">🔥<span class="spell-cd" id="cd-fireball">-</span></div>
-      <div class="spell-btn" data-spell="lightning" onclick="game.castSpell('lightning')">⚡<span class="spell-cd" id="cd-lightning">-</span></div>
-      <div class="spell-btn" data-spell="shield" onclick="game.castSpell('shield')">🛡️<span class="spell-cd" id="cd-shield">-</span></div>
-      <div class="spell-btn" data-spell="heal" onclick="game.castSpell('heal')">💚<span class="spell-cd" id="cd-heal">-</span></div>
-      <div class="spell-btn" data-spell="freeze" onclick="game.castSpell('freeze')">❄️<span class="spell-cd" id="cd-freeze">-</span></div>
-      <div class="spell-btn" data-spell="clone" onclick="game.castSpell('clone')">🌀<span class="spell-cd" id="cd-clone">-</span></div>
-      <div class="spell-btn" data-spell="shadow" onclick="game.castSpell('shadow')">🌑<span class="spell-cd" id="cd-shadow">-</span></div>
-    </div>
-  </div>
-  <div class="boss-touch-hint">👆 ťukni na bosse pro útok</div>
-</div>
-
-<!-- RESULT -->
+<!-- ===== RESULT ===== -->
 <div id="resultScreen" class="hidden">
   <div class="result-screen container">
     <div class="result-icon" id="resultIcon">💀</div>
@@ -140,8 +100,28 @@
   </div>
 </div>
 
-<!-- MEDALS -->
-<div id="medalScreen" class="container hidden"></div>
+<!-- ===== TRAINING BATTLE (minigames) ===== -->
+<div id="battleScreen" class="container hidden">
+  <div class="card">
+    <div class="flex-between">
+      <span class="text-green" id="enemyName">Trénink</span>
+      <span id="gameTypeBadge" class="badge simon">Kouzlo</span>
+    </div>
+    <div class="flex-between" style="margin-top:6px"><span id="floorNum">Patro 1</span></div>
+    <div style="margin-top:4px"><span id="playerHearts"></span></div>
+    <div class="enemy-face" id="enemyFace">👻</div>
+    <!-- ALL MINIGAMES -->
+    <div id="simonArea" class="minigame-hide"><div class="card-subtitle text-center mt-10" id="simonPrompt">👀 Sekvence</div><div class="simon-grid" id="simonGrid"></div><div class="text-center"><span id="simonProgress" style="font-size:13px;color:#8888aa">0/3</span></div></div>
+    <div id="judgeArea" class="minigame-hide"><div class="card-subtitle text-center mt-10">⚖️ Pravda?</div><div class="judge-statement" id="judgeStatement">2+2=4</div><div class="judge-buttons"><div class="judge-btn judge-true" onclick="game.judgeAnswer(true)">✅</div><div class="judge-btn judge-false" onclick="game.judgeAnswer(false)">❌</div></div><div class="text-center"><span id="judgeTimer" style="font-size:13px;color:#ffd700">5s</span></div></div>
+    <div id="colorClashArea" class="minigame-hide"><div class="card-subtitle text-center mt-10">🎨 Barva!</div><div class="color-clash-area" id="colorArena"></div></div>
+    <div id="gridDefenderArea" class="minigame-hide"><div class="card-subtitle text-center mt-10">🧮 Příklad!</div><div class="grid-defender-area" id="gridArea"></div></div>
+    <div id="aimArea" class="minigame-hide"><div class="card-subtitle text-center mt-10" id="aimPrompt">🎯 Cíl!</div><div class="aim-area" id="aimArena"></div><div class="aim-stats"><span class="aim-hits" id="aimHits">0</span><span class="aim-misses" id="aimMisses">0</span></div></div>
+    <div id="echoArea" class="minigame-hide"><div class="card-subtitle text-center mt-10" id="echoPrompt">👂 Echo</div><div class="echo-grid" id="echoGrid"></div><div class="text-center"><span id="echoProgress" style="font-size:13px;color:#8888aa">0/0</span></div></div>
+    <div id="orderArea" class="minigame-hide"><div class="card-subtitle text-center mt-10">🧩 Řazení</div><div class="order-area" id="orderAreaInner"></div><div class="text-center"><span id="orderProgress" style="font-size:13px;color:#8888aa">0/0</span></div></div>
+    <div id="reverseArea" class="minigame-hide"><div class="card-subtitle text-center mt-10" id="reversePrompt">🎵 Reverse</div><div class="reverse-area" id="reverseAreaInner"><div class="reverse-buttons" id="reverseButtons"></div><div id="reverseBossPlay" style="display:none" class="reverse-boss-play">👹 Hraje…</div><div class="reverse-answer" id="reverseAnswerBtns" style="display:none"><div class="judge-btn judge-true" onclick="game.reverseAnswer(true)">✅</div><div class="judge-btn judge-false" onclick="game.reverseAnswer(false)">❌</div></div></div></div>
+  </div>
+  <div id="countdownOverlay" class="countdown-overlay hidden"><div class="countdown-number" id="countdownNumber">3</div></div>
+</div>
 
 <script src="game.js"></script>
 </body>
