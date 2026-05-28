@@ -113,7 +113,7 @@ body {
 .color-projectile { position:absolute; width:32px; height:32px; border-radius:50%; border:2px solid #fff; box-shadow:0 0 8px rgba(255,255,255,0.3); z-index:10; }
 
 /* Grid */
-.grid-defender-area { display:flex; flex-direction:column; gap:10px; align-items:center; margin:16px 0; }
+.grid-defender-area { display:flex; flex-direction:column; gap:10px; align-items:center; margin:8px 0; }
 .grid-info { display:flex; align-items:center; gap:12px; padding:8px 14px; background:#1a1a3a; border-radius:8px; border:1px solid #e94560; }
 .grid-time { font-size:18px; font-weight:bold; color:#ffd700; min-width:36px; text-align:center; }
 .grid-target { font-size:14px; }

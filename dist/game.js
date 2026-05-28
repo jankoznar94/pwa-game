@@ -133,7 +133,7 @@
 
     mapBattleState = {
       locId, loc, isBoss, progress,
-      bossHp, maxBossHp: isBoss ? (loc.boss.hp + Math.floor(loc.boss.hp * 0.5)) : 1, // +50% HP pro více kol
+      bossHp, maxBossHp: isBoss ? (loc.boss.hp + Math.floor(loc.boss.hp * 0.5)) : 3, // 3 kol pro monsters
       playerHp: playerMaxHp, maxPlayerHp: playerMaxHp,
       ended: false, turn: 0, isAttacking: false,
       stunned: 0, frozen: 0, dot: 0, shieldActive: null,
@@ -276,16 +276,18 @@
 
     if (dir === mapBattleState.currentAttack) {
       sfxHit();
+      // Monster: snížit HP po každém úhybu, až bossHp <= 0
       if (!mapBattleState.isBoss) {
-        // Monster defeated
-        endMapBattle(true);
+        mapBattleState.bossHp--;
+        if (mapBattleState.bossHp <= 0) { endMapBattle(true); return; }
+        $('mbHint').textContent = `✅ Úhyb! ${mapBattleState.bossHp} zbývá`;
+        setTimeout(() => mapBattleTurn(), 500);
       } else {
-        // Boss fáze: ubíráme HP — jakmile >50% zbyde, další turn
+        // Boss fáze
         mapBattleState.bossHp -= Math.max(1, state.hero.baseDmg - 1);
         if (mapBattleState.bossHp <= 0) { endMapBattle(true); return; }
-        // Boss pokračuje, dokud má >50% HP — potom více kol
         const phase = mapBattleState.bossHp / mapBattleState.maxBossHp;
-        const hint = phase > 0.5 ? `✅ Úhyb! Boss ${(mapBattleState.bossHp)} HP zbývá` : '➡️ Boss slabí!';
+        const hint = phase > 0.5 ? `✅ Úhyb! Boss ${mapBattleState.bossHp} HP zbývá` : '➡️ Boss slabí!';
         $('mbHint').textContent = hint;
         setTimeout(() => mapBattleTurn(), 500);
       }
@@ -297,7 +299,7 @@
   function onMapAttack() {
     if (mapBattleState.ended) return;
     if (mapBattleState.isAttacking) { $('mbHint').textContent = '⚠️ Uhni nejdřív!'; return; }
-    if (!mapBattleState.isBoss) { endMapBattle(true); return; }
+    // monster: pokračovat, něhodit hned končit
 
     const baseDmg = state.hero.baseDmg || 2;
     const critChance = (state.skills.crit||0) * 5 + 10;
