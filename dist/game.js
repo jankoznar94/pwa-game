@@ -56,21 +56,38 @@
   function isBossFloor(floor) { return floor % BOSS_INTERVAL === 0; }
   function getBossHp(floor) { return clamp(Math.floor(floor / 10) + 2, 3, 7); }
 
+  // ===== MEDALS & ACHIEVEMENTS =====
+  const BOSS_MEDAL_FLOORS = [10, 20, 30, 40, 50];
+  const ACHIEVEMENTS = [
+    { id: 'first_win', name: '🎯 První výhra', desc: 'Vyhraj první patro', check: s => s.wins >= 1 },
+    { id: 'first_boss', name: '🏅 První boss', desc: 'Poraz prvního bosse', check: s => s.bossMedals.some(d => d.some(m => m)) },
+    { id: 'ten_wins', name: '🏆 10 výher', desc: 'Vyhraj 10 pater', check: s => s.wins >= 10 },
+    { id: 'fifty_wins', name: '💫 50 výher', desc: 'Vyhraj 50 pater', check: s => s.wins >= 50 },
+    { id: 'hundred_wins', name: '👑 100 výher', desc: 'Vyhraj 100 pater', check: s => s.wins >= 100 },
+    { id: 'ten_deaths', name: '💀 10 proher', desc: 'Zemři 10×', check: s => s.deaths >= 10 },
+    { id: 'first_dungeon_done', name: '🗺️ První dungeon', desc: 'Dokonči celý jeden dungeon', check: s => s.dungeons.some(d => d >= 50) },
+    { id: 'all_dungeons', name: '🌟 Všechny dungeony', desc: 'Dokonči všech 8 dungeonů', check: s => s.dungeons.every(d => d >= 50) },
+    { id: 'all_bosses', name: '⚜️ 40 bossů', desc: 'Poraz všech 40 bossů', check: s => s.bossMedals.every(d => d.every(m => m)) },
+    { id: 'five_bosses', name: '🥉 5 bossů', desc: 'Poraz 5 bossů', check: s => { let c = 0; s.bossMedals.forEach(d => d.forEach(m => { if (m) c++; })); return c >= 5; } },
+    { id: 'fifteen_bosses', name: '🥈 15 bossů', desc: 'Poraz 15 bossů', check: s => { let c = 0; s.bossMedals.forEach(d => d.forEach(m => { if (m) c++; })); return c >= 15; } },
+  ];
+  function bossFloorIndex(floor) { return BOSS_MEDAL_FLOORS.indexOf(floor); }
+
   // ===== STATE =====
   let state = {};
   let battleState = {};
   let minigameState = {};
 
-  const SAVE_KEY = 'dungeonRecallV3';
+  const SAVE_KEY = 'dungeonRecallV4';
   function loadSave() {
     try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); if (s && s.dungeons) return s; } catch {}
-    return { dungeons: [0,0,0,0,0,0,0,0], deaths: 0, wins: 0 };
+    return { dungeons: [0,0,0,0,0,0,0,0], deaths: 0, wins: 0, bossMedals: [[],[],[],[],[],[],[],[]].map(() => [false,false,false,false,false]), achievements: {} };
   }
   function saveGame() {
-    localStorage.setItem(SAVE_KEY, JSON.stringify({ dungeons: state.dungeons, deaths: state.deaths, wins: state.wins }));
+    localStorage.setItem(SAVE_KEY, JSON.stringify({ dungeons: state.dungeons, deaths: state.deaths, wins: state.wins, bossMedals: state.bossMedals, achievements: state.achievements }));
   }
   function resetGame() {
-    state = { dungeons: [0,0,0,0,0,0,0,0], deaths: 0, wins: 0 };
+    state = { dungeons: [0,0,0,0,0,0,0,0], deaths: 0, wins: 0, bossMedals: [[],[],[],[],[],[],[],[]].map(() => [false,false,false,false,false]), achievements: {} };
     saveGame();
     showDungeonSelect();
   }
@@ -78,6 +95,15 @@
   // ===== SCREENS =====
   const SCREEN_NAMES = ['dungeonSelect', 'battleScreen', 'resultScreen'];
   function showScreen(name) {
+    if (name === 'medalScreen') {
+      // Medal screen is dynamic, just hide others
+      SCREEN_NAMES.forEach(id => { const el = $(id); if (el) { el.classList.add('hidden'); if (id === 'battleScreen') el.classList.remove('active'); } });
+      return;
+    }
+    // Remove dynamic medal screen if exists
+    const oldMedal = $('medalScreen');
+    if (oldMedal) oldMedal.remove();
+
     SCREEN_NAMES.forEach(id => {
       const el = $(id);
       if (id === name) { el.classList.remove('hidden'); if (id === 'battleScreen') el.classList.add('active'); }
@@ -238,7 +264,19 @@
     if (won) {
       if (bs.floor > state.dungeons[dId]) state.dungeons[dId] = bs.floor;
       state.wins = (state.wins || 0) + 1;
+
+      // Uložit medaili za bosse
+      if (bs.isBossFloor) {
+        const bfIdx = bossFloorIndex(bs.floor);
+        if (bfIdx >= 0) {
+          if (!state.bossMedals) state.bossMedals = [[],[],[],[],[],[],[],[]].map(() => [false,false,false,false,false]);
+          if (!state.bossMedals[dId]) state.bossMedals[dId] = [false,false,false,false,false];
+          state.bossMedals[dId][bfIdx] = true;
+        }
+      }
+
       saveGame();
+      checkAchievements();
       const completed = state.dungeons[dId] >= TOTAL_FLOORS;
       sfxBossDefeat();
       $('resultIcon').textContent = '🎉';
@@ -254,6 +292,77 @@
       $('resultBtn').innerHTML = `<button class="btn btn-primary" onclick="game.retryFloor()">🔄 Znovu toto patro</button><button class="btn btn-secondary" onclick="game.showScreen('dungeonSelect')">🗺️ Jiný dungeon</button>`;
     }
     showScreen('resultScreen');
+  }
+
+  // ===== ACHIEVEMENTS & MEDALS =====
+  function checkAchievements() {
+    if (!state.achievements) state.achievements = {};
+    ACHIEVEMENTS.forEach(a => {
+      if (!state.achievements[a.id] && a.check(state)) {
+        state.achievements[a.id] = true;
+        saveGame();
+        // Zobrazit notifikaci
+        showAchievementPopup(a);
+      }
+    });
+  }
+
+  function showAchievementPopup(a) {
+    const popup = document.createElement('div');
+    popup.style.cssText = 'position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:300;background:#12122a;border:2px solid #f1c40f;border-radius:12px;padding:16px 24px;text-align:center;animation:enemyEnter 0.5s ease-out;max-width:360px;width:90%';
+    popup.innerHTML = `
+      <div style="font-size:32px;margin-bottom:6px">🏅</div>
+      <div style="font-size:16px;font-weight:bold;color:#f1c40f">Achievement odemčen!</div>
+      <div style="font-size:14px;margin-top:4px">${a.name}</div>
+      <div style="font-size:12px;color:#8888aa;margin-top:2px">${a.desc}</div>
+    `;
+    document.body.appendChild(popup);
+    setTimeout(() => { popup.style.transition = 'opacity 0.5s'; popup.style.opacity = '0'; setTimeout(() => popup.remove(), 500); }, 2500);
+  }
+
+  function showMedals() {
+    const medalEmojis = ['🥇', '🥈', '🥉', '🏅', '⭐'];
+    const floorLabels = ['10', '20', '30', '40', '50'];
+    let html = '<div class="card"><div class="card-title">🏅 Medaile za bosse</div><div class="card-subtitle">Každý dungeon má 5 bossů (patra 10,20,30,40,50)</div></div>';
+
+    DUNGEONS.forEach((d, di) => {
+      const medals = (state.bossMedals && state.bossMedals[di]) || [false,false,false,false,false];
+      html += `<div class="card">
+        <div class="card-title" style="font-size:14px">${d.name}</div>
+        <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+          ${floorLabels.map((fl, fi) => {
+            const earned = medals[fi];
+            return `<div style="width:52px;height:52px;border-radius:8px;background:${earned ? '#1a3a1a' : '#1a1a2a'};border:2px solid ${earned ? '#2ecc71' : '#2a2a4a'};display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:${earned ? '20px' : '12px'};color:${earned ? '#2ecc71' : '#555'}">
+              ${earned ? medalEmojis[fi] : '🔒'}
+              <span style="font-size:9px;margin-top:2px">${fl}</span>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>`;
+    });
+
+    html += '<div class="card"><div class="card-title">🏆 Achievementy</div></div>';
+    ACHIEVEMENTS.forEach(a => {
+      const earned = state.achievements && state.achievements[a.id];
+      html += `<div class="card" style="${earned ? 'border-color:#2ecc71' : 'opacity:0.5'}">
+        <div class="flex-between">
+          <div>
+            <div style="font-size:14px;font-weight:bold">${earned ? a.name : a.name.replace(/^./, '🔒')}</div>
+            <div style="font-size:11px;color:#8888aa">${a.desc}</div>
+          </div>
+          <div style="font-size:20px">${earned ? '✅' : '⏳'}</div>
+        </div>
+      </div>`;
+    });
+
+    html += '<button class="btn btn-secondary" onclick="game.showScreen(\'dungeonSelect\')">🗺️ Zpět</button>';
+
+    const container = document.createElement('div');
+    container.className = 'container';
+    container.id = 'medalScreen';
+    container.innerHTML = html;
+    document.body.appendChild(container);
+    showScreen('medalScreen');
   }
 
   function continueDungeon() {
@@ -828,11 +937,14 @@
     while (state.dungeons.length < 8) state.dungeons.push(0);
     state.deaths = state.deaths || 0;
     state.wins = state.wins || 0;
+    if (!state.bossMedals) state.bossMedals = [[],[],[],[],[],[],[],[]].map(() => [false,false,false,false,false]);
+    if (!state.achievements) state.achievements = {};
 
     document.querySelectorAll('.nav-bar a').forEach(a => {
       a.addEventListener('click', (e) => {
         e.preventDefault();
         if (a.dataset.screen === 'dungeonSelect') showDungeonSelect();
+        else if (a.dataset.screen === 'medals') showMedals();
         else if (a.dataset.screen === 'reset') resetGame();
       });
     });
@@ -840,7 +952,7 @@
   }
 
   window.game = {
-    showScreen, enterDungeon, continueDungeon, retryFloor,
+    showScreen, enterDungeon, continueDungeon, retryFloor, showMedals,
     simonClick, colorInput, gridPick, judgeAnswer,
     echoClick, orderPick, reverseInput, reverseAnswer
   };
