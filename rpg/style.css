@@ -61,7 +61,11 @@ body {
 
 /* === Battle === */
 #battleScreen { display: none; }
-#battleScreen.active { display: block; }
+#battleScreen.active {
+  display: block;
+  height: 100vh;
+  overflow: hidden;
+}
 
 @keyframes screenShake {
   0%, 100% { transform: translate(0, 0); }
@@ -91,8 +95,9 @@ body {
 
 /* === Simon === */
 .simon-grid {
+  position: sticky; top: 0; z-index: 15;
   display: grid; gap: 8px;
-  max-width: 260px; margin: 20px auto;
+  max-width: 260px; margin: 0 auto;
 }
 .simon-cell {
   aspect-ratio: 1; border-radius: 10px; cursor: pointer;
@@ -103,9 +108,10 @@ body {
 
 /* === Color Clash === */
 .color-clash-area {
-  position: relative; width: 100%; height: 260px;
+  position: sticky; top: 0; z-index: 20;
+  width: 100%; height: 260px;
   background: #0a0a1a; border: 1px solid #2a2a4a; border-radius: 10px;
-  overflow: hidden; margin: 10px 0; display: flex; flex-direction: column;
+  overflow: hidden; margin: 0; display: flex; flex-direction: column;
 }
 .color-clash-area .color-lane {
   display: flex; align-items: flex-start; justify-content: center;
@@ -121,7 +127,8 @@ body {
 
 /* === Grid Defender === */
 .grid-defender-area {
-  display: flex; flex-direction: column; gap: 12px; align-items: center; margin: 20px 0;
+  position: sticky; top: 0; z-index: 15;
+  display: flex; flex-direction: column; gap: 12px; align-items: center; margin: 0;
 }
 .grid-info {
   display: flex; align-items: center; gap: 16px; padding: 10px 16px;

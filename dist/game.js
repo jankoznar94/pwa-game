@@ -134,7 +134,7 @@
 
     mapBattleState = {
       locId, loc, isBoss, progress,
-      bossHp, maxBossHp: bossHp,
+      bossHp, maxBossHp: isBoss ? (loc.boss.hp + Math.floor(loc.boss.hp * 0.5)) : 1, // +50% HP pro více kol
       playerHp: playerMaxHp, maxPlayerHp: playerMaxHp,
       ended: false, turn: 0, isAttacking: false,
       stunned: 0, frozen: 0, dot: 0, shieldActive: null,
@@ -230,7 +230,9 @@
     if (mb.frozen > 0) mb.frozen--;
 
     const attackDir = DIRECTIONS[rand(0,3)];
-    const speed = Math.max(350, 700 - mb.turn * 15);
+    // Zpomalím útoky pro nižší levely — base 600ms, snížení podle turn, frozen * 1.5
+    // Bossy: minime 800ms, zpomalují se pomaleji než monsters (turn*10 místo *15)
+    const speed = Math.max(500, 800 - mb.turn * 10);
     const windowTime = mb.frozen > 0 ? speed * 1.5 : speed;
 
     const arrow = $('mbArrow');
@@ -240,6 +242,14 @@
     mb.currentAttack = attackDir;
     const playerEl = $('mbPlayerFigure');
     if (playerEl) playerEl.className = 'boss-fight-player';
+
+    // Animace časového proužku (kolečko, které ubývá s časem)
+    const ring = $('mbTimerRing');
+    if (ring) {
+      ring.style.animation = 'none';
+      void ring.offsetWidth; // trigger reflow
+      ring.style.animation = `timerRingDecay ${windowTime}ms linear forwards`;
+    }
 
     mb._attackTimer = setTimeout(() => {
       if (mapBattleState.ended) return;
@@ -251,6 +261,10 @@
     if (mapBattleState.ended || !mapBattleState.isAttacking) return;
     clearTimeout(mapBattleState._attackTimer);
     mapBattleState.isAttacking = false;
+
+    // Reset animace časového proužku
+    const ring = $('mbTimerRing');
+    if (ring) { ring.style.animation = 'none'; }
 
     const arrow = $('mbArrow');
     if (arrow) arrow.className = 'boss-attack-arrow hidden';
@@ -267,10 +281,14 @@
         // Monster defeated
         endMapBattle(true);
       } else {
+        // Boss fáze: ubíráme HP — jakmile >50% zbyde, další turn
         mapBattleState.bossHp -= Math.max(1, state.hero.baseDmg - 1);
         if (mapBattleState.bossHp <= 0) { endMapBattle(true); return; }
-        $('mbHint').textContent = '✅ Úhyb! Protizásah!';
-        setTimeout(() => mapBattleTurn(), 350);
+        // Boss pokračuje, dokud má >50% HP — potom více kol
+        const phase = mapBattleState.bossHp / mapBattleState.maxBossHp;
+        const hint = phase > 0.5 ? `✅ Úhyb! Boss ${(mapBattleState.bossHp)} HP zbývá` : '➡️ Boss slabí!';
+        $('mbHint').textContent = hint;
+        setTimeout(() => mapBattleTurn(), 500);
       }
     } else {
       onMapHit();
@@ -291,8 +309,14 @@
     mapBattleState.bossHp -= dmg;
     sfxHit();
     if (mapBattleState.bossHp <= 0) { endMapBattle(true); return; }
+    
+    // Boss pokračuje po útoku hráče, ale s delším cooldownem (vícero kol)
+    const phase = mapBattleState.bossHp / mapBattleState.maxBossHp;
+    if (phase > 0.5) { $('mbHint').textContent += ` — Boss ${mapBattleState.bossHp} HP zbývá`; }
+    else { $('mbHint').textContent += ' — Boss slabí!'; }
+    
     updateMapBattleUI();
-    setTimeout(() => mapBattleTurn(), 350);
+    setTimeout(() => mapBattleTurn(), 700); // delší cooldown
   }
 
   function onMapHit() {
@@ -307,10 +331,18 @@
     }
     mb.playerHp -= amount;
     sfxPlayerHit();
+
+    // Reset animace časového proužku
+    const ring = $('mbTimerRing');
+    if (ring) { ring.style.animation = 'none'; }
+
     $('mbHint').textContent = `💔 Zásah! -${amount}`;
     updateMapBattleUI();
     if (mb.playerHp <= 0) { endMapBattle(false); }
-    else { setTimeout(() => mapBattleTurn(), 500); }
+    else { 
+      // Bossy/příšery: delší timeout po zásahu hráče (500ms -> 700ms)
+      setTimeout(() => mapBattleTurn(), mb.isBoss ? 700 : 600);
+    }
   }
 
   function castMapSpell(spellId) {
