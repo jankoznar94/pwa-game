@@ -33,7 +33,7 @@
   // ===== LOCATIONS (MAP) =====
   const DIRECTIONS = ['⬆️','⬇️','⬅️','➡️'];
   const LOCATIONS = [
-    { id:0, name:'🌲 Stínový les', icon:'🌲', monsters:5, boss:{name:'Stínový pán',face:'👹',hp:10}, skill:'fireball', minSkill:1, reward:{gold:5,weapon:'dagger'} },
+    { id:0, name:'🌲 Stínový les', icon:'🌲', monsters:5, boss:{name:'Stínový pán',face:'👹',hp:10}, skill:'fireball', minSkill:0, reward:{gold:5,weapon:'dagger'} },
     { id:1, name:'⚖️ Soudní síň', icon:'⚖️', monsters:6, boss:{name:'Soudce pekel',face:'⚖️',hp:12}, skill:'lightning', minSkill:2, reward:{gold:8,armor:'leather'} },
     { id:2, name:'🏜️ Pouštní brána', icon:'🏜️', monsters:7, boss:{name:'Faraonova kletba',face:'🐍',hp:14}, skill:'shield', minSkill:3, reward:{gold:12} },
     { id:3, name:'⏳ Časová zřícenina', icon:'⌛', monsters:8, boss:{name:'Architekt času',face:'⌛',hp:16}, skill:'heal', minSkill:4, reward:{gold:15,weapon:'sword'} },
