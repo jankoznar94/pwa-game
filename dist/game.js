@@ -602,7 +602,7 @@
   function showMedals(){
     let h='<div class="card"><div class="card-title">🏅 Úspěchy</div></div>';
     ACHIEVEMENTS.forEach(a=>{const e=state.achievements&&state.achievements[a.id];h+=`<div class="card" style="${e?'border-color:#2ecc71':'opacity:0.5'}"><div class="flex-between"><div><div style="font-size:14px;font-weight:bold">${e?a.name:'🔒 '+a.name}</div><div style="font-size:11px;color:#8888aa">${a.desc}</div></div><div style="font-size:20px">${e?'✅':'⏳'}</div></div></div>`;});
-    h+='<button class="btn btn-secondary" onclick="game.showScreen(\\'map\\')">🌍 Zpět</button>';
+    h+='<button class="btn btn-secondary" onclick="game.showScreen(\'map\')">🌍 Zpět</button>';
     const c=document.createElement('div');c.className='container';c.id='medalScreen';c.innerHTML=h;document.body.appendChild(c);showScreen('medals');
   }
 
