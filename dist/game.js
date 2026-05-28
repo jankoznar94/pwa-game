@@ -429,7 +429,7 @@
         }
       }
       saveGame();
-      checkAchievements();
+      // achievementy odstraněny - hráč nezískává achievementy po první příšerě
     }
     showScreen('result');
   }
@@ -555,7 +555,9 @@
       state.deaths = (state.deaths||0) + 1;
       $('resultBtn').innerHTML=`<button class="btn btn-primary" onclick="game.enterTraining('${trainingState.skillId}')">🔄 Znovu</button><button class="btn btn-secondary" onclick="game.showScreen('tower')">🔮 Věž</button>`;
     }
-    saveGame(); checkAchievements(); showScreen('result');
+    saveGame(); 
+    // achievementy odstraněny - hráč nezískává achievementy po tréninku
+    showScreen('result');
   }
 
   function trainingWin() { trainingState.playerHp=1; sfxSuccess(); endTraining(true); }
