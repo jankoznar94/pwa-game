@@ -19,7 +19,6 @@
   // ===== SPELLS =====
   const SKILLS = [
     { id:'fireball', name:'Fireball', icon:'🔥', dungeon:'simon', dungeonName:'🌲 Les stínů', maxLv:10, desc:t=>t===0?'Zamčeno':`${t*2+3} dmg + ${t} DoT`, baseCd:6, cdR:0.3 },
-    { id:'lightning', name:'Blesk', icon:'⚡', dungeon:'judge', dungeonName:'⚖️ Pekelný tribunál', maxLv:10, desc:t=>t===0?'Zamčeno':`${t*3+2} dmg + stun`, baseCd:8, cdR:0.4 },
     { id:'shield', name:'Štít', icon:'🛡️', dungeon:'color', dungeonName:'🏜️ Pouštní nekropole', maxLv:10, desc:t=>t===0?'Zamčeno':`${t*10+10}% blok`, baseCd:9, cdR:0.3 },
     { id:'heal', name:'Léčení', icon:'💚', dungeon:'grid', dungeonName:'⏳ Zřícenina času', maxLv:10, desc:t=>t===0?'Zamčeno':`+${t+2} HP`, baseCd:12, cdR:0.5 },
     { id:'crit', name:'Kritik', icon:'🗡️', dungeon:'aim', dungeonName:'🎯 Temná aréna', maxLv:10, desc:t=>t===0?'Zamčeno':`${t*5+10}% crit`, baseCd:0, cdR:0 },
@@ -34,13 +33,12 @@
   const DIRECTIONS = ['⬆️','⬇️','⬅️','➡️'];
   const LOCATIONS = [
     { id:0, name:'🌲 Stínový les', icon:'🌲', monsters:5, boss:{name:'Stínový pán',face:'👹',hp:10}, skill:'fireball', minSkill:0, reward:{gold:5,weapon:'dagger'} },
-    { id:1, name:'⚖️ Soudní síň', icon:'⚖️', monsters:6, boss:{name:'Soudce pekel',face:'⚖️',hp:12}, skill:'lightning', minSkill:2, reward:{gold:8,armor:'leather'} },
-    { id:2, name:'🏜️ Pouštní brána', icon:'🏜️', monsters:7, boss:{name:'Faraonova kletba',face:'🐍',hp:14}, skill:'shield', minSkill:3, reward:{gold:12} },
-    { id:3, name:'⏳ Časová zřícenina', icon:'⌛', monsters:8, boss:{name:'Architekt času',face:'⌛',hp:16}, skill:'heal', minSkill:4, reward:{gold:15,weapon:'sword'} },
-    { id:4, name:'🎯 Temná aréna', icon:'🎯', monsters:9, boss:{name:'Mistr terčů',face:'🎯',hp:18}, skill:'crit', minSkill:5, reward:{gold:20} },
-    { id:5, name:'🔊 Jeskyně ozvěn', icon:'🔊', monsters:10, boss:{name:'Šepotající hlas',face:'🔊',hp:20}, skill:'clone', minSkill:6, reward:{gold:25,armor:'chainmail'} },
-    { id:6, name:'🧩 Labyrint zákonů', icon:'🧩', monsters:11, boss:{name:'Architekt zákonů',face:'🧩',hp:22}, skill:'freeze', minSkill:7, reward:{gold:30} },
-    { id:7, name:'🔄 Zrcadlový sál', icon:'🔄', monsters:12, boss:{name:'Zrcadlový král',face:'🔄',hp:25}, skill:'shadow', minSkill:8, reward:{gold:40,weapon:'flameSword',armor:'plate'} },
+    { id:1, name:'🏜️ Pouštní brána', icon:'🏜️', monsters:7, boss:{name:'Faraonova kletba',face:'🐍',hp:14}, skill:'shield', minSkill:2, reward:{gold:12} },
+    { id:2, name:'⏳ Časová zřícenina', icon:'⌛', monsters:8, boss:{name:'Architekt času',face:'⌛',hp:16}, skill:'heal', minSkill:3, reward:{gold:15,weapon:'sword'} },
+    { id:3, name:'🎯 Temná aréna', icon:'🎯', monsters:9, boss:{name:'Mistr terčů',face:'🎯',hp:18}, skill:'crit', minSkill:4, reward:{gold:20} },
+    { id:4, name:'🔊 Jeskyně ozvěn', icon:'🔊', monsters:10, boss:{name:'Šepotající hlas',face:'🔊',hp:20}, skill:'clone', minSkill:5, reward:{gold:25,armor:'chainmail'} },
+    { id:5, name:'🧩 Labyrint zákonů', icon:'🧩', monsters:11, boss:{name:'Architekt zákonů',face:'🧩',hp:22}, skill:'freeze', minSkill:6, reward:{gold:30} },
+    { id:6, name:'🔄 Zrcadlový sál', icon:'🔄', monsters:12, boss:{name:'Zrcadlový král',face:'🔄',hp:25}, skill:'shadow', minSkill:7, reward:{gold:40,weapon:'flameSword',armor:'plate'} },
   ];
 
   // ===== STATE =====
@@ -62,7 +60,7 @@
   const SAVE_KEY = 'dungeonRecallV6';
   function defaultState() {
     const s = { skills:{}, skillXp:{}, hero:{level:1,xp:0,gold:0,hp:3,maxHp:3,baseDmg:2,weapon:'fists',armor:'rags'}, deaths:0, wins:0,
-      locationProgress:[0,0,0,0,0,0,0,0], bossesDefeated:[false,false,false,false,false,false,false,false], achievements:{} };
+      locationProgress:[0,0,0,0,0,0,0], bossesDefeated:[false,false,false,false,false,false,false], achievements:{} };
     SKILLS.forEach(sk => { s.skills[sk.id]=0; s.skillXp[sk.id]=0; });
     return s;
   }
@@ -328,7 +326,6 @@
     mb.spellCooldowns[spellId] = cd;
 
     if (spellId === 'fireball') { const dmg = lv*2+3; mb.bossHp -= dmg; mb.dot += lv; $('mbHint').textContent = `🔥 Fireball! ${dmg}+${lv}DoT`; }
-    else if (spellId === 'lightning') { const dmg = lv*3+2; mb.bossHp -= dmg; mb.stunned = 1; $('mbHint').textContent = `⚡ Blesk! ${dmg}+stun!`; }
     else if (spellId === 'shield') { mb.shieldActive = lv*10+10; $('mbHint').textContent = `🛡️ Štít ${lv*10+10}%`; }
     else if (spellId === 'heal') { mb.playerHp = Math.min(mb.maxPlayerHp, mb.playerHp + lv + 2); $('mbHint').textContent = `💚 +${lv+2} HP`; }
     else if (spellId === 'freeze') { mb.frozen += lv+1; $('mbHint').textContent = `❄️ Mráz ${lv+1}k`; }
@@ -478,7 +475,7 @@
     $('gameTypeBadge').textContent = ts.skill.name;
     $('floorNum').textContent = `Lv.${Math.min(10,(state.skills[ts.skillId]||0)+1)}`;
     $('playerHearts').textContent = '❤️'.repeat(ts.playerHp);
-    const faces = { simon:'👻', judge:'📜', color:'🏹', grid:'🗿', aim:'🎯', echo:'🔊', order:'🧩', reverse:'🔄' };
+    const faces = { simon:'👻', color:'🏹', grid:'🗿', aim:'🎯', echo:'🔊', order:'🧩', reverse:'🔄' };
     $('enemyFace').textContent = faces[ts.skill.dungeon] || '👾';
   }
 
@@ -494,14 +491,14 @@
 
   function showMinigame(type) {
     cleanupTimers();
-    const areas = { simon:'simonArea', color:'colorClashArea', grid:'gridDefenderArea', judge:'judgeArea', aim:'aimArea', echo:'echoArea', order:'orderArea', reverse:'reverseArea' };
-    const fns = { simon:startSimon, color:startColorClash, grid:startGridDefender, judge:startJudge, aim:startAim, echo:startEcho, order:startOrder, reverse:startReverse };
+    const areas = { simon:'simonArea', color:'colorClashArea', grid:'gridDefenderArea', aim:'aimArea', echo:'echoArea', order:'orderArea', reverse:'reverseArea' };
+    const fns = { simon:startSimon, color:startColorClash, grid:startGridDefender, aim:startAim, echo:startEcho, order:startOrder, reverse:startReverse };
     const el = $(areas[type]);
     if (el && fns[type]) { el.classList.remove('minigame-hide'); fns[type](); }
   }
 
   function hideAllMinigames() {
-    ['simonArea','colorClashArea','gridDefenderArea','judgeArea','aimArea','echoArea','orderArea','reverseArea'].forEach(id => $(id).classList.add('minigame-hide'));
+    ['simonArea','colorClashArea','gridDefenderArea','aimArea','echoArea','orderArea','reverseArea'].forEach(id => $(id).classList.add('minigame-hide'));
   }
 
   function endTraining(won) {
@@ -562,41 +559,6 @@
   function colorInput(c){if(!minigameState.active)return;if(c===minigameState.currentColor){minigameState.active=false;if(minigameState.projectile){const e=minigameState.projectile;e.style.transition='transform 0.2s, opacity 0.2s';e.style.transform='scale(2.5)';e.style.opacity='0';setTimeout(()=>e.remove(),200);}sfxHit();trainingWin();}}
   function startGridDefender(){const level=trainingState.level,maxNum=5+level*2,target=rand(3,maxNum),ops=['+','-','×'],options=[],used=new Set();const cop=ops[rand(0,2)];let a,b,ex,res;for(let t=0;t<50;t++){if(cop==='+'){a=rand(1,target-1);b=target-a;ex=`${a}+${b}`;res=a+b;}else if(cop==='-'){a=rand(target+1,target+maxNum);b=a-target;ex=`${a}-${b}`;res=a-b;}else{const f=[];for(let i=1;i<=Math.sqrt(target);i++){if(target%i===0)f.push(i);}if(f.length>1){a=f[rand(1,f.length-1)];b=target/a;ex=`${a}×${b}`;res=a*b;}else{a=rand(1,3);b=target;ex=`${a}×${b}`;res=a*b;}}if(!used.has(ex)&&res===target){used.add(ex);break;}}options.push({value:res,expr:ex,wins:true});const cv=[];for(let d=1;d<=3;d++){if(res-d>=1)cv.push(res-d);if(res+d!==target)cv.push(res+d);}shuffle(cv);for(let i=1;i<3;i++){const fr=cv.length>0?cv.shift():rand(1,maxNum+5);let fe;for(let t=0;t<30;t++){const op=ops[rand(0,2)];let ba,bb,bex,bres;if(op==='+'){ba=rand(1,maxNum);bb=rand(1,maxNum);bex=`${ba}+${bb}`;bres=ba+bb;}else if(op==='-'){ba=rand(1,maxNum*2);bb=rand(1,ba-1);bex=`${ba}-${bb}`;bres=ba-bb;}else{ba=rand(1,5);bb=rand(1,5);bex=`${ba}×${bb}`;bres=ba*bb;}if(!used.has(bex)&&bres===fr){used.add(bex);options.push({value:bres,expr:bex,wins:false});fe=true;break;}}if(!fe){for(let t=0;t<50;t++){const op=ops[rand(0,2)];let ba,bb,bex,bres;if(op==='+'){ba=rand(1,maxNum);bb=rand(1,maxNum);bex=`${ba}+${bb}`;bres=ba+bb;}else if(op==='-'){ba=rand(1,maxNum*2);bb=rand(1,ba-1);bex=`${ba}-${bb}`;bres=ba-bb;}else{ba=rand(1,5);bb=rand(1,5);bex=`${ba}×${bb}`;bres=ba*bb;}if(!used.has(bex)&&Math.abs(bres-fr)<=1){used.add(bex);options.push({value:bres,expr:bex,wins:false});break;}}}}shuffle(options);const td=Math.max(3,6-Math.floor(level/3));minigameState={options,target,active:true,timer:td};$('gridArea').innerHTML=`<div class="grid-info"><span class="grid-time" id="gridTimer">${td}s</span><span class="grid-target">👹 <strong>${target}</strong></span></div><div class="grid-cards">${options.map((o,i)=>`<div class="grid-card" onclick="game.gridPick(${i})"><span class="expr">${o.expr}</span></div>`).join('')}</div>`;const te=$('gridTimer');if(te){minigameState.timerInterval=setInterval(()=>{minigameState.timer--;te.textContent=minigameState.timer+'s';if(minigameState.timer<=0){clearInterval(minigameState.timerInterval);if(minigameState.active){minigameState.active=false;trainingLose();}}},1000);}}
   function gridPick(idx){if(!minigameState.active)return;minigameState.active=false;if(minigameState.timerInterval)clearInterval(minigameState.timerInterval);if(minigameState.options[idx].wins){sfxSuccess();trainingWin();}else{sfxPlayerHit();trainingLose();}}
-  const JUDGE_STATEMENTS={easy:[{text:'6×7=42',answer:true},{text:'Voda vaří při 100°C',answer:true},{text:'Země je plochá',answer:false},{text:'12 dělitelné 3',answer:true},{text:'Čtverec má 5 stran',answer:false},{text:'Žralok je savec',answer:false},{text:'Slunce vychází na východě',answer:true},{text:'Týden má 7 dní',answer:true},{text:'Měsíc větší než Země',answer:false},{text:'5×5=25',answer:true},{text:'Kočka má 9 životů',answer:false},{text:'8+4=11',answer:false}],medium:[{text:'1+2×3=9',answer:false},{text:'Krychle má 8 vrcholů',answer:true},{text:'0 je sudé číslo',answer:true},{text:'24 dělitelné 7',answer:false},{text:'Praha je hl. město Polska',answer:false},{text:'Všechna prvočísla lichá',answer:false},{text:'Antarktida je poušť',answer:true},{text:'Delfín je ryba',answer:false},{text:'2+3×4=20',answer:false},{text:'Průměr 2,8,14 je 8',answer:true}],hard:[{text:'3²+4²=5²',answer:true},{text:'0,5×20=12',answer:false},{text:'Sudé×liché=vždy sudé',answer:true},{text:'48/6=8',answer:true},{text:'121 je prvočíslo',answer:false},{text:'(8−3)×2=10',answer:true},{text:'Dva zápory dají klad',answer:true},{text:'Kg je jednotka síly',answer:false},{text:'Hlemýžď má 25000 zubů',answer:true}]};
-  function startJudge(){const level=trainingState.level;let f;if(level<=3)f=JUDGE_STATEMENTS.easy;else if(level<=6)f=[...JUDGE_STATEMENTS.easy,...JUDGE_STATEMENTS.medium];else f=[...JUDGE_STATEMENTS.medium,...JUDGE_STATEMENTS.hard];const st=f[rand(0,f.length-1)],td=Math.max(3,6-Math.floor(level/3));minigameState={active:true,statement:st,timer:td};$('judgeStatement').textContent=st.text;$('judgeTimer').textContent=td+'s';if(minigameState.timerInterval)clearInterval(minigameState.timerInterval);minigameState.timerInterval=setInterval(()=>{minigameState.timer--;$('judgeTimer').textContent=minigameState.timer+'s';if(minigameState.timer<=0){clearInterval(minigameState.timerInterval);if(minigameState.active){minigameState.active=false;trainingLose();}}},1000);}
-  function judgeAnswer(a){if(!minigameState.active)return;minigameState.active=false;if(minigameState.timerInterval)clearInterval(minigameState.timerInterval);if(a===minigameState.statement.answer){sfxSuccess();trainingWin();}else{sfxPlayerHit();trainingLose();}}
-  function startAim(){const l=trainingState.level,rh=3+Math.floor(l/2),ts=Math.max(26,50-l*3),to=Math.max(600,1600-l*100);minigameState={active:true,hits:0,misses:0,requiredHits:rh,targetSize:ts,timeout:to};$('aimHits').textContent='0';$('aimMisses').textContent='0';$('aimPrompt').textContent=`🎯 ${rh}×!`;$('aimArena').innerHTML='';(function spawn(){if(!minigameState.active)return;const a=$('aimArena');if(minigameState.target&&minigameState.target.parentNode)minigameState.target.remove();const aw=a.clientWidth||280,ah=a.clientHeight||160,s=minigameState.targetSize,x=rand(10,Math.max(11,aw-s-10)),y=rand(10,Math.max(11,ah-s-10));const el=document.createElement('div');el.className='aim-target';el.style.cssText=`left:${x}px;top:${y}px;width:${s}px;height:${s}px;background:${['#e94560','#f1c40f','#2ecc71','#4a7dff'][rand(0,3)]}`;el.addEventListener('click',e=>{e.stopPropagation();if(!minigameState.active)return;minigameState.hits++;clearTimeout(minigameState.aimTimeout);if(minigameState.target&&minigameState.target.parentNode)minigameState.target.remove();$('aimHits').textContent=minigameState.hits;sfxHit();if(minigameState.hits>=minigameState.requiredHits){minigameState.active=false;trainingWin();}else setTimeout(spawn,200);});a.appendChild(el);minigameState.target=el;minigameState.aimTimeout=setTimeout(()=>{if(!minigameState.active)return;if(el.parentNode)el.remove();minigameState.misses++;$('aimMisses').textContent=minigameState.misses;sfxPlayerHit();if(minigameState.misses>=2){minigameState.active=false;trainingLose();}else setTimeout(spawn,300);},minigameState.timeout);})();}
-  const ECHO_COLORS=['#e94560','#f1c40f','#4a7dff','#2ecc71'],ECHO_FREQS=[262,330,392,523],ECHO_SYMBOLS=['🔴','🟡','🔵','🟢'];
-  function startEcho(){const l=trainingState.level,seqLen=Math.min(2+Math.floor(l*0.6),7),cells=Math.min(4,2+Math.floor(l/4));const seq=[];for(let i=0;i<seqLen;i++)seq.push(rand(0,cells-1));minigameState={sequence:seq,playerIndex:0,showing:true,inputEnabled:false,cells};const g=$('echoGrid');g.style.gridTemplateColumns=`repeat(${Math.min(cells,2)},1fr)`;g.innerHTML='';for(let i=0;i<cells;i++){const c=document.createElement('div');c.className='echo-cell';c.style.background=ECHO_COLORS[i];c.dataset.idx=i;c.textContent=ECHO_SYMBOLS[i];c.addEventListener('click',()=>game.echoClick(i));g.appendChild(c);}$('echoPrompt').textContent='👂';$('echoProgress').textContent=`0/${seqLen}`;minigameState.showing=true;(function pe(idx){if(idx>=minigameState.sequence.length){minigameState.showing=false;minigameState.inputEnabled=true;$('echoPrompt').textContent='🎯';return;}initAudio();const c=document.querySelectorAll('#echoGrid .echo-cell'),ci=minigameState.sequence[idx];c.forEach(x=>x.classList.remove('lit'));c[ci].classList.add('lit');playTone(ECHO_FREQS[ci%ECHO_FREQS.length],0.2,'sine',0.12);setTimeout(()=>{c.forEach(x=>x.classList.remove('lit'));setTimeout(()=>pe(idx+1),200);},300);})(0);}
-  function echoClick(idx){if(!minigameState.inputEnabled||minigameState.showing)return;initAudio();const c=document.querySelectorAll('#echoGrid .echo-cell');c[idx].classList.add('active');setTimeout(()=>c[idx].classList.remove('active'),150);playTone(ECHO_FREQS[idx%ECHO_FREQS.length],0.15,'sine',0.10);if(idx!==minigameState.sequence[minigameState.playerIndex]){minigameState.inputEnabled=false;trainingLose();return;}minigameState.playerIndex++;$('echoProgress').textContent=`${minigameState.playerIndex}/${minigameState.sequence.length}`;if(minigameState.playerIndex>=minigameState.sequence.length){minigameState.inputEnabled=false;trainingWin();}}
-  const ORDER_POOLS=[{rule:'Nejmenší→Největší',items:[1,2,3,4,5,6],fn:a=>a},{rule:'Největší→Nejmenší',items:[9,7,5,3,1],fn:a=>-a},{rule:'A→Z',items:['👻','🤖','🧟','👽','🦇','🐉'],fn:a=>a},{rule:'Z→A',items:['🐉','🦇','👽','🧟','🤖','👻'],fn:a=>-a},{rule:'Počet písmen',items:['A','AB','ABC','ABCD','ABCDE'],fn:a=>a.length},{rule:'Číselná hodnota',items:['II','IV','VI','VIII','X'],fn:a=>({II:2,IV:4,VI:6,VIII:8,X:10}[a]||0)},{rule:'Sudé⬆️ pak liché',items:[2,4,6,1,3,5],fn:a=>a%2===0?a:a+10}];
-  function startOrder(){const l=trainingState.level,pi=(l-1)%ORDER_POOLS.length,pool=ORDER_POOLS[pi],items=shuffle([...pool.items]),cnt=Math.min(3+Math.floor(l/3),items.length),sel=items.slice(0,cnt);minigameState={selected:sel,rule:pool.rule,active:true,orderIndex:0};$('orderAreaInner').innerHTML=`<div class="order-rule">${pool.rule}</div><div class="order-items" id="orderItems">${shuffle([...sel]).map((it,i)=>`<div class="order-item" data-idx="${i}" onclick="game.orderPick(${i})" data-val="${String(it)}">${it}</div>`).join('')}</div>`;$('orderProgress').textContent=`0/${sel.length}`;}
-  function orderPick(idx){if(!minigameState.active)return;const items=document.querySelectorAll('#orderItems .order-item'),item=items[idx];if(item.classList.contains('picked'))return;const pi=(trainingState.level-1)%ORDER_POOLS.length,cf=ORDER_POOLS[pi].fn,all=[...minigameState.selected].sort((a,b)=>cf(a)-cf(b));if(String(all[minigameState.orderIndex])===String(item.dataset.val)){item.classList.add('picked');minigameState.orderIndex++;$('orderProgress').textContent=`${minigameState.orderIndex}/${minigameState.selected.length}`;sfxHit();if(minigameState.orderIndex>=minigameState.selected.length){minigameState.active=false;trainingWin();}}else{sfxPlayerHit();trainingLose();}}
-  const RV_FREQS=[262,330,392,523],RV_COLORS=['#e94560','#f1c40f','#4a7dff','#2ecc71'],RV_SYMS=['⭐','🔥','💧','🌿'];
-  function startReverse(){const l=trainingState.level,seqLen=Math.min(2+Math.floor(l*0.5),5),pl=[];for(let i=0;i<seqLen;i++)pl.push(rand(0,3));const isC=Math.random()<0.5,bs=[...pl].reverse();if(!isC){const bi=rand(0,bs.length-1);let nn;do{nn=rand(0,3);}while(nn===bs[bi]);bs[bi]=nn;}minigameState={active:true,phase:'input',playerSeq:pl,bossSeq:bs,isCorrectReverse:isC,playerInputIndex:0,inputEnabled:true};const bc=$('reverseButtons');bc.innerHTML='';for(let i=0;i<4;i++){const b=document.createElement('div');b.className='reverse-btn';b.style.background=RV_COLORS[i];b.textContent=RV_SYMS[i];b.dataset.idx=i;b.addEventListener('click',()=>game.reverseInput(i));bc.appendChild(b);}$('reversePrompt').textContent='🎵 ťukej!';$('reverseBossPlay').style.display='none';$('reverseAnswerBtns').style.display='none';}
-  function reverseInput(idx){if(!minigameState.active||!minigameState.inputEnabled||minigameState.phase!=='input')return;const ms=minigameState;initAudio();const b=document.querySelectorAll('#reverseButtons .reverse-btn');b[idx].classList.add('active');setTimeout(()=>b[idx].classList.remove('active'),150);playTone(RV_FREQS[idx],0.15,'sine',0.10);if(idx!==ms.playerSeq[ms.playerInputIndex]){ms.inputEnabled=false;ms.active=false;trainingLose();return;}ms.playerInputIndex++;if(ms.playerInputIndex>=ms.playerSeq.length){ms.phase='playing';ms.inputEnabled=false;$('reversePrompt').textContent='👂';$('reverseBossPlay').style.display='block';(function pb(idx){if(idx>=ms.bossSeq.length){ms.phase='answer';$('reversePrompt').textContent='🤔?';$('reverseBossPlay').textContent='👹 Klikni!';$('reverseAnswerBtns').style.display='flex';return;}initAudio();const b=document.querySelectorAll('#reverseButtons .reverse-btn'),ci=ms.bossSeq[idx];b.forEach(x=>x.classList.remove('active'));b[ci].classList.add('active');playTone(RV_FREQS[ci%RV_FREQS.length],0.2,'sine',0.12);$('reverseBossPlay').textContent=`👹 ${idx+1}/${ms.bossSeq.length}`;setTimeout(()=>{b.forEach(x=>x.classList.remove('active'));setTimeout(()=>pb(idx+1),200);},350);})(0);}}
-  function reverseAnswer(a){if(!minigameState.active||minigameState.phase!=='answer')return;minigameState.active=false;if(a===minigameState.isCorrectReverse){sfxSuccess();trainingWin();}else{sfxPlayerHit();trainingLose();}}
-
-  // ===== ACHIEVEMENTS =====
-  const ACHIEVEMENTS=[
-    {id:'first_win',name:'🎯 První výhra',desc:'Vyhraj první souboj',check:s=>s.wins>=1},
-    {id:'first_skill',name:'📖 První kouzlo',desc:'Lv.1 v kouzle',check:s=>SKILLS.some(sk=>(s.skills[sk.id]||0)>=1)},
-    {id:'skill_5',name:'🧙 5 kouzel',desc:'5 kouzel Lv.1+',check:s=>SKILLS.filter(sk=>(s.skills[sk.id]||0)>=1).length>=5},
-    {id:'all_skills',name:'🌟 Všechna kouzla',desc:'8 kouzel Lv.1+',check:s=>SKILLS.every(sk=>(s.skills[sk.id]||0)>=1)},
-    {id:'max_skill',name:'💎 První MAX',desc:'Kouzlo na Lv.10',check:s=>SKILLS.some(sk=>(s.skills[sk.id]||0)>=10)},
-    {id:'hero_5',name:'👤 Hrdina Lv.5',desc:'Hrdina Lv.5',check:s=>s.hero.level>=5},
-    {id:'hero_10',name:'👑 Hrdina Lv.10',desc:'Hrdina Lv.10',check:s=>s.hero.level>=10},
-    {id:'first_boss',name:'👹 První boss',desc:'Poraz prvního bosse',check:s=>s.bossesDefeated.some(Boolean)},
-    {id:'all_bosses',name:'⚜️ Všichni bossové',desc:'Poraz všech 8 bossů',check:s=>s.bossesDefeated.every(Boolean)},
-    {id:'ten_wins',name:'🏆 10 výher',desc:'10 výher',check:s=>s.wins>=10},
-    {id:'fifty_wins',name:'💫 50 výher',desc:'50 výher',check:s=>s.wins>=50},
-    {id:'first_weapon',name:'🗡️ Zbraň',desc:'Lepší zbraň než pěsti',check:s=>s.hero.weapon!=='fists'},
-    {id:'first_armor',name:'🦺 Brnění',desc:'Lepší brnění než hadry',check:s=>s.hero.armor!=='rags'},
-  ];
-  function checkAchievements(){
-    if(!state.achievements)state.achievements={};
-    ACHIEVEMENTS.forEach(a=>{if(!state.achievements[a.id]&&a.check(state)){state.achievements[a.id]=true;saveGame();showAchievementPopup(a);}});
-  }
   function showAchievementPopup(a){const p=document.createElement('div');p.style.cssText='position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:300;background:#12122a;border:2px solid #f1c40f;border-radius:12px;padding:16px 24px;text-align:center;animation:enemyEnter 0.5s ease-out;max-width:360px;width:90%';p.innerHTML=`<div style="font-size:24px;margin-bottom:4px">🏅</div><div style="font-size:14px;font-weight:bold;color:#f1c40f">${a.name}</div><div style="font-size:11px;color:#8888aa;margin-top:2px">${a.desc}</div>`;document.body.appendChild(p);setTimeout(()=>{p.style.transition='opacity 0.5s';p.style.opacity='0';setTimeout(()=>p.remove(),500);},2500);}
   function showMedals(){
     // Odstranit starou medalScreen, aby se nehromadily
@@ -616,8 +578,8 @@
     state = loadSave();
     SKILLS.forEach(sk => { if (state.skills[sk.id] === undefined) state.skills[sk.id] = 0; if (state.skillXp[sk.id] === undefined) state.skillXp[sk.id] = 0; });
     if (!state.achievements) state.achievements = {};
-    if (!state.bossesDefeated || state.bossesDefeated.length < 8) state.bossesDefeated = [false,false,false,false,false,false,false,false];
-    if (!state.locationProgress || state.locationProgress.length < 8) state.locationProgress = [0,0,0,0,0,0,0,0];
+    if (!state.bossesDefeated || state.bossesDefeated.length < 7) state.bossesDefeated = [false,false,false,false,false,false,false];
+    if (!state.locationProgress || state.locationProgress.length < 7) state.locationProgress = [0,0,0,0,0,0,0];
     if (!state.hero) state.hero = { level:1, xp:0, gold:0, hp:3, maxHp:3, baseDmg:2, weapon:'fists', armor:'rags' };
     if (state.hero.maxHp === undefined) state.hero.maxHp = 3;
 
@@ -636,7 +598,7 @@
 
   window.game = {
     showScreen, enterLocation, enterTraining,
-    simonClick, colorInput, gridPick, judgeAnswer, echoClick, orderPick, reverseInput, reverseAnswer
+    simonClick, colorInput, gridPick,echoClick, orderPick, reverseInput, reverseAnswer
   };
   init();
 })();

@@ -84,9 +84,7 @@ body {
 .badge.echo { background: #0088bb; }
 .badge.order { background: #8b4513; }
 .badge.reverse { background: #6a0dad; }
-.badge.boss { background: #e94560; }
-
-/* Battle (training) */
+.badge.boss { background: #e94560; }/* Battle (training) */
 #battleScreen { display: none; }
 #battleScreen.active { display: block; }
 #bossFightScreen { display: none; }
@@ -125,12 +123,10 @@ body {
 .grid-card:hover { border-color:#4a7dff; transform:scale(1.05); }
 .grid-card .expr { font-size:18px; }
 
-/* Judge */
-.judge-statement { font-size:20px; font-weight:bold; text-align:center; padding:20px 14px; margin:12px 0; background:#1a1a3a; border:2px solid #f1c40f; border-radius:10px; color:#ffd700; }
-.judge-buttons { display:flex; gap:10px; justify-content:center; margin:16px 0; }
-.judge-btn { flex:1; max-width:140px; padding:14px; border-radius:8px; font-size:16px; font-weight:bold; text-align:center; cursor:pointer; transition:0.15s; }
-.judge-true { background:#2ecc71; color:#fff; }
-.judge-false { background:#e94560; color:#fff; }
+/* Reverse (odpovědi — tlačítka) */
+.rev-btn { flex:1; max-width:140px; padding:14px; border-radius:8px; font-size:16px; font-weight:bold; text-align:center; cursor:pointer; transition:0.15s; }
+.rev-true { background:#2ecc71; color:#fff; }
+.rev-false { background:#e94560; color:#fff; }
 
 /* Aim */
 .aim-area { position:relative; width:100%; height:200px; background:#0a0a1a; border:1px solid #2a2a4a; border-radius:10px; overflow:hidden; margin:8px 0; }
