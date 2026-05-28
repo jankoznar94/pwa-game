@@ -9,13 +9,11 @@
 </head>
 <body>
 
-<!-- ===== NAVIGATION ===== -->
 <nav class="nav-bar">
   <a href="#" data-screen="dungeonSelect" class="active">🗺️ Dungeony</a>
   <a href="#" data-screen="reset">🔄 Reset</a>
 </nav>
 
-<!-- ===== DUNGEON SELECT ===== -->
 <div id="dungeonSelect" class="container">
   <div class="card">
     <div class="card-title">⚔️ Vyber dungeon</div>
@@ -24,10 +22,8 @@
   <div id="dungeonList"></div>
 </div>
 
-<!-- ===== BATTLE ===== -->
 <div id="battleScreen" class="container">
   <div class="card">
-    <!-- Enemy info -->
     <div class="flex-between">
       <span class="text-green" id="bossName">Dungeon</span>
       <span id="gameTypeBadge" class="boss-type-badge simon">🧠 Simon</span>
@@ -35,27 +31,21 @@
     <div class="flex-between" style="margin-top:6px">
       <span id="roundNum">Patro 1/50</span>
     </div>
-
-    <!-- HP -->
     <div class="flex-between" style="margin-top:8px">
       <span id="playerHearts">❤️❤️❤️</span><span id="playerHeartsLost"></span>
       <span id="bossHpHearts">❤️</span><span id="bossHpMax"></span>
     </div>
-
-    <!-- Enemy face -->
     <div class="enemy-face" id="bossFace">👻</div>
     <div class="enemy-name" id="bossName2"></div>
 
-    <!-- ===== SIMON SAYS ===== -->
+    <!-- SIMON -->
     <div id="simonArea" class="minigame-hide">
       <div class="card-subtitle text-center mt-10" id="simonPrompt">Zapamatuj si sekvenci!</div>
       <div class="simon-grid" id="simonGrid"></div>
-      <div class="text-center">
-        <span id="simonProgress" style="font-size:13px;color:#8888aa">0/3</span>
-      </div>
+      <div class="text-center"><span id="simonProgress" style="font-size:13px;color:#8888aa">0/3</span></div>
     </div>
 
-    <!-- ===== JUDGE ===== -->
+    <!-- JUDGE -->
     <div id="judgeArea" class="minigame-hide">
       <div class="card-subtitle text-center mt-10" id="judgePrompt">Je následující výrok pravdivý?</div>
       <div class="judge-statement" id="judgeStatement">2 + 2 = 4</div>
@@ -63,31 +53,64 @@
         <div class="judge-btn judge-true" onclick="game.judgeAnswer(true)">✅ Pravda</div>
         <div class="judge-btn judge-false" onclick="game.judgeAnswer(false)">❌ Nepravda</div>
       </div>
-      <div class="text-center">
-        <span id="judgeTimer" style="font-size:13px;color:#ffd700">5s</span>
-      </div>
+      <div class="text-center"><span id="judgeTimer" style="font-size:13px;color:#ffd700">5s</span></div>
     </div>
 
-    <!-- ===== COLOR CLASH ===== -->
+    <!-- COLOR CLASH -->
     <div id="colorClashArea" class="minigame-hide">
       <div class="card-subtitle text-center mt-10">Ťukni na správnou barvu!</div>
       <div class="color-clash-area" id="colorArena"></div>
     </div>
 
-    <!-- ===== GRID DEFENDER ===== -->
+    <!-- GRID -->
     <div id="gridDefenderArea" class="minigame-hide">
       <div class="card-subtitle text-center mt-10">Najdi správný příklad!</div>
       <div class="grid-defender-area" id="gridArea"></div>
     </div>
+
+    <!-- AIM -->
+    <div id="aimArea" class="minigame-hide">
+      <div class="card-subtitle text-center mt-10" id="aimPrompt">🎯 Ťukni na cíl!</div>
+      <div class="aim-area" id="aimArena"></div>
+      <div class="aim-stats">
+        <span class="aim-hits" id="aimHits">🎯 0</span>
+        <span class="aim-misses" id="aimMisses">❌ 0</span>
+      </div>
+    </div>
+
+    <!-- ECHO -->
+    <div id="echoArea" class="minigame-hide">
+      <div class="card-subtitle text-center mt-10" id="echoPrompt">👂 Poslouchej sekvenci</div>
+      <div class="echo-grid" id="echoGrid"></div>
+      <div class="text-center"><span id="echoProgress" style="font-size:13px;color:#8888aa">0/0</span></div>
+    </div>
+
+    <!-- ORDER -->
+    <div id="orderArea" class="minigame-hide">
+      <div class="card-subtitle text-center mt-10" id="orderPrompt">Seřaď podle pravidla</div>
+      <div class="order-area" id="orderAreaInner"></div>
+      <div class="text-center"><span id="orderProgress" style="font-size:13px;color:#8888aa">0/0</span></div>
+    </div>
+
+    <!-- REVERSE -->
+    <div id="reverseArea" class="minigame-hide">
+      <div class="card-subtitle text-center mt-10" id="reversePrompt">🎵 Zahraj krátkou melodii</div>
+      <div class="reverse-area" id="reverseAreaInner">
+        <div class="reverse-buttons" id="reverseButtons"></div>
+        <div id="reverseBossPlay" class="reverse-boss-play">👹 Nepřítel přehrává…</div>
+        <div class="reverse-answer" id="reverseAnswerBtns">
+          <div class="judge-btn judge-true" onclick="game.reverseAnswer(true)">✅ Správně</div>
+          <div class="judge-btn judge-false" onclick="game.reverseAnswer(false)">❌ Blbě</div>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <!-- ===== COUNTDOWN OVERLAY ===== -->
   <div id="countdownOverlay" class="countdown-overlay hidden">
     <div class="countdown-number" id="countdownNumber">3</div>
   </div>
 </div>
 
-<!-- ===== RESULT ===== -->
 <div id="resultScreen" class="hidden">
   <div class="result-screen container">
     <div class="result-icon" id="resultIcon">💀</div>
