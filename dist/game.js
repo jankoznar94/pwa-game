@@ -128,7 +128,7 @@
     cleanupTimers();
     const progress = state.locationProgress[locId] || 0;
     const isBoss = progress >= loc.monsters;
-    const bossHp = isBoss ? loc.boss.hp : 1;
+    const bossHp = isBoss ? loc.boss.hp : 3;
     const playerMaxHp = state.hero.maxHp || 3;
 
     mapBattleState = {
@@ -229,9 +229,9 @@
     if (mb.frozen > 0) mb.frozen--;
 
     const attackDir = DIRECTIONS[rand(0,3)];
-    // Zpomalím útoky pro nižší levely — base 600ms, snížení podle turn, frozen * 1.5
-    // Bossy: minime 800ms, zpomalují se pomaleji než monsters (turn*10 místo *15)
-    const speed = Math.max(500, 800 - mb.turn * 10);
+    // Zpomalím útoky pro nižší levely — base 900ms, snížení podle turn, frozen * 1.5
+    // Bossy: minime 900ms, zpomalují se pomaleji než monsters (turn*10 místo *15)
+    const speed = Math.max(500, 900 - mb.turn * 10);
     const windowTime = mb.frozen > 0 ? speed * 1.5 : speed;
 
     const arrow = $('mbArrow');
@@ -242,12 +242,15 @@
     const playerEl = $('mbPlayerFigure');
     if (playerEl) playerEl.className = 'boss-fight-player';
 
-    // Animace časového proužku (kolečko, které ubývá s časem)
+    // Animace časového proužku (kolečko se vybarvuje s časem) — SVG stroke-dashoffset
     const ring = $('mbTimerRing');
     if (ring) {
-      ring.style.animation = 'none';
-      void ring.offsetWidth; // trigger reflow
-      ring.style.animation = `timerRingDecay ${windowTime}ms linear forwards`;
+      const circle = ring.querySelector('.timer-circle');
+      if (circle) {
+        circle.style.transition = `stroke-dashoffset ${windowTime}ms linear`;
+        circle.style.strokeDashoffset = '176';
+        setTimeout(() => circle.style.strokeDashoffset = '0', 10);
+      }
     }
 
     mb._attackTimer = setTimeout(() => {
@@ -261,9 +264,15 @@
     clearTimeout(mapBattleState._attackTimer);
     mapBattleState.isAttacking = false;
 
-    // Reset animace časového proužku
+    // Reset animace časového proužku (po úhybu zůstane vybarvené)
     const ring = $('mbTimerRing');
-    if (ring) { ring.style.animation = 'none'; }
+    if (ring) {
+      const circle = ring.querySelector('.timer-circle');
+      if (circle) {
+        circle.style.transition = 'none';
+        circle.style.strokeDashoffset = '0';
+      }
+    }
 
     const arrow = $('mbArrow');
     if (arrow) arrow.className = 'boss-attack-arrow hidden';
@@ -333,9 +342,15 @@
     mb.playerHp -= amount;
     sfxPlayerHit();
 
-    // Reset animace časového proužku
+    // Reset animace časového proužku (po hitu zůstane vybarvené)
     const ring = $('mbTimerRing');
-    if (ring) { ring.style.animation = 'none'; }
+    if (ring) {
+      const circle = ring.querySelector('.timer-circle');
+      if (circle) {
+        circle.style.transition = 'none';
+        circle.style.strokeDashoffset = '0';
+      }
+    }
 
     $('mbHint').textContent = `💔 Zásah! -${amount}`;
     updateMapBattleUI();
