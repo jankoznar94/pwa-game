@@ -44,30 +44,30 @@
   // Každý boss má: jméno, obličej, typ minihry, životy, obtížnost 1-10
   const BOSSES = [
     // Simon (phantom)
-    { id: 0, name: 'Stínový pán', face: '👹', type: 'simon', hp: 3, level: 1, dungeonName: '🌲 Les stínů', dungeonMobs: 2 },
-    { id: 1, name: 'Věžový démon', face: '👹', type: 'simon', hp: 4, level: 3, dungeonName: '🗼 Prokletá věž', dungeonMobs: 3 },
-    { id: 2, name: 'Duch pralesa', face: '🌳', type: 'simon', hp: 4, level: 5, dungeonName: '🌴 Prales krve', dungeonMobs: 3 },
-    { id: 3, name: 'Sněžný král', face: '🧊', type: 'simon', hp: 5, level: 7, dungeonName: '❄️ Ledová propast', dungeonMobs: 4 },
+    { id: 0, name: 'Stínový pán', face: '👹', type: 'simon', hp: 3, level: 1, dungeonName: '🌲 Les stínů', dungeonMobs: 9 },
+    { id: 1, name: 'Věžový démon', face: '👹', type: 'simon', hp: 4, level: 3, dungeonName: '🗼 Prokletá věž', dungeonMobs: 9 },
+    { id: 2, name: 'Duch pralesa', face: '🌳', type: 'simon', hp: 4, level: 5, dungeonName: '🌴 Prales krve', dungeonMobs: 9 },
+    { id: 3, name: 'Sněžný král', face: '🧊', type: 'simon', hp: 5, level: 7, dungeonName: '❄️ Ledová propast', dungeonMobs: 9 },
     // Color Clash (archer)
-    { id: 4, name: 'Faraonova kletba', face: '🐍', type: 'color', hp: 3, level: 2, dungeonName: '🏜️ Pouštní nekropole', dungeonMobs: 2 },
-    { id: 5, name: 'Král bažin', face: '🐊', type: 'color', hp: 4, level: 4, dungeonName: '🌿 Bažiny zapomnění', dungeonMobs: 3 },
-    { id: 6, name: 'Magma behemot', face: '🐲', type: 'color', hp: 5, level: 6, dungeonName: '🌋 Lávové údolí', dungeonMobs: 4 },
+    { id: 4, name: 'Faraonova kletba', face: '🐍', type: 'color', hp: 3, level: 2, dungeonName: '🏜️ Pouštní nekropole', dungeonMobs: 9 },
+    { id: 5, name: 'Král bažin', face: '🐊', type: 'color', hp: 4, level: 4, dungeonName: '🌿 Bažiny zapomnění', dungeonMobs: 9 },
+    { id: 6, name: 'Magma behemot', face: '🐲', type: 'color', hp: 5, level: 6, dungeonName: '🌋 Lávové údolí', dungeonMobs: 9 },
     // Math Grid (tank)
-    { id: 7, name: 'Archivář zhouby', face: '👹', type: 'grid', hp: 3, level: 2, dungeonName: '🔥 Hořící katakomby', dungeonMobs: 2 },
-    { id: 8, name: 'Nebeský drak', face: '🐉', type: 'grid', hp: 4, level: 5, dungeonName: '☁️ Nebeská pevnost', dungeonMobs: 3 },
-    { id: 9, name: 'Architekt času', face: '⌛', type: 'grid', hp: 5, level: 8, dungeonName: '⏳ Zřícenina času', dungeonMobs: 4 },
+    { id: 7, name: 'Archivář zhouby', face: '👹', type: 'grid', hp: 3, level: 2, dungeonName: '🔥 Hořící katakomby', dungeonMobs: 9 },
+    { id: 8, name: 'Nebeský drak', face: '🐉', type: 'grid', hp: 4, level: 5, dungeonName: '☁️ Nebeská pevnost', dungeonMobs: 9 },
+    { id: 9, name: 'Architekt času', face: '⌛', type: 'grid', hp: 5, level: 8, dungeonName: '⏳ Zřícenina času', dungeonMobs: 9 },
   ];
 
   // ===== MOBS (dungeon fodder) =====
   const MOB_FACES = {
-    simon: ['👻', '👾', '💀'],
-    color: ['🏹', '🐺', '🦅'],
-    grid: ['🛡️', '🗿', '🧟']
+    simon: ['👻', '👾', '💀', '🎃', '🕳️', '🦇', '👺', '⚰️', '☠️'],
+    color: ['🏹', '🐺', '🦅', '🐗', '🦂', '🐍', '🐪', '🦎', '🐙'],
+    grid: ['🛡️', '🗿', '🧟', '🤖', '🦾', '🧱', '⛓️', '⚙️', '🪨']
   };
   const MOB_NAMES = {
-    simon: ['Přízrak', 'Stín', 'Mlžný duch'],
-    color: ['Lovec', 'Střelec', 'Lučištník'],
-    grid: ['Strážce', 'Tank', 'Obr']
+    simon: ['Přízrak', 'Stín', 'Duch', 'Noční můra', 'Fantom', 'Netvor', 'Mlžný duch', 'Kostlivec', 'Spektrum'],
+    color: ['Lovec', 'Střelec', 'Lučištník', 'Šelma', 'Šílenec', 'Berserker', 'Lovkyně', 'Plaz', 'Dravý střelec'],
+    grid: ['Strážce', 'Tank', 'Obr', 'Hlídka', 'Golem', 'Valibuk', 'Hromotluk', 'Mechanik', 'Krutý obr']
   };
 
   // ===== STATE =====
