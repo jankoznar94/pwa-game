@@ -84,7 +84,6 @@
     if (name === 'map') renderMap();
     else if (name === 'tower') renderTower();
     else if (name === 'hero') renderHero();
-    else if (name === 'medals') showMedals();
   }
 
   function showMessage(msg) {
