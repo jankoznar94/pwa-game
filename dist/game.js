@@ -61,6 +61,21 @@
   let battleState = {};   // training mode
   let bossState = {};     // boss fight mode
   let minigameState = {};
+  let _activeIntervals = []; // pro cleanup proti sekání
+
+  function cleanupTimers() {
+    _activeIntervals.forEach(id => { try { clearInterval(id); } catch {} });
+    _activeIntervals = [];
+    if (minigameState.timerInterval) { clearInterval(minigameState.timerInterval); minigameState.timerInterval = null; }
+    if (minigameState.aimTimeout) { clearTimeout(minigameState.aimTimeout); minigameState.aimTimeout = null; }
+    if (minigameState.countdownInterval) { clearInterval(minigameState.countdownInterval); minigameState.countdownInterval = null; }
+    ['simonTimeout','echoTimeout','reverseTimeout'].forEach(k => {
+      if (minigameState[k]) { clearTimeout(minigameState[k]); delete minigameState[k]; }
+    });
+    // cleanup all timeouts with a sweep
+    let id = window.setTimeout(()=>{},0);
+    while(id--) window.clearTimeout(id);
+  }
 
   const SAVE_KEY = 'dungeonRecallV5';
   function defaultState() {
@@ -78,6 +93,7 @@
   // ===== SCREENS =====
   const SCREEN_IDS = { hero:'heroScreen', dungeons:'dungeonsScreen', battle:'battleScreen', bossFight:'bossFightScreen', result:'resultScreen', medals:'medalScreen' };
   function showScreen(name) {
+    cleanupTimers();
     // Remove dynamic medal screen if exists
     if (name !== 'medals') { const m = $('medalScreen'); if (m) m.remove(); }
     Object.values(SCREEN_IDS).forEach(id => {
@@ -126,6 +142,20 @@
     $('equipWeapon').textContent = weaponNames[h.weapon] || '✊ Pěsti';
     $('equipArmor').textContent = armorNames[h.armor] || '🧥 Hadry';
     $('equipInventory').textContent = '—';
+
+    // Boss list
+    $('bossList').innerHTML = BOSSES.map((b, i) => {
+      const defeated = state.bossMedals && state.bossMedals[i] && state.bossMedals[i][0];
+      const sk = SKILL_MAP[b.skill];
+      const lv = state.skills[b.skill] || 0;
+      const locked = lv < b.minSkillLv;
+      return `<div class="dungeon-card ${defeated?'completed':''}" onclick="game.startBossFight(${i})" style="padding:8px 12px;margin:0">
+        <div class="flex-between">
+          <span>${defeated?'✅':locked?'🔒':''} ${b.face} ${b.name}</span>
+          <span style="font-size:11px;color:#8888aa">${defeated?'Poražen':locked?`${sk.icon} Lv.${b.minSkillLv}`:`❤️${b.hp}`}</span>
+        </div>
+      </div>`;
+    }).join('');
   }
 
   // ===== DUNGEONS (TRAINING) =====
@@ -196,6 +226,7 @@
   }
 
   function showMinigame(type) {
+    cleanupTimers();
     const areas = { simon:'simonArea', color:'colorClashArea', grid:'gridDefenderArea', judge:'judgeArea', aim:'aimArea', echo:'echoArea', order:'orderArea', reverse:'reverseArea' };
     const fns = { simon:startSimon, color:startColorClash, grid:startGridDefender, judge:startJudge, aim:startAim, echo:startEcho, order:startOrder, reverse:startReverse };
     const el = $(areas[type]);
@@ -361,18 +392,478 @@
 
   // ===== BOSS FIGHT =====
   const BOSSES = [
-    { id:0, name:'Stínový pán', face:'👹', hp:10, skill:'fireball' },
-    { id:1, name:'Soudce pekel', face:'⚖️', hp:12, skill:'lightning' },
-    { id:2, name:'Faraonova kletba', face:'🐍', hp:14, skill:'shield' },
-    { id:3, name:'Architekt času', face:'⌛', hp:16, skill:'heal' },
-    { id:4, name:'Mistr terčů', face:'🎯', hp:18, skill:'crit' },
-    { id:5, name:'Šepotající hlas', face:'🔊', hp:20, skill:'clone' },
-    { id:6, name:'Architekt zákonů', face:'🧩', hp:22, skill:'freeze' },
-    { id:7, name:'Zrcadlový král', face:'🔄', hp:25, skill:'shadow' },
+    { id:0, name:'Stínový pán', face:'👹', hp:10, skill:'fireball', minSkillLv:1, reward:{gold:5,weapon:'dagger'} },
+    { id:1, name:'Soudce pekel', face:'⚖️', hp:12, skill:'lightning', minSkillLv:2, reward:{gold:8,armor:'leather'} },
+    { id:2, name:'Faraonova kletba', face:'🐍', hp:14, skill:'shield', minSkillLv:3, reward:{gold:12} },
+    { id:3, name:'Architekt času', face:'⌛', hp:16, skill:'heal', minSkillLv:4, reward:{gold:15,weapon:'sword'} },
+    { id:4, name:'Mistr terčů', face:'🎯', hp:18, skill:'crit', minSkillLv:5, reward:{gold:20} },
+    { id:5, name:'Šepotající hlas', face:'🔊', hp:20, skill:'clone', minSkillLv:6, reward:{gold:25,armor:'chainmail'} },
+    { id:6, name:'Architekt zákonů', face:'🧩', hp:22, skill:'freeze', minSkillLv:7, reward:{gold:30} },
+    { id:7, name:'Zrcadlový král', face:'🔄', hp:25, skill:'shadow', minSkillLv:8, reward:{gold:40,weapon:'flameSword',armor:'plate'} },
   ];
 
+  // ===== BOSS FIGHT ENGINE =====
+  const DIRECTIONS = ['⬆️','⬇️','⬅️','➡️'];
+
+  function startBossFight(bossIdx) {
+    const boss = BOSSES[bossIdx];
+    if (!boss) return;
+
+    // Check skill requirement
+    const sk = SKILL_MAP[boss.skill];
+    const lv = state.skills[boss.skill] || 0;
+    if (lv < boss.minSkillLv) {
+      showMessage(`❌ Potřebuješ ${sk.icon} Lv.${boss.minSkillLv} (máš Lv.${lv})`);
+      return;
+    }
+
+    // Check if already defeated
+    if (state.bossMedals && state.bossMedals[bossIdx] && state.bossMedals[bossIdx][0]) {
+      showMessage('✅ Tohoto bosse už jsi porazil!');
+      return;
+    }
+
+    cleanupTimers();
+
+    const playerMaxHp = state.hero.maxHp || 3;
+    const baseDmg = state.hero.baseDmg || 2;
+
+    bossState = {
+      bossIdx, boss,
+      bossHp: boss.hp,
+      maxBossHp: boss.hp,
+      playerHp: playerMaxHp,
+      maxPlayerHp: playerMaxHp,
+      ended: false,
+      turn: 0,
+      dodgeWindow: 800, // ms to react
+      attackDelay: 600,
+      isAttacking: false,
+      stunned: 0,
+      frozen: 0,
+      playerPos: 'center', // center | left | right | up | down
+      spellCooldowns: {},
+      dot: 0,
+      playerDmgMult: 1,
+      score: 0
+    };
+
+    // Init cooldowns
+    SKILLS.forEach(sk => {
+      const l = state.skills[sk.id] || 0;
+      if (l > 0) {
+        bossState.spellCooldowns[sk.id] = 0;
+      }
+    });
+
+    showScreen('bossFight');
+    updateBossUI();
+    setupBossInput();
+    setTimeout(() => bossFightTurn(), 500);
+  }
+
+  function updateBossUI() {
+    const bs = bossState;
+    // Update HP
+    $('bossName').textContent = bs.boss.name;
+    $('bossLevelBadge').textContent = `👹 Boss Lv.${bs.boss.id+1}`;
+    $('bossFightFloor').textContent = `${bs.boss.name} · ${bs.boss.face}`;
+    $('bossFightPlayerHp').textContent = '❤️'.repeat(bs.playerHp) + '🖤'.repeat(Math.max(0, bs.maxPlayerHp - bs.playerHp));
+    $('bossFightHp').textContent = '❤️'.repeat(bs.bossHp) + '🖤'.repeat(Math.max(0, bs.maxBossHp - bs.bossHp));
+    $('bossFigure').textContent = bs.boss.face;
+    $('bossHint').textContent = `⬆️⬇️⬅️➡️ – ťuknutím uhni! | Kolo ${bs.turn}`;
+
+    if (bs.stunned > 0) $('bossHint').textContent += ' | ⚡ Stun!';
+    if (bs.frozen > 0) $('bossHint').textContent += ' | ❄️ Zpomalení!';
+    if (bs.dot > 0) $('bossHint').textContent += ` | 🔥 DoT: ${bs.dot}`;
+
+    // Update spell buttons
+    SKILLS.forEach(sk => {
+      const lv = state.skills[sk.id] || 0;
+      const btn = document.querySelector(`.spell-btn[data-spell="${sk.id}"]`);
+      if (btn) {
+        const cdEl = btn.querySelector('.spell-cd');
+        if (lv === 0) {
+          btn.style.display = 'none';
+        } else {
+          btn.style.display = 'flex';
+          const cd = bs.spellCooldowns ? bs.spellCooldowns[sk.id] : 0;
+          if (cd > 0) {
+            btn.classList.add('on-cd');
+            cdEl.textContent = cd;
+          } else {
+            btn.classList.remove('on-cd');
+            cdEl.textContent = '✓';
+          }
+        }
+      }
+    });
+  }
+
+  function setupBossInput() {
+    const arena = $('bossArena');
+    if (!arena) return;
+
+    // Remove old listeners
+    const old = arena._bsHandlers;
+    if (old) old.forEach(h => arena.removeEventListener(h[0], h[1]));
+
+    // Touch/swipe handling
+    let startX, startY;
+    const handlers = [];
+
+    const touchStart = (e) => {
+      if (bossState.ended || bossState.isAttacking) return;
+      const t = e.touches[0];
+      startX = t.clientX;
+      startY = t.clientY;
+    };
+    const touchEnd = (e) => {
+      if (bossState.ended || !startX) return;
+      const t = e.changedTouches[0];
+      const dx = t.clientX - startX;
+      const dy = t.clientY - startY;
+      startX = startY = null;
+
+      const absDx = Math.abs(dx), absDy = Math.abs(dy);
+      const minDist = 20;
+
+      if (absDx < minDist && absDy < minDist) {
+        // Tap = attack
+        onPlayerAttack();
+        return;
+      }
+
+      let dir;
+      if (absDy > absDx) {
+        dir = dy < 0 ? '⬆️' : '⬇️';
+      } else {
+        dir = dx < 0 ? '⬅️' : '➡️';
+      }
+      onPlayerDodge(dir);
+    };
+
+    arena.addEventListener('touchstart', touchStart);
+    arena.addEventListener('touchend', touchEnd);
+    handlers.push(['touchstart', touchStart]);
+    handlers.push(['touchend', touchEnd]);
+
+    // Also keyboard
+    const keyHandler = (e) => {
+      if (bossState.ended) return;
+      const map = { ArrowUp:'⬆️', ArrowDown:'⬇️', ArrowLeft:'⬅️', ArrowRight:'➡️', 'w':'⬆️','s':'⬇️','a':'⬅️','d':'➡️' };
+      const dir = map[e.key];
+      if (dir) { e.preventDefault(); onPlayerDodge(dir); return; }
+      if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); onPlayerAttack(); }
+    };
+    window.addEventListener('keydown', keyHandler);
+    handlers.push(['keydown', keyHandler]);
+
+    arena._bsHandlers = handlers;
+  }
+
+  function bossFightTurn() {
+    if (bossState.ended) return;
+
+    // Check dot damage
+    if (bossState.dot > 0) {
+      bossState.bossHp -= bossState.dot;
+      if (bossState.bossHp <= 0) { endBossFight(true); return; }
+    }
+
+    // Check player death
+    if (bossState.playerHp <= 0) { endBossFight(false); return; }
+
+    bossState.turn++;
+    updateBossUI();
+
+    // Reduce cooldowns
+    SKILLS.forEach(sk => {
+      const l = state.skills[sk.id] || 0;
+      if (l > 0 && bossState.spellCooldowns[sk.id] > 0) {
+        bossState.spellCooldowns[sk.id]--;
+      }
+    });
+
+    // Reduce stun
+    if (bossState.stunned > 0) {
+      bossState.stunned--;
+      setTimeout(() => bossFightTurn(), 800);
+      return;
+    }
+    if (bossState.frozen > 0) {
+      bossState.frozen--;
+      // Extra delay for dodge window
+    }
+
+    // Boss attacks
+    const attackDir = DIRECTIONS[rand(0, 3)];
+    const speed = Math.max(300, 800 - bossState.turn * 20);
+
+    // Show attack arrow
+    const arrow = $('bossArrow');
+    if (arrow) {
+      arrow.textContent = attackDir;
+      arrow.className = 'boss-attack-arrow';
+    }
+
+    // Apply freeze extra time
+    const windowTime = bossState.frozen > 0 ? speed * 2 : speed;
+
+    bossState.isAttacking = true;
+    bossState.currentAttack = attackDir;
+
+    // Boss attack animation
+    const playerEl = $('playerFigure');
+    if (playerEl) {
+      playerEl.classList.remove('swipe-up','swipe-down','swipe-left','swipe-right');
+    }
+
+    // Timeout - if player doesn't dodge
+    bossState._attackTimer = setTimeout(() => {
+      if (bossState.ended) return;
+      // Player didn't dodge
+      takeDamage(1);
+    }, windowTime);
+  }
+
+  function onPlayerDodge(dir) {
+    if (bossState.ended || !bossState.isAttacking) return;
+
+    clearTimeout(bossState._attackTimer);
+    bossState.isAttacking = false;
+
+    // Hide arrow
+    const arrow = $('bossArrow');
+    if (arrow) arrow.className = 'boss-attack-arrow hidden';
+
+    // Animate dodge
+    const playerEl = $('playerFigure');
+    if (playerEl) {
+      if (dir === '⬆️') playerEl.className = 'boss-fight-player swipe-up';
+      else if (dir === '⬇️') playerEl.className = 'boss-fight-player swipe-down';
+      else if (dir === '⬅️') playerEl.className = 'boss-fight-player swipe-left';
+      else if (dir === '➡️') playerEl.className = 'boss-fight-player swipe-right';
+      setTimeout(() => playerEl.className = 'boss-fight-player', 200);
+    }
+
+    const correct = dir === bossState.currentAttack;
+    if (correct) {
+      sfxHit();
+      bossState.score++;
+      // Extra: counter attack
+      bossState.bossHp -= Math.max(1, state.hero.baseDmg - 1);
+      if (bossState.bossHp <= 0) { endBossFight(true); return; }
+      $('bossHint').textContent = '✅ Správný úhyb! Protizásah!';
+    } else {
+      takeDamage(1);
+      return;
+    }
+
+    setTimeout(() => bossFightTurn(), 400);
+  }
+
+  function onPlayerAttack() {
+    if (bossState.ended) return;
+
+    // Check if boss is attacking - if so, player can't attack
+    if (bossState.isAttacking) {
+      $('bossHint').textContent = '⚠️ Uhni nejdřív!';
+      return;
+    }
+
+    // Player attacks boss
+    const baseDmg = state.hero.baseDmg || 2;
+    const critChance = (state.skills.crit || 0) * 5 + 10;
+    const critMult = (state.skills.crit || 0) * 0.2 + 1;
+    let dmg = baseDmg;
+
+    if (Math.random() * 100 < critChance) {
+      dmg = Math.round(dmg * critMult);
+      $('bossHint').textContent = `💥 Kritický zásah! ${dmg} dmg!`;
+    } else {
+      $('bossHint').textContent = `⚔️ Útok! ${dmg} dmg`;
+    }
+
+    bossState.bossHp -= dmg;
+    sfxHit();
+    if (bossState.bossHp <= 0) { endBossFight(true); return; }
+    updateBossUI();
+    setTimeout(() => bossFightTurn(), 400);
+  }
+
+  function castSpell(spellId) {
+    if (bossState.ended) return;
+    const bs = bossState;
+    const sk = SKILL_MAP[spellId];
+    if (!sk) return;
+    const lv = state.skills[spellId] || 0;
+    if (lv === 0) { $('bossHint').textContent = '❌ Tohle kouzlo neumíš!'; return; }
+    if (bs.spellCooldowns[spellId] > 0) { $('bossHint').textContent = `⏳ Cooldown: ${bs.spellCooldowns[spellId]} kol`; return; }
+
+    // Passive skills (crit, shadow) just apply continuously
+    if (spellId === 'crit') { $('bossHint').textContent = '🗡️ Kritický útok je pasivní!'; return; }
+
+    // Calculate cooldown
+    const cd = Math.max(1, Math.round(sk.baseCd - lv * sk.cdReduction));
+    bs.spellCooldowns[spellId] = cd;
+
+    // Apply effects
+    if (spellId === 'fireball') {
+      const dmg = lv * 2 + 3;
+      bs.bossHp -= dmg;
+      bs.dot += lv;
+      $('bossHint').textContent = `🔥 Fireball! ${dmg} dmg + ${lv} DoT`;
+    } else if (spellId === 'lightning') {
+      const dmg = lv * 3 + 2;
+      bs.bossHp -= dmg;
+      bs.stunned = 1;
+      $('bossHint').textContent = `⚡ Blesk! ${dmg} dmg + stun!`;
+    } else if (spellId === 'shield') {
+      // Block next attack
+      const block = lv * 10 + 10;
+      if (lv >= 5) {
+        $('bossHint').textContent = `🛡️ Štít: ${block}% blok + odraz (1 kolo)`;
+      } else {
+        $('bossHint').textContent = `🛡️ Štít: ${block}% blok (1 kolo)`;
+      }
+      // Implemented in takeDamage
+      bs.shieldActive = block;
+    } else if (spellId === 'heal') {
+      const heal = lv + 2;
+      bs.playerHp = Math.min(bs.maxPlayerHp, bs.playerHp + heal);
+      $('bossHint').textContent = `💚 Léčení! +${heal} HP`;
+    } else if (spellId === 'freeze') {
+      const turns = lv + 1;
+      bs.frozen += turns;
+      $('bossHint').textContent = `❄️ Mráz! ${turns} kola zpomalení`;
+    } else if (spellId === 'clone') {
+      // Chance that boss attacks clone
+      const chance = lv * 8 + 10;
+      if (Math.random() * 100 < chance) {
+        $('bossHint').textContent = `🌀 Klon! Boss zaútočil na klona!`;
+        return; // skip boss turn
+      } else {
+        $('bossHint').textContent = `🌀 Klon selhal...`;
+      }
+    } else if (spellId === 'shadow') {
+      const dmg = lv * 4 + 5;
+      bs.bossHp -= dmg;
+      $('bossHint').textContent = `🌑 Stín! ${dmg} dmg ignoruje obranu!`;
+    }
+
+    sfxSuccess();
+    if (bs.bossHp <= 0) { endBossFight(true); return; }
+    updateBossUI();
+    setTimeout(() => bossFightTurn(), 400);
+  }
+
+  function takeDamage(amount) {
+    if (bossState.ended) return;
+    const bs = bossState;
+
+    // Shield check
+    if (bs.shieldActive) {
+      const block = bs.shieldActive;
+      if (block >= 100) {
+        $('bossHint').textContent = `🛡️ Štít odrazil útok!`;
+        delete bs.shieldActive;
+        // Counter damage
+        bs.bossHp -= 2;
+        if (bs.bossHp <= 0) { endBossFight(true); return; }
+      } else {
+        amount = Math.max(1, Math.round(amount * (1 - block / 100)));
+        $('bossHint').textContent = `🛡️ Štít ztlumil na ${amount} dmg`;
+        delete bs.shieldActive;
+      }
+    } else {
+      // Avoid unnecessary DOM read
+    }
+
+    bs.playerHp -= amount;
+    sfxPlayerHit();
+    updateBossUI();
+    $('bossHint').textContent = `💔 Zásah! -${amount} HP`;
+
+    if (bs.playerHp <= 0) {
+      endBossFight(false);
+    } else {
+      // Boss also takes this chance to attack again
+      setTimeout(() => {
+        if (!bossState.ended) bossFightTurn();
+      }, 600);
+    }
+  }
+
+  function endBossFight(won) {
+    if (bossState.ended) return;
+    bossState.ended = true;
+    cleanupTimers();
+    if (bossState._attackTimer) clearTimeout(bossState._attackTimer);
+
+    // Cleanup listeners
+    const arena = $('bossArena');
+    if (arena && arena._bsHandlers) {
+      arena._bsHandlers.forEach(h => arena.removeEventListener(h[0], h[1]));
+      arena._bsHandlers = null;
+    }
+    const oldMedal = $('medalScreen');
+    if (oldMedal) oldMedal.remove();
+
+    if (won) {
+      const boss = bossState.boss;
+      // Mark as defeated
+      if (!state.bossMedals) state.bossMedals = [[],[],[],[],[],[],[],[]].map(()=>[false]);
+      if (!state.bossMedals[boss.id]) state.bossMedals[boss.id] = [false];
+      state.bossMedals[boss.id][0] = true;
+      state.wins = (state.wins || 0) + 1;
+
+      // Apply reward
+      const reward = boss.reward;
+      if (reward.gold) state.hero.gold = (state.hero.gold || 0) + reward.gold;
+      if (reward.weapon && state.hero.weapon === 'fists') state.hero.weapon = reward.weapon;
+      if (reward.armor && state.hero.armor === 'rags') state.hero.armor = reward.armor;
+
+      saveGame();
+      checkAchievements();
+
+      sfxBossDefeat();
+      $('resultIcon').textContent = '🏆';
+      $('resultTitle').textContent = `${boss.name} poražen!`;
+      let msg = `Získal jsi ${reward.gold || 0}💰`;
+      if (reward.weapon) msg += ` + ${reward.weapon}`;
+      if (reward.armor) msg += ` + ${reward.armor}`;
+      $('resultMsg').textContent = msg;
+      $('resultBtn').innerHTML = `<button class="btn btn-primary" onclick="game.showScreen('hero')">👤 Hrdina</button>`;
+
+      // Unlock next boss? No, all visible but require skill level
+    } else {
+      state.deaths = (state.deaths || 0) + 1;
+      saveGame();
+      $('resultIcon').textContent = '💀';
+      $('resultTitle').textContent = `${bossState.boss.name} tě porazil`;
+      $('resultMsg').textContent = `Více trénuj kouzla!`;
+      $('resultBtn').innerHTML = `<button class="btn btn-primary" onclick="game.startBossFight(${bossState.bossIdx})">🔄 Znovu</button><button class="btn btn-secondary" onclick="game.showScreen('hero')">👤 Hrdina</button>`;
+    }
+    showScreen('result');
+  }
+
+  function showMessage(msg) {
+    // Simple notification
+    const p = document.createElement('div');
+    p.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:300;background:#12122a;border:2px solid #e94560;border-radius:12px;padding:20px 30px;text-align:center;font-size:16px;font-weight:bold';
+    p.textContent = msg;
+    document.body.appendChild(p);
+    setTimeout(() => { p.style.transition='opacity 0.3s'; p.style.opacity='0'; setTimeout(()=>p.remove(),300); }, 2000);
+  }
+
   // ===== COUNTDOWN =====
-  function showCountdown(s,cb){let r=s;const el=$('countdownOverlay'),ne=$('countdownNumber');el.classList.remove('hidden');ne.textContent=r;playTone(440+r*60,0.15,'sine',0.1);const iv=setInterval(()=>{r--;if(r<=0){clearInterval(iv);el.classList.add('hidden');if(cb)cb();}else{ne.textContent=r;playTone(440+r*60,0.15,'sine',0.1);}},1000);}
+  function showCountdown(s,cb){
+    cleanupTimers();
+    let r=s;const el=$('countdownOverlay'),ne=$('countdownNumber');
+    el.classList.remove('hidden');ne.textContent=r;playTone(440+r*60,0.15,'sine',0.1);
+    minigameState.countdownInterval=setInterval(()=>{r--;if(r<=0){clearInterval(minigameState.countdownInterval);minigameState.countdownInterval=null;el.classList.add('hidden');if(cb)cb();}else{ne.textContent=r;playTone(440+r*60,0.15,'sine',0.1);}},1000);
+  }
 
   // ===== ACHIEVEMENTS & MEDALS =====
   const BOSS_MEDAL_FLOORS=[10,20,30,40,50];
@@ -431,8 +922,8 @@
 
   window.game = {
     showScreen, enterTraining, enterDungeonBySkill: (id) => { showScreen('dungeons'); },
-    simonClick, colorInput, gridPick, judgeAnswer,
-    echoClick, orderPick, reverseInput, reverseAnswer
+    simonClick, colorInput, gridPick, judgeAnswer, echoClick, orderPick, reverseInput, reverseAnswer,
+    startBossFight, castSpell, showMedals, showMessage
   };
 
   init();
