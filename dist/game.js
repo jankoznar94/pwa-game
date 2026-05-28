@@ -57,7 +57,6 @@
     if (minigameState.countdownInterval) { clearInterval(minigameState.countdownInterval); minigameState.countdownInterval = null; }
     ['simonTimeout','echoTimeout','reverseTimeout'].forEach(k => { if (minigameState[k]) { clearTimeout(minigameState[k]); delete minigameState[k]; } });
     if (mapBattleState && mapBattleState._attackTimer) { clearTimeout(mapBattleState._attackTimer); mapBattleState._attackTimer = null; }
-    let id = window.setTimeout(()=>{},0); while(id--) window.clearTimeout(id);
   }
 
   const SAVE_KEY = 'dungeonRecallV6';
