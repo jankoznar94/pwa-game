@@ -21,10 +21,10 @@
     { id:'fireball', name:'Fireball', icon:'🔥', dungeon:'simon', dungeonName:'🌲 Les stínů', maxLv:10, desc:t=>t===0?'Zamčeno':`${t*2+3} dmg + ${t} DoT`, baseCd:6, cdR:0.3 },
     { id:'shield', name:'Štít', icon:'🛡️', dungeon:'color', dungeonName:'🏜️ Pouštní nekropole', maxLv:10, desc:t=>t===0?'Zamčeno':`${t*10+10}% blok`, baseCd:9, cdR:0.3 },
     { id:'heal', name:'Léčení', icon:'💚', dungeon:'grid', dungeonName:'⏳ Zřícenina času', maxLv:10, desc:t=>t===0?'Zamčeno':`+${t+2} HP`, baseCd:12, cdR:0.5 },
-    { id:'crit', name:'Kritik', icon:'🗡️', dungeon:'aim', dungeonName:'🎯 Temná aréna', maxLv:10, desc:t=>t===0?'Zamčeno':`${t*5+10}% crit`, baseCd:0, cdR:0 },
-    { id:'clone', name:'Klon', icon:'🌀', dungeon:'echo', dungeonName:'🔊 Ozvěny jeskyně', maxLv:10, desc:t=>t===0?'Zamčeno':`${t*8+10}% klon`, baseCd:14, cdR:0.5 },
-    { id:'freeze', name:'Mráz', icon:'❄️', dungeon:'order', dungeonName:'🧩 Labyrint pravidel', maxLv:10, desc:t=>t===0?'Zamčeno':`${t+1}k zpomalení`, baseCd:10, cdR:0.4 },
-    { id:'shadow', name:'Stín', icon:'🌑', dungeon:'reverse', dungeonName:'🔄 Zrcadlová síň', maxLv:10, desc:t=>t===0?'Zamčeno':`${t*4+5} dmg`, baseCd:10, cdR:0.4 },
+    { id:'crit', name:'Kritik', icon:'🗡️', dungeon:'simon', dungeonName:'🌲 Les stínů', maxLv:10, desc:t=>t===0?'Zamčeno':`${t*5+10}% crit`, baseCd:0, cdR:0 },
+    { id:'clone', name:'Klon', icon:'🌀', dungeon:'color', dungeonName:'🏜️ Pouštní nekropole', maxLv:10, desc:t=>t===0?'Zamčeno':`${t*8+10}% klon`, baseCd:14, cdR:0.5 },
+    { id:'freeze', name:'Mráz', icon:'❄️', dungeon:'grid', dungeonName:'⏳ Zřícenina času', maxLv:10, desc:t=>t===0?'Zamčeno':`${t+1}k zpomalení`, baseCd:10, cdR:0.4 },
+    { id:'shadow', name:'Stín', icon:'🌑', dungeon:'simon', dungeonName:'🌲 Les stínů', maxLv:10, desc:t=>t===0?'Zamčeno':`${t*4+5} dmg`, baseCd:10, cdR:0.4 },
   ];
   const SKILL_MAP = {}; SKILLS.forEach(s => SKILL_MAP[s.id] = s);
   function skillXpToLevel(lv) { return 3 + lv * 2; }
@@ -524,6 +524,8 @@
     cleanupTimers();
     const areas = { simon:'simonArea', color:'colorClashArea', grid:'gridDefenderArea' };
     const fns = { simon:startSimon, color:startColorClash, grid:startGridDefender };
+    const el = $(areas[type]);
+    if (el && fns[type]) { el.classList.remove('minigame-hide'); fns[type](); }
   }
 
   function hideAllMinigames() {
