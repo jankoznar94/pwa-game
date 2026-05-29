@@ -396,7 +396,7 @@
     }
 
     const arrow = $('mbArrow');
-    if (arrow) arrow.className = 'boss-attack-arrow hidden';
+    if (arrow) arrow.setAttribute('class', 'boss-attack-arrow hidden');
 
     const playerEl = $('mbPlayerFigure');
     if (playerEl) {
