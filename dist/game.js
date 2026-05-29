@@ -44,13 +44,13 @@
   // ===== LOCATIONS (MAP) =====
   const DIRECTIONS = ['⬆️','⬇️','⬅️','➡️'];
   const LOCATIONS = [
-    { id:0, name:'🌲 Stínový les', icon:'🌲', monsters:5, xpReward:5, boss:{name:'Stínový pán',face:'👹',hp:10}, skill:'fireball', minSkill:0, reward:{gold:5,weapon:'dagger'} },
-    { id:1, name:'🏜️ Pouštní brána', icon:'🏜️', monsters:7, xpReward:7, boss:{name:'Faraonova kletba',face:'🐍',hp:14}, skill:'shield', minSkill:2, reward:{gold:12} },
-    { id:2, name:'⏳ Časová zřícenina', icon:'⌛', monsters:8, xpReward:8, boss:{name:'Architekt času',face:'⌛',hp:16}, skill:'heal', minSkill:3, reward:{gold:15,weapon:'sword'} },
-    { id:3, name:'🎯 Temná aréna', icon:'🎯', monsters:9, xpReward:10, boss:{name:'Mistr terčů',face:'🎯',hp:18}, skill:'crit', minSkill:4, reward:{gold:20} },
-    { id:4, name:'🔊 Jeskyně ozvěn', icon:'🔊', monsters:10, xpReward:12, boss:{name:'Šepotající hlas',face:'🔊',hp:20}, skill:'clone', minSkill:5, reward:{gold:25,armor:'chainmail'} },
-    { id:5, name:'🧩 Labyrint zákonů', icon:'🧩', monsters:11, xpReward:14, boss:{name:'Architekt zákonů',face:'🧩',hp:22}, skill:'freeze', minSkill:6, reward:{gold:30} },
-    { id:6, name:'🔄 Zrcadlový sál', icon:'🔄', monsters:12, xpReward:16, boss:{name:'Zrcadlový král',face:'🔄',hp:25}, skill:'shadow', minSkill:7, reward:{gold:40,weapon:'flameSword',armor:'plate'} },
+    { id:0, name:'🌲 Stínový les', icon:'🌲', monsters:5, xpReward:100, bossXp:200, boss:{name:'Stínový pán',face:'👹',hp:10}, skill:'fireball', minSkill:0, reward:{gold:5,weapon:'dagger'} },
+    { id:1, name:'🏜️ Pouštní brána', icon:'🏜️', monsters:7, xpReward:140, bossXp:240, boss:{name:'Faraonova kletba',face:'🐍',hp:14}, skill:'shield', minSkill:2, reward:{gold:12} },
+    { id:2, name:'⏳ Časová zřícenina', icon:'⌛', monsters:8, xpReward:180, bossXp:300, boss:{name:'Architekt času',face:'⌛',hp:16}, skill:'heal', minSkill:3, reward:{gold:15,weapon:'sword'} },
+    { id:3, name:'🎯 Temná aréna', icon:'🎯', monsters:9, xpReward:250, bossXp:400, boss:{name:'Mistr terčů',face:'🎯',hp:18}, skill:'crit', minSkill:4, reward:{gold:20} },
+    { id:4, name:'🔊 Jeskyně ozvěn', icon:'🔊', monsters:10, xpReward:300, bossXp:500, boss:{name:'Šepotající hlas',face:'🔊',hp:20}, skill:'clone', minSkill:5, reward:{gold:25,armor:'chainmail'} },
+    { id:5, name:'🧩 Labyrint zákonů', icon:'🧩', monsters:11, xpReward:350, bossXp:600, boss:{name:'Architekt zákonů',face:'🧩',hp:22}, skill:'freeze', minSkill:6, reward:{gold:30} },
+    { id:6, name:'🔄 Zrcadlový sál', icon:'🔄', monsters:12, xpReward:400, bossXp:800, boss:{name:'Zrcadlový král',face:'🔄',hp:25}, skill:'shadow', minSkill:7, reward:{gold:40,weapon:'flameSword',armor:'plate'} },
   ];
 
   // ===== STATE =====
@@ -559,8 +559,8 @@
         const p = (state.locationProgress[locId] || 0) + 1;
         state.locationProgress[locId] = p;
         if (p >= mb.loc.monsters) {
-          // All monsters done — XP jen po dokončení všech nestvůr
-          state.hero.xp = (state.hero.xp || 0) + mb.loc.monsters;
+          // All monsters done — XP z xpReward
+          state.hero.xp = (state.hero.xp || 0) + mb.loc.xpReward;
           $('resultIcon').textContent = '👹';
           $('resultTitle').textContent = `Všech ${mb.loc.monsters} nestvůr poraženo!`;
           $('resultMsg').textContent = `Teď na tebe čeká ${mb.loc.boss.name}!`;
@@ -573,11 +573,12 @@
           $('resultBtn').innerHTML = `<button class="btn btn-primary" onclick="game.enterLocation(${locId})">🚀 Další</button><button class="btn btn-secondary" onclick="game.showScreen('map')">🌍 Mapa</button>`;
         }
       } else {
-        // Boss defeated — výrazně více XP
+        // Boss defeated — XP z bossXp
         state.bossesDefeated[locId] = true;
-        state.hero.xp = (state.hero.xp || 0) + 10; // +10 XP za bossa
-        // Level up check
-        if (state.hero.xp >= state.hero.level * 5) {
+        state.hero.xp = (state.hero.xp || 0) + mb.loc.bossXp;
+        // Level up check (level*100 XP pro level N, zvyšuje se s každým levelem)
+        const xpNeeded = state.hero.level * 100;
+        if (state.hero.xp >= xpNeeded) {
           state.hero.xp = 0;
           state.hero.level++;
           state.hero.maxHp = 100 + Math.floor(state.hero.level * 10);
