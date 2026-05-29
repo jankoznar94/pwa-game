@@ -179,7 +179,8 @@
     const eHpPct = mb.isBoss ? Math.round((mb.bossHp / mb.maxBossHp) * 100) : 100;
     $('mbPlayerHp').textContent = `❤️ ${mb.playerHp}/${mb.maxPlayerHp} (${pHpPct}%)`;
     $('mbEnemyHp').textContent = mb.isBoss ? `❤️ ${mb.bossHp}/${mb.maxBossHp} (${eHpPct}%)` : `👾`;
-    $('mbFigure').textContent = mb.isBoss ? mb.loc.boss.face : '👾';
+    const emoji = mb.isBoss ? mb.loc.boss.face : '👾';
+    $('mbFigure').innerHTML = `${emoji}<span class="damage-text hidden" id="mbDamageText"></span>`;
     $('mbHint').textContent = mb.isBoss ? `⬆️⬇️⬅️➡️ uhni! Černá = útok (70%) | Žlutá = heavy (20%) → 2x meč | Červená = Lhář (15%+): swipe≠šipka! | Zelená = opak směru | Fialový ⏳: čekáni` : `⬆️⬇️⬅️➡️ uhni! Nestvůra ${mb.loc.monsters-mb.progress}/${mb.loc.monsters}`;
 
     // Update counterattack icon position (center of arena)
@@ -417,6 +418,7 @@
         mapBattleState.bossHp -= Math.max(1, dmg);
         if (mapBattleState.bossHp <= 0) { endMapBattle(true); return; }
         $('mbHint').textContent = `✅ Úhyb! ${mapBattleState.bossHp} zbývá`;
+        updateMapBattleUI();
         setTimeout(() => mapBattleTurn(), 500);
       } else {
         // Boss fáze — RPG poškození: baseDmg ±20%
@@ -433,6 +435,7 @@
         const phase = mapBattleState.bossHp / mapBattleState.maxBossHp;
         const hint = phase > 0.5 ? `✅ Úhyb! Boss ${mapBattleState.bossHp} HP zbývá` : '➡️ Boss slabí!';
         $('mbHint').textContent = hint;
+        updateMapBattleUI();
 
         // Counterattack: po úhybu od heavy útoku zobrazí meč
         if (mapBattleState.isHeavyAttack) {
