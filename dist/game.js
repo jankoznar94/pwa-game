@@ -29,6 +29,18 @@
   const SKILL_MAP = {}; SKILLS.forEach(s => SKILL_MAP[s.id] = s);
   function skillXpToLevel(lv) { return 3 + lv * 2; }
 
+  // ===== ITEMS (WEAPONS/ARMOR) =====
+  const ITEMS = [
+    { id:'fists', name:'Pěsti', type:'weapon', baseDmg:2, bonusHp:0, icon:'👊' },
+    { id:'rags', name:'Hadry', type:'armor', baseDmg:0, bonusHp:0, icon:'rag' },
+    { id:'dagger', name:'Dýka', type:'weapon', baseDmg:5, bonusHp:0, icon:'🗡️' },
+    { id:'sword', name:'Meč', type:'weapon', baseDmg:8, bonusHp:0, icon:'⚔️' },
+    { id:'flameSword', name:'Plamenový meč', type:'weapon', baseDmg:12, bonusHp:0, icon:'🔥' },
+    { id:'chainmail', name:'Kroužková pletva', type:'armor', baseDmg:0, bonusHp:20, icon:'🛡️' },
+    { id:'plate', name:'Plná zbroj', type:'armor', baseDmg:0, bonusHp:40, icon:'🛡️' },
+  ];
+  const ITEM_MAP = {}; ITEMS.forEach(i => ITEM_MAP[i.id] = i);
+
   // ===== LOCATIONS (MAP) =====
   const DIRECTIONS = ['⬆️','⬇️','⬅️','➡️'];
   const LOCATIONS = [
@@ -58,7 +70,8 @@
 
   const SAVE_KEY = 'dungeonRecallV6';
   function defaultState() {
-    const s = { skills:{}, skillXp:{}, hero:{level:1,xp:0,gold:0,hp:100,maxHp:100,baseDmg:10,weapon:'fists',armor:'rags'}, deaths:0, wins:0,
+    // ITEMS: fists (baseDmg:2), rags (bonusHp:0), dagger (baseDmg:5), sword (baseDmg:8), flameSword (baseDmg:12), chainmail (bonusHp:20), plate (bonusHp:40)
+    const s = { skills:{}, skillXp:{}, hero:{level:1,xp:0,gold:0,hp:100,maxHp:100,baseDmg:12,inventory:[],equip:{weapon:'fists',armor:'rags'}}, deaths:0, wins:0,
       locationProgress:[0,0,0,0,0,0,0], bossesDefeated:[false,false,false,false,false,false,false], achievements:{} };
     SKILLS.forEach(sk => { s.skills[sk.id]=0; s.skillXp[sk.id]=0; });
     return s;
@@ -278,6 +291,10 @@
     mb.turn++;
     updateMapBattleUI();
 
+    // RPG baseDmg: zbran + level bonus (base 10 + level*3, zbraň dodává baseDmg)
+    const weapon = ITEM_MAP[state.hero.equip.weapon] || ITEM_MAP['fists'];
+    mb.baseDmg = 10 + Math.floor(state.hero.level * 3) + weapon.baseDmg;
+
     SKILLS.forEach(sk => { const l = state.skills[sk.id]||0; if (l>0 && mb.spellCooldowns[sk.id]>0) mb.spellCooldowns[sk.id]--; });
 
     if (mb.stunned > 0) { mb.stunned--; setTimeout(() => mapBattleTurn(), 600); return; }
@@ -356,8 +373,8 @@
     if (dir === mapBattleState.currentAttack) {
       sfxHit();
       // Monster: RPG poškození z úhybu (baseDmg ±20%)
+      const baseDmg = mapBattleState.baseDmg || (10 + Math.floor(state.hero.level * 3) + (ITEM_MAP[state.hero.equip.weapon]||ITEM_MAP['fists']).baseDmg);
       if (!mapBattleState.isBoss) {
-        const baseDmg = state.hero.baseDmg || 2;
         const dmg = Math.round(baseDmg * (0.8 + Math.random() * 0.4));
         mapBattleState.bossHp -= Math.max(1, dmg);
         if (mapBattleState.bossHp <= 0) { endMapBattle(true); return; }
@@ -365,7 +382,6 @@
         setTimeout(() => mapBattleTurn(), 500);
       } else {
         // Boss fáze — RPG poškození: baseDmg ±20%
-        const baseDmg = state.hero.baseDmg || 2;
         const dmg = Math.round(baseDmg * (0.8 + Math.random() * 0.4));
         mapBattleState.bossHp -= Math.max(1, dmg);
         if (mapBattleState.bossHp <= 0) { endMapBattle(true); return; }
@@ -401,9 +417,9 @@
     
     sfxHit();
     $('mbHint').textContent = '🛡️ Štít zablokoval zákeřný útok!';
-    mapBattleState.bossHp -= Math.max(1, state.hero.baseDmg - 1);
+    const baseDmg = mapBattleState.baseDmg || (10 + Math.floor(state.hero.level * 3) + (ITEM_MAP[state.hero.equip.weapon]||ITEM_MAP['fists']).baseDmg);
+    mapBattleState.bossHp -= Math.max(1, Math.round(baseDmg * (0.8 + Math.random() * 0.4)));
     mapBattleState.isAttacking = false;
-    
     setTimeout(() => mapBattleTurn(), 500);
   }
 
@@ -412,7 +428,7 @@
     if (mapBattleState.isAttacking) { $('mbHint').textContent = '⚠️ Uhni nejdřív!'; return; }
     // monster: pokračovat, něhodit hned končit
 
-    const baseDmg = state.hero.baseDmg || 2;
+    const baseDmg = mapBattleState.baseDmg || (10 + Math.floor(state.hero.level * 3) + (ITEM_MAP[state.hero.equip.weapon]||ITEM_MAP['fists']).baseDmg);
     const critChance = (state.skills.crit||0) * 5 + 10;
     const critMult = (state.skills.crit||0) * 0.2 + 1;
     let dmg = baseDmg;
@@ -559,8 +575,8 @@
         state.bossesDefeated[locId] = true;
         const r = mb.loc.reward;
         if (r.gold) state.hero.gold = (state.hero.gold || 0) + r.gold;
-        if (r.weapon && state.hero.weapon === 'fists') state.hero.weapon = r.weapon;
-        if (r.armor && state.hero.armor === 'rags') state.hero.armor = r.armor;
+        if (r.weapon && state.hero.equip.weapon === 'fists') state.hero.equip.weapon = r.weapon;
+        if (r.armor && state.hero.equip.armor === 'rags') state.hero.equip.armor = r.armor;
 
         sfxBossDefeat();
         $('resultIcon').textContent = '🏆';
@@ -569,7 +585,7 @@
         if (r.weapon) msg += ` + ${r.weapon}`;
         if (r.armor) msg += ` + ${r.armor}`;
         $('resultMsg').textContent = `Získal jsi ${msg}`;
-        $('resultBtn').innerHTML = `<button class="btn btn-primary" onclick="game.showScreen('map')">🌍 Mapa</button><button class="btn btn-secondary" onclick="game.showScreen('tower')">🔮 Věž magie</button>`;
+        $('resultBtn').innerHTML = `<button class="btn btn-primary" onclick="game.showScreen('map')">🌍 Mapa</button><button class="btn btn-secondary" onclick="game.showScreen('hero')">🎒 Inventář</button>`;
 
         if (locId + 1 < LOCATIONS.length) {
           $('resultBtn').innerHTML += `<button class="btn btn-secondary" onclick="game.enterLocation(${locId+1})">🚀 Další lokace</button>`;
