@@ -334,7 +334,6 @@
 
     const arrow = $('mbArrow');
     if (arrow) {
-      arrow.innerHTML = ''; // vyčistit emoji
       arrow.setAttribute('class', 'boss-attack-arrow'); // reset tříd na SVG
       // Nastavit fill barvu podle typu útoku
       if (isHeavyAttack) arrow.style.fill = '#f1c40f';
