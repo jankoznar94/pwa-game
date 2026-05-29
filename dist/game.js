@@ -327,6 +327,9 @@
     // else: normal attack
     const windowTime = mb.frozen > 0 ? speed * 1.5 : (isHeavyAttack ? speed * 2.5 : (isInvertedAttack || isWaitAttack ? speed * 1.5 : (isBlockAttack ? speed * 1.5 : speed)));
 
+    // Uložíme windowTime pro pozdější použití (counterattack timeout)
+    mb.windowTime = windowTime;
+
     const arrow = $('mbArrow');
     if (arrow) { 
       arrow.textContent = isWaitAttack ? '⏳' : attackDir; 
@@ -417,7 +420,8 @@
           if (counterIcon) {
             counterIcon.classList.remove('hidden');
             // Zaražený boss ×2 čas, ale jen pokud je aktuální útok
-            mapBattleState._counterAttackWindow = windowTime * 2;
+            const counterWindowTime = mapBattleState.windowTime || 900;
+            mapBattleState._counterAttackWindow = counterWindowTime * 2;
           }
         }
 
