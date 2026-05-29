@@ -555,28 +555,21 @@
       state.wins = (state.wins || 0) + 1;
 
       if (!mb.isBoss) {
-        // Monster killed, advance progress + XP
+        // Monster killed, advance progress
         const p = (state.locationProgress[locId] || 0) + 1;
         state.locationProgress[locId] = p;
-        state.hero.xp = (state.hero.xp || 0) + 1;
-        // Level up: xp >= level * 3
-        if (state.hero.xp >= state.hero.level * 3) {
-          state.hero.xp = 0;
-          state.hero.level++;
-          state.hero.maxHp = 100 + Math.floor(state.hero.level * 10);
-          state.hero.baseDmg = 10 + Math.floor(state.hero.level * 3);
-          sfxLevelUp();
-          showScreen('hero');
-        }
         if (p >= mb.loc.monsters) {
+          // All monsters done — XP jen po dokončení všech nestvůr
+          state.hero.xp = (state.hero.xp || 0) + mb.loc.monsters;
           $('resultIcon').textContent = '👹';
           $('resultTitle').textContent = `Všech ${mb.loc.monsters} nestvůr poraženo!`;
           $('resultMsg').textContent = `Teď na tebe čeká ${mb.loc.boss.name}!`;
           $('resultBtn').innerHTML = `<button class="btn btn-primary" onclick="game.enterLocation(${locId})">👹 Jdi na bosse!</button><button class="btn btn-secondary" onclick="game.showScreen('map')">🌍 Mapa</button>`;
         } else {
+          // XP se přidává až po dokončení lokace, zatím jen zobrazení
           $('resultIcon').textContent = '✅';
           $('resultTitle').textContent = 'Nestvůra poražena!';
-          $('resultMsg').textContent = `Postup: ${p}/${mb.loc.monsters} | ✨ XP: ${state.hero.xp}`;
+          $('resultMsg').textContent = `Postup: ${p}/${mb.loc.monsters}`;
           $('resultBtn').innerHTML = `<button class="btn btn-primary" onclick="game.enterLocation(${locId})">🚀 Další</button><button class="btn btn-secondary" onclick="game.showScreen('map')">🌍 Mapa</button>`;
         }
       } else {
