@@ -407,6 +407,13 @@
       const baseDmg = mapBattleState.baseDmg || (10 + Math.floor(state.hero.level * 3) + (ITEM_MAP[state.hero.equip.weapon]||ITEM_MAP['fists']).baseDmg);
       if (!mapBattleState.isBoss) {
         const dmg = Math.round(baseDmg * (0.8 + Math.random() * 0.4));
+        // Show damage text over boss
+        const damageText = $('mbDamageText');
+        if (damageText) {
+          damageText.textContent = `-${Math.max(1, dmg)}`;
+          damageText.classList.remove('hidden');
+          setTimeout(() => damageText.classList.add('hidden'), 600);
+        }
         mapBattleState.bossHp -= Math.max(1, dmg);
         if (mapBattleState.bossHp <= 0) { endMapBattle(true); return; }
         $('mbHint').textContent = `✅ Úhyb! ${mapBattleState.bossHp} zbývá`;
@@ -414,6 +421,13 @@
       } else {
         // Boss fáze — RPG poškození: baseDmg ±20%
         const dmg = Math.round(baseDmg * (0.8 + Math.random() * 0.4));
+        // Show damage text over boss
+        const damageText = $('mbDamageText');
+        if (damageText) {
+          damageText.textContent = `-${Math.max(1, dmg)}`;
+          damageText.classList.remove('hidden');
+          setTimeout(() => damageText.classList.add('hidden'), 600);
+        }
         mapBattleState.bossHp -= Math.max(1, dmg);
         if (mapBattleState.bossHp <= 0) { endMapBattle(true); return; }
         const phase = mapBattleState.bossHp / mapBattleState.maxBossHp;
@@ -538,6 +552,14 @@
         circle.style.transition = 'none';
         circle.style.strokeDashoffset = '176';
       }
+    }
+
+    // Show damage text under player
+    const playerDamageText = $('mbPlayerDamageText');
+    if (playerDamageText) {
+      playerDamageText.textContent = `-${amount}`;
+      playerDamageText.classList.remove('hidden');
+      setTimeout(() => playerDamageText.classList.add('hidden'), 600);
     }
 
     $('mbHint').textContent = `💔 Zásah! -${amount}`;
