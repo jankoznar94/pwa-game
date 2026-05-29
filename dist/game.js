@@ -332,18 +332,7 @@
     // Uložíme windowTime pro pozdější použití (counterattack timeout)
     mb.windowTime = windowTime;
 
-    const arrow = $('mbArrow');
-    if (arrow) { 
-      arrow.textContent = isWaitAttack ? '⏳' : isLiarAttack ? '🔵' : attackDir; 
-      let className = 'boss-attack-arrow';
-      if (isHeavyAttack) className += ' boss-attack-yellow';
-      else if (isBlockAttack) className += ' boss-attack-red';
-      else if (isInvertedAttack) className += ' boss-attack-green';
-      else if (isLiarAttack) className += ' boss-attack-red'; // Lhář: červený
-      else if (isWaitAttack) className += ' boss-attack-purple'; // fialový čekání
-      arrow.className = className;
-      console.log('mapBattleTurn arrow:', arrow.className);
-    }
+    const arrow = $('mbArrow');\n    if (arrow) { \n      arrow.innerHTML = ''; // vyčistit emoji\n      // Nastavit fill barvu podle typu útoku\n      if (isHeavyAttack) arrow.style.fill = '#f1c40f';\n      else if (isBlockAttack) arrow.style.fill = '#e74c3c';\n      else if (isInvertedAttack) arrow.style.fill = '#2ecc71';\n      else if (isLiarAttack) arrow.style.fill = '#e74c3c'; // červený\n      else if (isWaitAttack) arrow.style.fill = '#9b59b6';\n      \n      let className = 'boss-attack-arrow';\n      if (isHeavyAttack) className += ' boss-attack-yellow';\n      else if (isBlockAttack) className += ' boss-attack-red';\n      else if (isInvertedAttack) className += ' boss-attack-green';\n      else if (isLiarAttack) className += ' boss-attack-red'; // Lhář: červený\n      else if (isWaitAttack) className += ' boss-attack-purple'; // fialový čekání\n      arrow.className = className;\n      console.log('mapBattleTurn arrow:', arrow.className);\n    }
     const counterIcon = $('mbCounterAttack');
     if (counterIcon) counterIcon.classList.add('hidden');
     const shieldIcon = $('mbShieldIcon');
