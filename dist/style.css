@@ -169,6 +169,12 @@ body {
 .boss-fight-player.swipe-right { transform:translate(30px,0); }
 .boss-attack-arrow { position:absolute;top:50%;left:50%;font-size:36px;transform:translate(-50%,-50%);z-index:10;animation:arrowPulse 0.3s ease-out; }
 @keyframes arrowPulse { 0%{font-size:54px;opacity:0}100%{font-size:36px;opacity:1} }
+.boss-attack-yellow { color:#f1c40f; }
+.counter-attack-icon {
+  position:absolute;top:50%;left:50%;font-size:64px;transform:translate(-50%,-50%);z-index:15;
+  display:none;color:#4a7dff;cursor:pointer;animation:counterPulse 0.5s ease-out infinite;
+}
+@keyframes counterPulse { 0%,100%{transform:translate(-50%,-50%) scale(1);opacity:1}50%{transform:translate(-50%,-50%) scale(1.2);opacity:0.7} }
 .attack-timer-ring {
   position:absolute;top:50%;left:50%;width:64px;height:64px;
   transform:translate(-50%,-50%);z-index:5;

@@ -160,7 +160,15 @@
     $('mbPlayerHp').textContent = '❤️'.repeat(mb.playerHp) + '🖤'.repeat(Math.max(0, mb.maxPlayerHp - mb.playerHp));
     $('mbEnemyHp').textContent = mb.isBoss ? ('❤️'.repeat(mb.bossHp)+'🖤'.repeat(Math.max(0, mb.maxBossHp-mb.bossHp))) : '👾';
     $('mbFigure').textContent = mb.isBoss ? mb.loc.boss.face : '👾';
-    $('mbHint').textContent = mb.isBoss ? `⬆️⬇️⬅️➡️ uhni! Kolo ${mb.turn}` : `⬆️⬇️⬅️➡️ uhni! Nestvůra ${mb.loc.monsters-mb.progress}/${mb.loc.monsters}`;
+    $('mbHint').textContent = mb.isBoss ? `⬆️⬇️⬅️➡️ uhni! Černá šipka = útok | Žlutá šipka = heavy (úhyb → meč = 2x útok)` : `⬆️⬇️⬅️➡️ uhni! Nestvůra ${mb.loc.monsters-mb.progress}/${mb.loc.monsters}`;
+
+    // Update counterattack icon position (center of arena)
+    const counterIcon = $('mbCounterAttack');
+    if (counterIcon) {
+      counterIcon.style.top = '50%';
+      counterIcon.style.left = '50%';
+      counterIcon.style.transform = 'translate(-50%, -50%)';
+    }
 
     // Spells
     const container = $('mbSpells');
@@ -186,13 +194,34 @@
     let startX, startY;
     const handlers = [];
 
+    // Click handler for counterattack (PC)
+    const counterIcon = $('mbCounterAttack');
+    if (counterIcon) {
+      counterIcon.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (mapBattleState && !mapBattleState.ended && mapBattleState.isHeavyAttack) {
+          onMapCounterAttack();
+        }
+      });
+    }
+    handlers.push(['click', (e) => { /* handled above */ }]);
+
     const ts = (e) => { if (mapBattleState.ended || mapBattleState.isAttacking) return; const t=e.touches[0]; startX=t.clientX; startY=t.clientY; };
     const te = (e) => {
       if (mapBattleState.ended || !startX) return;
       const t = e.changedTouches[0];
       const dx = t.clientX - startX, dy = t.clientY - startY;
       startX = startY = null;
-      if (Math.abs(dx)<20 && Math.abs(dy)<20) { onMapAttack(); return; }
+      if (Math.abs(dx)<20 && Math.abs(dy)<20) { 
+        // Check if clicking on counter-attack icon
+        const counterIcon = $('mbCounterAttack');
+        if (counterIcon && !counterIcon.classList.contains('hidden') && mapBattleState.isHeavyAttack) {
+          onMapCounterAttack();
+          return;
+        }
+        onMapAttack();
+        return; 
+      }
       let dir;
       if (Math.abs(dy) > Math.abs(dx)) dir = dy < 0 ? '⬆️' : '⬇️';
       else dir = dx < 0 ? '⬅️' : '➡️';
@@ -232,13 +261,20 @@
     // Zpomalím útoky pro nižší levely — base 900ms, snížení podle turn, frozen * 1.5
     // Bossy: minime 900ms, zpomalují se pomaleji než monsters (turn*10 místo *15)
     const speed = Math.max(500, 900 - mb.turn * 10);
-    const windowTime = mb.frozen > 0 ? speed * 1.5 : speed;
+    const isHeavyAttack = Math.random() < 0.25; // 25% chance for heavy attack
+    const windowTime = mb.frozen > 0 ? speed * 1.5 : (isHeavyAttack ? speed * 2.5 : speed);
 
     const arrow = $('mbArrow');
-    if (arrow) { arrow.textContent = attackDir; arrow.className = 'boss-attack-arrow'; }
+    if (arrow) { 
+      arrow.textContent = attackDir; 
+      arrow.className = 'boss-attack-arrow' + (isHeavyAttack ? ' boss-attack-yellow' : '');
+    }
+    const counterIcon = $('mbCounterAttack');
+    if (counterIcon) counterIcon.classList.add('hidden');
 
     mb.isAttacking = true;
     mb.currentAttack = attackDir;
+    mb.isHeavyAttack = isHeavyAttack;
     const playerEl = $('mbPlayerFigure');
     if (playerEl) playerEl.className = 'boss-fight-player';
 
@@ -264,13 +300,13 @@
     clearTimeout(mapBattleState._attackTimer);
     mapBattleState.isAttacking = false;
 
-    // Reset animace časového proužku (po úhybu zůstane vybarvené)
+    // Reset animace časového proužku (po úhybu se kruh zruší na nevybarvený stav)
     const ring = $('mbTimerRing');
     if (ring) {
       const circle = ring.querySelector('.timer-circle');
       if (circle) {
         circle.style.transition = 'none';
-        circle.style.strokeDashoffset = '0';
+        circle.style.strokeDashoffset = '176';
       }
     }
 
@@ -298,6 +334,17 @@
         const phase = mapBattleState.bossHp / mapBattleState.maxBossHp;
         const hint = phase > 0.5 ? `✅ Úhyb! Boss ${mapBattleState.bossHp} HP zbývá` : '➡️ Boss slabí!';
         $('mbHint').textContent = hint;
+
+        // Counterattack: po úhybu od heavy útoku zobrazí meč
+        if (mapBattleState.isHeavyAttack) {
+          const counterIcon = $('mbCounterAttack');
+          if (counterIcon) {
+            counterIcon.classList.remove('hidden');
+            // Zaražený boss ×2 čas, ale jen pokud je aktuální útok
+            mapBattleState._counterAttackWindow = windowTime * 2;
+          }
+        }
+
         setTimeout(() => mapBattleTurn(), 500);
       }
     } else {
@@ -342,13 +389,17 @@
     mb.playerHp -= amount;
     sfxPlayerHit();
 
-    // Reset animace časového proužku (po hitu zůstane vybarvené)
+    // Reset counterattack icon
+    const counterIcon = $('mbCounterAttack');
+    if (counterIcon) counterIcon.classList.add('hidden');
+
+    // Reset animace časového proužku (po hitu se kruh zruší na nevybarvený stav)
     const ring = $('mbTimerRing');
     if (ring) {
       const circle = ring.querySelector('.timer-circle');
       if (circle) {
         circle.style.transition = 'none';
-        circle.style.strokeDashoffset = '0';
+        circle.style.strokeDashoffset = '176';
       }
     }
 
@@ -359,6 +410,27 @@
       // Bossy/příšery: delší timeout po zásahu hráče (500ms -> 700ms)
       setTimeout(() => mapBattleTurn(), mb.isBoss ? 700 : 600);
     }
+  }
+
+  function onMapCounterAttack() {
+    if (mapBattleState.ended || !mapBattleState.isAttacking) return;
+    const mb = mapBattleState;
+    if (!mb.isHeavyAttack) return; // only after heavy attack
+    
+    const counterIcon = $('mbCounterAttack');
+    if (counterIcon) counterIcon.classList.add('hidden');
+    
+    // Deal bonus damage
+    const baseDmg = state.hero.baseDmg || 2;
+    const dmg = baseDmg * 2; // double damage
+    mb.bossHp -= dmg;
+    sfxHit();
+    $('mbHint').textContent = `⚔️ Counterattack! ${dmg} dmg`;
+    
+    if (mb.bossHp <= 0) { endMapBattle(true); return; }
+    
+    // Resume boss attack after short delay
+    setTimeout(() => mapBattleTurn(), 300);
   }
 
   function castMapSpell(spellId) {
@@ -587,7 +659,7 @@
   const SIMON_COLORS = ['#e94560','#f1c40f','#4a7dff','#2ecc71','#9b59b6','#e67e22','#1abc9c','#2c3e50','#d35400','#f39c12','#16a085','#c0392b','#8e44ad','#2980b9','#bdc3c7','#7f8c8d'];
   const SIMON_FREQS = [73.42*4,87.31*4,110.0*4,146.84*2,164.81*2,196.0*2,220.0*2,246.94*2,73.42*5,87.31*5,110.0*5,146.84*3,164.81*3,196.0*3,220.0*3,246.94*3];
   function startSimon() {
-    const level=trainingState.level,gridSize=Math.min(2+Math.floor(level/3),4),nc=gridSize*gridSize,seqLen=Math.min(3+Math.floor(level*0.8),10);
+    const level=trainingState.level,gridSize=Math.min(2+Math.floor(level/3),4),nc=gridSize*gridSize,seqLen=15+Math.floor(level/2);
     const sym=shuffle([...SIMON_SYMBOLS]).slice(0,nc),cols=SIMON_COLORS.slice(0,nc);
     minigameState={sequence:[],playerIndex:0,showing:true,inputEnabled:false,symbols:sym,gridSize,seqLen};
     for(let i=0;i<seqLen;i++) minigameState.sequence.push(rand(0,nc-1));
@@ -605,17 +677,23 @@
     if(idx!==minigameState.sequence[minigameState.playerIndex]){minigameState.inputEnabled=false;trainingLose();return;}
     minigameState.playerIndex++;$('simonProgress').textContent=`${minigameState.playerIndex}/${minigameState.sequence.length}`;
     if(minigameState.playerIndex>=minigameState.sequence.length){minigameState.inputEnabled=false;trainingWin();}}
-  function startColorClash(){const level=trainingState.level,fd=Math.max(0.8,2.8-level*0.25).toFixed(2),colors=['red','blue','green','yellow'],cl={red:'🔴',blue:'🔵',green:'🟢',yellow:'🟡'};const a=$('colorArena');a.innerHTML='';a.style.height='180px';a.style.display='flex';a.style.flexDirection='column';const ld=document.createElement('div');ld.style.cssText='display:flex;flex:1;';ld.innerHTML=colors.map(c=>`<div class="color-lane" data-color="${c}" style="flex:1;text-align:center;padding-top:4px;font-size:20px;border-right:1px solid #1a1a3a">${cl[c]}</div>`).join('');a.appendChild(ld);const br=document.createElement('div');br.style.cssText='display:flex;height:40px;';br.innerHTML=colors.map(c=>{const bg=c==='red'?'#e94560':c==='blue'?'#4a7dff':c==='green'?'#2ecc71':'#f1c40f';return `<div style="flex:1;display:flex;align-items:center;justify-content:center;cursor:pointer;background:${bg};margin:2px;border-radius:6px;font-size:13px;color:#fff;font-weight:bold" onclick="game.colorInput('${c}')">${cl[c]}</div>`;}).join('');a.appendChild(br);minigameState={active:true,colors,arena:a,projectile:null,currentColor:null,fallDuration:fd};(function spawn(){if(!minigameState.active)return;const a=minigameState.arena,col=minigameState.colors[rand(0,3)];if(minigameState.projectile&&minigameState.projectile.parentNode)minigameState.projectile.remove();const l=a.querySelectorAll('.color-lane'),li=minigameState.colors.indexOf(col),lane=l[li];if(!lane){setTimeout(spawn,100);return;}const lr=lane.getBoundingClientRect(),ar=a.getBoundingClientRect(),lx=lr.left-ar.left+lr.width/2-14;const el=document.createElement('div');el.className='color-projectile';el.style.cssText=`left:${lx}px;top:0px;background:${col==='red'?'#e94560':col==='blue'?'#4a7dff':col==='green'?'#2ecc71':'#f1c40f'};width:28px;height:28px;border-radius:50%;border:2px solid #fff;position:absolute;transition:top ${minigameState.fallDuration}s linear`;el.dataset.color=col;el.addEventListener('transitionend',()=>{if(minigameState.active&&minigameState.projectile===el){minigameState.active=false;el.remove();trainingLose();}});a.appendChild(el);minigameState.projectile=el;minigameState.currentColor=col;requestAnimationFrame(()=>{el.style.top='145px';});})();}
-  function colorInput(c){if(!minigameState.active)return;if(c===minigameState.currentColor){minigameState.active=false;if(minigameState.projectile){const e=minigameState.projectile;e.style.transition='transform 0.2s, opacity 0.2s';e.style.transform='scale(2.5)';e.style.opacity='0';setTimeout(()=>e.remove(),200);}sfxHit();trainingWin();}}
+  function startColorClash(){const level=trainingState.level,fd=Math.max(0.8,2.8-level*0.25).toFixed(2),colors=['red','blue','green','yellow'],cl={red:'🔴',blue:'🔵',green:'🟢',yellow:'🟡'};const a=$('colorArena');a.innerHTML='';a.style.height='180px';a.style.display='flex';a.style.flexDirection='column';const ld=document.createElement('div');ld.style.cssText='display:flex;flex:1;';ld.innerHTML=colors.map(c=>`<div class="color-lane" data-color="${c}" style="flex:1;text-align:center;padding-top:4px;font-size:20px;border-right:1px solid #1a1a3a">${cl[c]}</div>`).join('');a.appendChild(ld);const br=document.createElement('div');br.style.cssText='display:flex;height:40px;';br.innerHTML=colors.map(c=>{const bg=c==='red'?'#e94560':c==='blue'?'#4a7dff':c==='green'?'#2ecc71':'#f1c40f';return `<div style="flex:1;display:flex;align-items:center;justify-content:center;cursor:pointer;background:${bg};margin:2px;border-radius:6px;font-size:13px;color:#fff;font-weight:bold" onclick="game.colorInput('${c}')">${cl[c]}</div>`;}).join('');a.appendChild(br);minigameState={active:true,colors,arena:a,projectile:null,currentColor:null,fallDuration:fd,score:0};(function spawn(){if(!minigameState.active)return;const a=minigameState.arena,col=minigameState.colors[rand(0,3)];if(minigameState.projectile&&minigameState.projectile.parentNode)minigameState.projectile.remove();const l=a.querySelectorAll('.color-lane'),li=minigameState.colors.indexOf(col),lane=l[li];if(!lane){setTimeout(spawn,100);return;}const lr=lane.getBoundingClientRect(),ar=a.getBoundingClientRect(),lx=lr.left-ar.left+lr.width/2-14;const el=document.createElement('div');el.className='color-projectile';el.style.cssText=`left:${lx}px;top:0px;background:${col==='red'?'#e94560':col==='blue'?'#4a7dff':col==='green'?'#2ecc71':'#f1c40f'};width:28px;height:28px;border-radius:50%;border:2px solid #fff;position:absolute;transition:top ${minigameState.fallDuration}s linear`;el.dataset.color=col;el.addEventListener('transitionend',()=>{if(minigameSt... [truncated]
+  function colorInput(c){if(!minigameState.active)return;if(c===minigameState.currentColor){minigameState.active=false;minigameState.score++;if(minigameState.projectile){const e=minigameState.projectile;e.style.transition='transform 0.2s, opacity 0.2s';e.style.transform='scale(2.5)';e.style.opacity='0';setTimeout(()=>e.remove(),200);}sfxHit();if(minigameState.score>=15){trainingWin();}else{setTimeout(spawn,200);}}}
   function startGridDefender(){const level=trainingState.level,maxNum=5+level*2,target=rand(3,maxNum),ops=['+','-','×'],options=[],used=new Set();const cop=ops[rand(0,2)];let a,b,ex,res;for(let t=0;t<50;t++){if(cop==='+'){a=rand(1,target-1);b=target-a;ex=`${a}+${b}`;res=a+b;}else if(cop==='-'){a=rand(target+1,target+maxNum);b=a-target;ex=`${a}-${b}`;res=a-b;}else{const f=[];for(let i=1;i<=Math.sqrt(target);i++){if(target%i===0)f.push(i);}if(f.length>1){a=f[rand(1,f.length-1)];b=target/a;ex=`${a}×${b}`;res=a*b;}else{a=rand(1,3);b=target;ex=`${a}×${b}`;res=a*b;}}if(!used.has(ex)&&res===target){used.add(ex);break;}}options.push({value:res,expr:ex,wins:true});const cv=[];for(let d=1;d<=3;d++){if(res-d>=1)cv.push(res-d);if(res+d!==target)cv.push(res+d);}shuffle(cv);for(let i=1;i<3;i++){const fr=cv.length>0?cv.shift():rand(1,maxNum+5);let fe;for(let t=0;t<30;t++){const op=ops[rand(0,2)];let ba,bb,bex,bres;if(op==='+'){ba=rand(1,maxNum);bb=rand(1,maxNum);bex=`${ba}+${bb}`;bres=ba+bb;}else if(op==='-'){ba=rand(1,maxNum*2);bb=rand(1,ba-1);bex=`${ba}-${bb}`;bres=ba-bb;}else{ba=rand(1,5);bb=rand(1,5);bex=`${ba}×${bb}`;bres=ba*bb;}if(!used.has(bex)&&bres===fr){used.add(bex);options.push({value:bres,expr:bex,wins:false});fe=true;break;}}if(!fe){for(let t=0;t<50;t++){const op=ops[rand(0,2)];let ba,bb,bex,bres;if(op==='+'){ba=rand(1,maxNum);bb=rand(1,maxNum);bex=`${ba}+${bb}`;bres=ba+bb;}else if(op==='-'){ba=rand(1,maxNum*2);bb=rand(1,ba-1);bex=`${ba}-${bb}`;bres=ba-bb;}else{ba=rand(1,5);bb=rand(1,5);bex=`${ba}×${bb}`;bres=ba*bb;}if(!used.has(bex)&&Math.abs(bres-fr)<=1){used.add(bex);options.push({value:bres,expr:bex,wins:false});break;}}}}shuffle(options);const td=Math.max(3,6-Math.floor(level/3));minigameState={options,target,active:true,timer:td};$('gridArea').innerHTML=`<div class="grid-info"><span class="grid-time" id="gridTimer">${td}s</span><span class="grid-target">👹 <strong>${target}</strong></span></div><div class="grid-cards">${options.map((o,i)=>`<div class="grid-card" onclick="game.gridPick(${i})"><span class="expr">${o.expr}</span></div>`).join('')}</div>`;const te=$('gridTimer');if(te){minigameState.timerInterval=setInterval(()=>{minigameState.timer--;te.textContent=minigameState.timer+'s';if(minigameState.timer<=0){clearInterval(minigameState.timerInterval);if(minigameState.active){minigameState.active=false;trainingLose();}}},1000);}}
-  function gridPick(idx){if(!minigameState.active)return;minigameState.active=false;if(minigameState.timerInterval)clearInterval(minigameState.timerInterval);if(minigameState.options[idx].wins){sfxSuccess();trainingWin();}else{sfxPlayerHit();trainingLose();}}
+  function gridPick(idx){if(!minigameState.active)return;minigameState.active=false;if(minigameState.timerInterval)clearInterval(minigameState.timerInterval);if(minigameState.options[idx].wins){sfxSuccess();minigameState.rounds=minigameState.rounds||0;minigameState.rounds++;if(minigameState.rounds>=15){trainingWin();}else{setTimeout(startGridDefender,500);}}else{sfxPlayerHit();trainingLose();}}
   function showAchievementPopup(a){const p=document.createElement('div');p.style.cssText='position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:300;background:#12122a;border:2px solid #f1c40f;border-radius:12px;padding:16px 24px;text-align:center;animation:enemyEnter 0.5s ease-out;max-width:360px;width:90%';p.innerHTML=`<div style="font-size:24px;margin-bottom:4px">🏅</div><div style="font-size:14px;font-weight:bold;color:#f1c40f">${a.name}</div><div style="font-size:11px;color:#8888aa;margin-top:2px">${a.desc}</div>`;document.body.appendChild(p);setTimeout(()=>{p.style.transition='opacity 0.5s';p.style.opacity='0';setTimeout(()=>p.remove(),500);},2500);}
+  // Mock data for achievements (if needed later)
+  const ACHIEVEMENTS = [];
   function showMedals(){
     // Odstranit starou medalScreen, aby se nehromadily
     const old = $('medalScreen');
     if (old) old.remove();
     let h='<div class="card"><div class="card-title">🏅 Úspěchy</div></div>';
-    ACHIEVEMENTS.forEach(a=>{const e=state.achievements&&state.achievements[a.id];h+=`<div class="card" style="${e?'border-color:#2ecc71':'opacity:0.5'}"><div class="flex-between"><div><div style="font-size:14px;font-weight:bold">${e?a.name:'🔒 '+a.name}</div><div style="font-size:11px;color:#8888aa">${a.desc}</div></div><div style="font-size:20px">${e?'✅':'⏳'}</div></div></div>`;});
+    if (ACHIEVEMENTS.length === 0) {
+      h += '<div class="card" style="opacity:0.5"><div class="flex-between"><div><div style="font-size:14px;font-weight:bold">🔒 Žádné úspěchy</div><div style="font-size:11px;color:#8888aa">Zde budou přidány později</div></div></div></div>';
+    } else {
+      ACHIEVEMENTS.forEach(a=>{const e=state.achievements&&state.achievements[a.id];h+=`<div class="card" style="${e?'border-color:#2ecc71':'opacity:0.5'}"><div class="flex-between"><div><div style="font-size:14px;font-weight:bold">${e?a.name:'🔒 '+a.name}</div><div style="font-size:11px;color:#8888aa">${a.desc}</div></div><div style="font-size:20px">${e?'✅':'⏳'}</div></div></div>`;});
+    }
     h+='<button class="btn btn-secondary" onclick="game.showScreen(\'map\')">🌍 Zpět</button>';
     const c=document.createElement('div');c.className='container';c.id='medalScreen';c.innerHTML=h;document.body.appendChild(c);showScreen('medals');
   }
