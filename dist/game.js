@@ -335,6 +335,9 @@
     const arrow = $('mbArrow');
     if (arrow) {
       arrow.setAttribute('class', 'boss-attack-arrow'); // reset tříd na SVG
+      // Nastavit rotaci podle směru šipky (použiji translate + rotate)
+      const rotation = { '⬆️': 0, '⬇️': 180, '⬅️': -90, '➡️': 90 }[attackDir] || 0;
+      arrow.style.transform = `translate(-50%, -50%) rotate(${rotation}deg)`;
       // Přidat barvu do classListu (funguje i na SVG)
       if (isHeavyAttack) arrow.classList.add('boss-attack-yellow');
       else if (isBlockAttack) arrow.classList.add('boss-attack-red');
