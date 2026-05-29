@@ -179,7 +179,7 @@
     $('mbPlayerHp').textContent = `❤️ ${mb.playerHp}/${mb.maxPlayerHp} (${pHpPct}%)`;
     $('mbEnemyHp').textContent = mb.isBoss ? `❤️ ${mb.bossHp}/${mb.maxBossHp} (${eHpPct}%)` : `👾`;
     $('mbFigure').textContent = mb.isBoss ? mb.loc.boss.face : '👾';
-    $('mbHint').textContent = mb.isBoss ? `⬆️⬇️⬅️➡️ uhni! Černá = útok (70%) | Žlutá = heavy (20%) → 2x meč | Modrá = Lhář (15%+): neudělej šipku! | Zelená = opak směru | Fialový ⏳: čekáni` : `⬆️⬇️⬅️➡️ uhni! Nestvůra ${mb.loc.monsters-mb.progress}/${mb.loc.monsters}`;
+    $('mbHint').textContent = mb.isBoss ? `⬆️⬇️⬅️➡️ uhni! Černá = útok (70%) | Žlutá = heavy (20%) → 2x meč | Červená = Lhář (15%+): swipe≠šipka! | Zelená = opak směru | Fialový ⏳: čekáni` : `⬆️⬇️⬅️➡️ uhni! Nestvůra ${mb.loc.monsters-mb.progress}/${mb.loc.monsters}`;
 
     // Update counterattack icon position (center of arena)
     const counterIcon = $('mbCounterAttack');
@@ -338,8 +338,8 @@
       if (isHeavyAttack) className += ' boss-attack-yellow';
       else if (isBlockAttack) className += ' boss-attack-red';
       else if (isInvertedAttack) className += ' boss-attack-green';
+      else if (isLiarAttack) className += ' boss-attack-red'; // Lhář: červený
       else if (isWaitAttack) className += ' boss-attack-purple'; // fialový čekání
-      else if (isLiarAttack) className += ' boss-attack-blue'; // modrý Lhář
       arrow.className = className;
     }
     const counterIcon = $('mbCounterAttack');
@@ -435,7 +435,8 @@
       if (mapBattleState.isBlockAttack) {
         onMapHit(); // swipe = hit (nezabránilo se)
       } else if (mapBattleState.isLiarAttack) {
-        // Lhář: šipka ukazuje, co NESMÍš udělat (odlišný od inverzního)
+        // Lhář: šipka ukazuje, co NESMÍš udělat (liar = červený, musí swipe=other direction)
+        // Štít a útok jsou zakázány u Lháře
         if (dir === mapBattleState.currentAttack) {
           onMapHit(); // stejný směr = zásah
         } else {
