@@ -335,12 +335,6 @@
     const arrow = $('mbArrow');
     if (arrow) {
       arrow.setAttribute('class', 'boss-attack-arrow'); // reset tříd na SVG
-      // Nastavit fill barvu podle typu útoku
-      if (isHeavyAttack) arrow.style.fill = '#f1c40f';
-      else if (isBlockAttack) arrow.style.fill = '#e74c3c';
-      else if (isInvertedAttack) arrow.style.fill = '#2ecc71';
-      else if (isLiarAttack) arrow.style.fill = '#e74c3c';
-      else if (isWaitAttack) arrow.style.fill = '#9b59b6';
       // Přidat barvu do classListu (funguje i na SVG)
       if (isHeavyAttack) arrow.classList.add('boss-attack-yellow');
       else if (isBlockAttack) arrow.classList.add('boss-attack-red');
