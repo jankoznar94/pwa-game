@@ -332,7 +332,23 @@
     // Uložíme windowTime pro pozdější použití (counterattack timeout)
     mb.windowTime = windowTime;
 
-    const arrow = $('mbArrow');\n    if (arrow) {\n      arrow.innerHTML = ''; // vyčistit emoji\n      arrow.className = 'boss-attack-arrow'; // reset tříd\n      // Nastavit fill barvu podle typu útoku\n      if (isHeavyAttack) arrow.style.fill = '#f1c40f';\n      else if (isBlockAttack) arrow.style.fill = '#e74c3c';\n      else if (isInvertedAttack) arrow.style.fill = '#2ecc71';\n      else if (isLiarAttack) arrow.style.fill = '#e74c3c';\n      else if (isWaitAttack) arrow.style.fill = '#9b59b6';\n      // Přidat barvu do classListu (funguje i na SVG)\n      if (isHeavyAttack) arrow.classList.add('boss-attack-yellow');\n      else if (isBlockAttack) arrow.classList.add('boss-attack-red');\n      else if (isInvertedAttack) arrow.classList.add('boss-attack-green');\n      else if (isLiarAttack) arrow.classList.add('boss-attack-red');\n      else if (isWaitAttack) arrow.classList.add('boss-attack-purple');\n    }
+    const arrow = $('mbArrow');
+    if (arrow) {
+      arrow.innerHTML = ''; // vyčistit emoji
+      arrow.className = 'boss-attack-arrow'; // reset tříd
+      // Nastavit fill barvu podle typu útoku
+      if (isHeavyAttack) arrow.style.fill = '#f1c40f';
+      else if (isBlockAttack) arrow.style.fill = '#e74c3c';
+      else if (isInvertedAttack) arrow.style.fill = '#2ecc71';
+      else if (isLiarAttack) arrow.style.fill = '#e74c3c';
+      else if (isWaitAttack) arrow.style.fill = '#9b59b6';
+      // Přidat barvu do classListu (funguje i na SVG)
+      if (isHeavyAttack) arrow.classList.add('boss-attack-yellow');
+      else if (isBlockAttack) arrow.classList.add('boss-attack-red');
+      else if (isInvertedAttack) arrow.classList.add('boss-attack-green');
+      else if (isLiarAttack) arrow.classList.add('boss-attack-red');
+      else if (isWaitAttack) arrow.classList.add('boss-attack-purple');
+    }
     const counterIcon = $('mbCounterAttack');
     if (counterIcon) counterIcon.classList.add('hidden');
     const shieldIcon = $('mbShieldIcon');
