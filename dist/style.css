@@ -170,11 +170,17 @@ body {
 .boss-attack-arrow { position:absolute;top:50%;left:50%;font-size:36px;transform:translate(-50%,-50%);z-index:10;animation:arrowPulse 0.3s ease-out; }
 @keyframes arrowPulse { 0%{font-size:54px;opacity:0}100%{font-size:36px;opacity:1} }
 .boss-attack-yellow { color:#f1c40f; }
+.boss-attack-red { color:#e74c3c; }
 .counter-attack-icon {
   position:absolute;top:50%;left:50%;font-size:64px;transform:translate(-50%,-50%);z-index:15;
   display:none;color:#4a7dff;cursor:pointer;animation:counterPulse 0.5s ease-out infinite;
 }
 @keyframes counterPulse { 0%,100%{transform:translate(-50%,-50%) scale(1);opacity:1}50%{transform:translate(-50%,-50%) scale(1.2);opacity:0.7} }
+.shield-block-icon {
+  position:absolute;bottom:10px;right:10px;font-size:48px;transform:translate(0,0);z-index:15;
+  display:none;color:#3498db;cursor:pointer;animation:shieldPulse 0.8s ease-out infinite;
+}
+@keyframes shieldPulse { 0%,100%{transform:scale(1);opacity:1}50%{transform:scale(0.8);opacity:0.7} }
 .attack-timer-ring {
   position:absolute;top:50%;left:50%;width:64px;height:64px;
   transform:translate(-50%,-50%);z-index:5;

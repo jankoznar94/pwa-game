@@ -160,7 +160,7 @@
     $('mbPlayerHp').textContent = '❤️'.repeat(mb.playerHp) + '🖤'.repeat(Math.max(0, mb.maxPlayerHp - mb.playerHp));
     $('mbEnemyHp').textContent = mb.isBoss ? ('❤️'.repeat(mb.bossHp)+'🖤'.repeat(Math.max(0, mb.maxBossHp-mb.bossHp))) : '👾';
     $('mbFigure').textContent = mb.isBoss ? mb.loc.boss.face : '👾';
-    $('mbHint').textContent = mb.isBoss ? `⬆️⬇️⬅️➡️ uhni! Černá šipka = útok | Žlutá šipka = heavy (úhyb → meč = 2x útok)` : `⬆️⬇️⬅️➡️ uhni! Nestvůra ${mb.loc.monsters-mb.progress}/${mb.loc.monsters}`;
+    $('mbHint').textContent = mb.isBoss ? `⬆️⬇️⬅️➡️ uhni! Černá = útok (70%) | Žlutá = heavy (20%) → 2x meč | Červená = štít (10%) → 🛨` : `⬆️⬇️⬅️➡️ uhni! Nestvůra ${mb.loc.monsters-mb.progress}/${mb.loc.monsters}`;
 
     // Update counterattack icon position (center of arena)
     const counterIcon = $('mbCounterAttack');
@@ -168,6 +168,14 @@
       counterIcon.style.top = '50%';
       counterIcon.style.left = '50%';
       counterIcon.style.transform = 'translate(-50%, -50%)';
+    }
+
+    // Update shield block icon position (bottom-right)
+    const shieldIcon = $('mbShieldIcon');
+    if (shieldIcon) {
+      shieldIcon.style.bottom = '10px';
+      shieldIcon.style.right = '10px';
+      shieldIcon.style.transform = 'translate(0, 0)';
     }
 
     // Spells
@@ -201,6 +209,18 @@
         e.stopPropagation();
         if (mapBattleState && !mapBattleState.ended && mapBattleState.isHeavyAttack) {
           onMapCounterAttack();
+        }
+      });
+    }
+    handlers.push(['click', (e) => { /* handled above */ }]);
+
+    // Click handler for block shield icon
+    const shieldIcon = $('mbShieldIcon');
+    if (shieldIcon) {
+      shieldIcon.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (mapBattleState && !mapBattleState.ended && mapBattleState.isBlockAttack) {
+          onMapBlock();
         }
       });
     }
@@ -261,20 +281,28 @@
     // Zpomalím útoky pro nižší levely — base 900ms, snížení podle turn, frozen * 1.5
     // Bossy: minime 900ms, zpomalují se pomaleji než monsters (turn*10 místo *15)
     const speed = Math.max(500, 900 - mb.turn * 10);
-    const isHeavyAttack = Math.random() < 0.25; // 25% chance for heavy attack
-    const windowTime = mb.frozen > 0 ? speed * 1.5 : (isHeavyAttack ? speed * 2.5 : speed);
+    const randNum = Math.random() * 100;
+    const isHeavyAttack = randNum < 20; // 20% heavy attack (yellow)
+    const isBlockAttack = randNum >= 20 && randNum < 30; // 10% block attack (red shield)
+    const windowTime = mb.frozen > 0 ? speed * 1.5 : (isHeavyAttack ? speed * 2.5 : (isBlockAttack ? speed * 1.5 : speed));
 
     const arrow = $('mbArrow');
     if (arrow) { 
       arrow.textContent = attackDir; 
-      arrow.className = 'boss-attack-arrow' + (isHeavyAttack ? ' boss-attack-yellow' : '');
+      let className = 'boss-attack-arrow';
+      if (isHeavyAttack) className += ' boss-attack-yellow';
+      else if (isBlockAttack) className += ' boss-attack-red';
+      arrow.className = className;
     }
     const counterIcon = $('mbCounterAttack');
     if (counterIcon) counterIcon.classList.add('hidden');
+    const shieldIcon = $('mbShieldIcon');
+    if (shieldIcon) shieldIcon.classList.add('hidden');
 
     mb.isAttacking = true;
     mb.currentAttack = attackDir;
     mb.isHeavyAttack = isHeavyAttack;
+    mb.isBlockAttack = isBlockAttack;
     const playerEl = $('mbPlayerFigure');
     if (playerEl) playerEl.className = 'boss-fight-player';
 
@@ -348,8 +376,25 @@
         setTimeout(() => mapBattleTurn(), 500);
       }
     } else {
-      onMapHit();
+      // Zákeřný útok (červený štít): úhyb nepomůže, musí se kliknout 🛨
+      if (mapBattleState.isBlockAttack) {
+        onMapHit(); // swipe = hit (nezabránilo se)
+      } else {
+        onMapHit();
+      }
     }
+  }
+
+  function onMapBlock() {
+    if (mapBattleState.ended) return;
+    if (!mapBattleState.isBlockAttack) { $('mbHint').textContent = '⚠️ Štít tu teď nepotřebuješ!'; return; }
+    
+    sfxHit();
+    $('mbHint').textContent = '🛡️ Štít zablokoval zákeřný útok!';
+    mapBattleState.bossHp -= Math.max(1, state.hero.baseDmg - 1);
+    mapBattleState.isAttacking = false;
+    
+    setTimeout(() => mapBattleTurn(), 500);
   }
 
   function onMapAttack() {
