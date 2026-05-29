@@ -45,7 +45,7 @@
   const DIRECTIONS = ['⬆️','⬇️','⬅️','➡️'];
   const LOCATIONS = [
     { id:0, name:'🌲 Stínový les', icon:'🌲', monsters:5, xpReward:100, bossXp:200, boss:{name:'Stínový pán',face:'👹',hp:10}, skill:'fireball', minSkill:0, reward:{gold:5,weapon:'dagger'} },
-    { id:1, name:'🏜️ Pouštní brána', icon:'🏜️', monsters:7, xpReward:140, bossXp:240, boss:{name:'Faraonova kletba',face:'🐍',hp:14}, skill:'shield', minSkill:2, reward:{gold:12} },
+    { id:1, name:'🏜️ Pouštní brána', icon:'🏜️', monsters:7, xpReward:140, bossXp:240, boss:{name:'Faraonova kletba',face:'🐍',hp:14}, skill:'shield', minSkill:0, reward:{gold:12} },
     { id:2, name:'⏳ Časová zřícenina', icon:'⌛', monsters:8, xpReward:180, bossXp:300, boss:{name:'Architekt času',face:'⌛',hp:16}, skill:'heal', minSkill:3, reward:{gold:15,weapon:'sword'} },
     { id:3, name:'🎯 Temná aréna', icon:'🎯', monsters:9, xpReward:250, bossXp:400, boss:{name:'Mistr terčů',face:'🎯',hp:18}, skill:'crit', minSkill:4, reward:{gold:20} },
     { id:4, name:'🔊 Jeskyně ozvěn', icon:'🔊', monsters:10, xpReward:300, bossXp:500, boss:{name:'Šepotající hlas',face:'🔊',hp:20}, skill:'clone', minSkill:5, reward:{gold:25,armor:'chainmail'} },
@@ -511,6 +511,13 @@
     let dmg = baseDmg;
     if (Math.random() * 100 < critChance) { dmg = Math.round(dmg * critMult); $('mbHint').textContent = `💥 Kritik! ${dmg}`; }
     else { $('mbHint').textContent = `⚔️ Útok! ${dmg}`; }
+    // Show damage text over boss
+    const bossDamageText = $('mbDamageText');
+    if (bossDamageText) {
+      bossDamageText.textContent = `-${dmg}`;
+      bossDamageText.classList.remove('hidden');
+      setTimeout(() => bossDamageText.classList.add('hidden'), 600);
+    }
     mapBattleState.bossHp -= dmg;
     sfxHit();
     if (mapBattleState.bossHp <= 0) { endMapBattle(true); return; }
@@ -539,6 +546,13 @@
     }
     mb.playerHp -= amount;
     sfxPlayerHit();
+    // Show damage text on player
+    const playerDamageText = $('mbPlayerDamageText');
+    if (playerDamageText) {
+      playerDamageText.textContent = `-${amount}`;
+      playerDamageText.classList.remove('hidden');
+      setTimeout(() => playerDamageText.classList.add('hidden'), 600);
+    }
 
     // Reset counterattack icon
     const counterIcon = $('mbCounterAttack');
