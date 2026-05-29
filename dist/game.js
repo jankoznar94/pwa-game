@@ -58,7 +58,7 @@
 
   const SAVE_KEY = 'dungeonRecallV6';
   function defaultState() {
-    const s = { skills:{}, skillXp:{}, hero:{level:1,xp:0,gold:0,hp:3,maxHp:3,baseDmg:2,weapon:'fists',armor:'rags'}, deaths:0, wins:0,
+    const s = { skills:{}, skillXp:{}, hero:{level:1,xp:0,gold:0,hp:100,maxHp:100,baseDmg:10,weapon:'fists',armor:'rags'}, deaths:0, wins:0,
       locationProgress:[0,0,0,0,0,0,0], bossesDefeated:[false,false,false,false,false,false,false], achievements:{} };
     SKILLS.forEach(sk => { s.skills[sk.id]=0; s.skillXp[sk.id]=0; });
     return s;
@@ -128,12 +128,15 @@
     cleanupTimers();
     const progress = state.locationProgress[locId] || 0;
     const isBoss = progress >= loc.monsters;
-    const bossHp = isBoss ? loc.boss.hp * 2 : 30;
-    const playerMaxHp = state.hero.maxHp || 3;
+    // RPG HP system: hráč má stovky HP, bossové mají stovky/tisíce podle turn a výbavy
+    const basePlayerHp = Math.max(100, 3 + Math.floor(state.hero.level * 5)); // stoupá s levelem
+    const playerMaxHp = isBoss ? basePlayerHp + Math.floor(state.hero.level * 10) : basePlayerHp;
+    // Boss HP: monster ~50-100, boss rychleji stoupá (turn*20 + loc.boss.hp)
+    const bossBaseHp = isBoss ? (progress >= loc.monsters ? 100 + Math.round(loc.boss.hp * 2 + progress * 25) : 100 + progress * 10) : 50 + progress * 10;
 
     mapBattleState = {
       locId, loc, isBoss, progress,
-      bossHp, maxBossHp: isBoss ? Math.round(loc.boss.hp * 2) : 30, // 30 kol pro monstra, ~20-50 pro bossy podle hp
+      bossHp: bossBaseHp, maxBossHp: isBoss ? Math.round(bossBaseHp * 2) : bossBaseHp,
       playerHp: playerMaxHp, maxPlayerHp: playerMaxHp,
       ended: false, turn: 0, isAttacking: false,
       stunned: 0, frozen: 0, dot: 0, shieldActive: null,
@@ -157,8 +160,11 @@
       $('mbEnemyName').textContent = `👾 Nestvůra (${left} zbývá)`;
       $('mbLocation').textContent = mb.loc.name;
     }
-    $('mbPlayerHp').textContent = '❤️'.repeat(mb.playerHp) + '🖤'.repeat(Math.max(0, mb.maxPlayerHp - mb.playerHp));
-    $('mbEnemyHp').textContent = mb.isBoss ? ('❤️'.repeat(mb.bossHp)+'🖤'.repeat(Math.max(0, mb.maxBossHp-mb.bossHp))) : '👾';
+    // RPG HP: zobrazovat jako čísla (protože budou stovky/tisíce)
+    const pHpPct = Math.round((mb.playerHp / mb.maxPlayerHp) * 100);
+    const eHpPct = mb.isBoss ? Math.round((mb.bossHp / mb.maxBossHp) * 100) : 100;
+    $('mbPlayerHp').textContent = `❤️ ${mb.playerHp}/${mb.maxPlayerHp} (${pHpPct}%)`;
+    $('mbEnemyHp').textContent = mb.isBoss ? `❤️ ${mb.bossHp}/${mb.maxBossHp} (${eHpPct}%)` : `👾`;
     $('mbFigure').textContent = mb.isBoss ? mb.loc.boss.face : '👾';
     $('mbHint').textContent = mb.isBoss ? `⬆️⬇️⬅️➡️ uhni! Černá = útok (70%) | Žlutá = heavy (20%) → 2x meč | Červená = štít (10%) → 🛨` : `⬆️⬇️⬅️➡️ uhni! Nestvůra ${mb.loc.monsters-mb.progress}/${mb.loc.monsters}`;
 
@@ -349,15 +355,19 @@
 
     if (dir === mapBattleState.currentAttack) {
       sfxHit();
-      // Monster: snížit HP po každém úhybu, až bossHp <= 0
+      // Monster: RPG poškození z úhybu (baseDmg ±20%)
       if (!mapBattleState.isBoss) {
-        mapBattleState.bossHp--;
+        const baseDmg = state.hero.baseDmg || 2;
+        const dmg = Math.round(baseDmg * (0.8 + Math.random() * 0.4));
+        mapBattleState.bossHp -= Math.max(1, dmg);
         if (mapBattleState.bossHp <= 0) { endMapBattle(true); return; }
         $('mbHint').textContent = `✅ Úhyb! ${mapBattleState.bossHp} zbývá`;
         setTimeout(() => mapBattleTurn(), 500);
       } else {
-        // Boss fáze
-        mapBattleState.bossHp -= Math.max(1, state.hero.baseDmg - 1);
+        // Boss fáze — RPG poškození: baseDmg ±20%
+        const baseDmg = state.hero.baseDmg || 2;
+        const dmg = Math.round(baseDmg * (0.8 + Math.random() * 0.4));
+        mapBattleState.bossHp -= Math.max(1, dmg);
         if (mapBattleState.bossHp <= 0) { endMapBattle(true); return; }
         const phase = mapBattleState.bossHp / mapBattleState.maxBossHp;
         const hint = phase > 0.5 ? `✅ Úhyb! Boss ${mapBattleState.bossHp} HP zbývá` : '➡️ Boss slabí!';
@@ -424,7 +434,10 @@
   function onMapHit() {
     if (mapBattleState.ended) return;
     const mb = mapBattleState;
-    let amount = 1;
+    // RPG poškození: boss útočí turn*2 ±20%, hráč se brání štítem
+    const baseBossDmg = Math.max(5, 2 + mb.turn * 2); // růst s turnem
+    const bossDmg = Math.round(baseBossDmg * (0.8 + Math.random() * 0.4));
+    let amount = bossDmg;
     if (mb.shieldActive) {
       const block = mb.shieldActive;
       if (block >= 100) { $('mbHint').textContent = '🛡️ Štít odrazil!'; mb.shieldActive = null; return; }
@@ -465,9 +478,9 @@
     const counterIcon = $('mbCounterAttack');
     if (counterIcon) counterIcon.classList.add('hidden');
     
-    // Deal bonus damage
+    // Deal bonus damage (2x base with 20% random variance)
     const baseDmg = state.hero.baseDmg || 2;
-    const dmg = baseDmg * 2; // double damage
+    const dmg = Math.round(baseDmg * 2 * (0.9 + Math.random() * 0.2));
     mb.bossHp -= dmg;
     sfxHit();
     $('mbHint').textContent = `⚔️ Counterattack! ${dmg} dmg`;
@@ -676,7 +689,7 @@
         if (state.skillXp[skId] >= needed) {
           state.skillXp[skId] = 0; state.skills[skId] = lv + 1;
           state.hero.xp = (state.hero.xp||0) + 1;
-          if (state.hero.xp >= state.hero.level * 2) { state.hero.xp = 0; state.hero.level++; state.hero.maxHp = Math.min(10, 3+Math.floor(state.hero.level/2)); state.hero.baseDmg = Math.min(10, 2+Math.floor(state.hero.level/2)); }
+          if (state.hero.xp >= state.hero.level * 2) { state.hero.xp = 0; state.hero.level++; state.hero.maxHp = 100 + Math.floor(state.hero.level * 10); state.hero.baseDmg = 10 + Math.floor(state.hero.level * 3); }
           sfxLevelUp();
           $('resultIcon').textContent='⬆️'; $('resultTitle').textContent=`${sk.icon} Lv.${lv+1}!`; $('resultMsg').textContent=sk.desc(lv+1)+(lv+1>=sk.maxLv?' [MAX]':'');
           $('resultBtn').innerHTML=`<button class="btn btn-primary" onclick="game.showScreen('tower')">🔮 Věž</button><button class="btn btn-secondary" onclick="game.enterTraining('${skId}')">🔄 Dále</button>`;
