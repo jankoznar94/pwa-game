@@ -179,7 +179,7 @@
     $('mbPlayerHp').textContent = `❤️ ${mb.playerHp}/${mb.maxPlayerHp} (${pHpPct}%)`;
     $('mbEnemyHp').textContent = mb.isBoss ? `❤️ ${mb.bossHp}/${mb.maxBossHp} (${eHpPct}%)` : `👾`;
     $('mbFigure').textContent = mb.isBoss ? mb.loc.boss.face : '👾';
-    $('mbHint').textContent = mb.isBoss ? `⬆️⬇️⬅️➡️ uhni! Černá = útok (70%) | Žlutá = heavy (20%) → 2x meč | Červená = štít (10%) → 🛨 | ⏳ čekání (15%+): nehyb!` : `⬆️⬇️⬅️➡️ uhni! Nestvůra ${mb.loc.monsters-mb.progress}/${mb.loc.monsters}`;
+    $('mbHint').textContent = mb.isBoss ? `⬆️⬇️⬅️➡️ uhni! Černá = útok (70%) | Žlutá = heavy (20%) → 2x meč | Modrá = Lhář (15%+): neudělej šipku! | Zelená = opak směru | Fialový ⏳: čekáni` : `⬆️⬇️⬅️➡️ uhni! Nestvůra ${mb.loc.monsters-mb.progress}/${mb.loc.monsters}`;
 
     // Update counterattack icon position (center of arena)
     const counterIcon = $('mbCounterAttack');
@@ -283,14 +283,14 @@
 
   function getDungeonAttackChances(locId) {
     // Inverzní útoky se přidávají postupně s každým dungeonem
-    if (locId === 0) return { normal: 70, heavy: 30, block: 0, inverted: 0, wait: 0 };
-    if (locId === 1) return { normal: 70, heavy: 20, block: 10, inverted: 0, wait: 0 };
-    if (locId === 2) return { normal: 50, heavy: 20, block: 15, inverted: 15, wait: 0 };
-    if (locId === 3) return { normal: 40, heavy: 15, block: 15, inverted: 15, wait: 15 }; // 4. dungeon: čekání
-    if (locId === 4) return { normal: 35, heavy: 10, block: 15, inverted: 15, wait: 25 };
-    if (locId === 5) return { normal: 30, heavy: 10, block: 15, inverted: 20, wait: 25 };
-    if (locId === 6) return { normal: 25, heavy: 5, block: 20, inverted: 20, wait: 30 };
-    return { normal: 70, heavy: 20, block: 10, inverted: 0, wait: 0 };
+    if (locId === 0) return { normal: 70, heavy: 30, block: 0, inverted: 0, wait: 0, liar: 0 };
+    if (locId === 1) return { normal: 70, heavy: 20, block: 10, inverted: 0, wait: 0, liar: 0 };
+    if (locId === 2) return { normal: 50, heavy: 20, block: 15, inverted: 15, wait: 0, liar: 0 };
+    if (locId === 3) return { normal: 40, heavy: 15, block: 15, inverted: 15, wait: 15, liar: 0 }; // 4. dungeon: čekání
+    if (locId === 4) return { normal: 35, heavy: 10, block: 15, inverted: 15, wait: 25, liar: 0 };
+    if (locId === 5) return { normal: 30, heavy: 10, block: 15, inverted: 15, wait: 15, liar: 15 }; // 5. dungeon: Lhář (modrý)
+    if (locId === 6) return { normal: 25, heavy: 5, block: 20, inverted: 20, wait: 15, liar: 15 };
+    return { normal: 70, heavy: 20, block: 10, inverted: 0, wait: 0, liar: 0 };
   }
 
   function mapBattleTurn() {
@@ -317,27 +317,29 @@
     // Bossy: minime 900ms, zpomalují se pomaleji než monsters (turn*10 místo *15)
     const speed = Math.max(500, 900 - mb.turn * 10);
     const chances = getDungeonAttackChances(mb.locId);
-    const randTotal = chances.normal + chances.heavy + chances.block + chances.inverted + chances.wait;
+    const randTotal = chances.normal + chances.heavy + chances.block + chances.inverted + chances.wait + chances.liar;
     const randNum = Math.random() * randTotal;
-    let isHeavyAttack = false, isBlockAttack = false, isInvertedAttack = false, isWaitAttack = false;
+    let isHeavyAttack = false, isBlockAttack = false, isInvertedAttack = false, isWaitAttack = false, isLiarAttack = false;
     if (randNum < chances.wait) { isWaitAttack = true; }
     else if (randNum < chances.wait + chances.inverted) { isInvertedAttack = true; }
     else if (randNum < chances.wait + chances.inverted + chances.block) { isBlockAttack = true; }
     else if (randNum < chances.wait + chances.inverted + chances.block + chances.heavy) { isHeavyAttack = true; }
+    else if (randNum < chances.wait + chances.inverted + chances.block + chances.heavy + chances.liar) { isLiarAttack = true; }
     // else: normal attack
-    const windowTime = mb.frozen > 0 ? speed * 1.5 : (isHeavyAttack ? speed * 2.5 : (isInvertedAttack || isWaitAttack ? speed * 1.5 : (isBlockAttack ? speed * 1.5 : speed)));
+    const windowTime = mb.frozen > 0 ? speed * 1.5 : (isHeavyAttack ? speed * 2.5 : (isInvertedAttack || isWaitAttack || isLiarAttack ? speed * 1.5 : (isBlockAttack ? speed * 1.5 : speed)));
 
     // Uložíme windowTime pro pozdější použití (counterattack timeout)
     mb.windowTime = windowTime;
 
     const arrow = $('mbArrow');
     if (arrow) { 
-      arrow.textContent = isWaitAttack ? '⏳' : attackDir; 
+      arrow.textContent = isWaitAttack ? '⏳' : isLiarAttack ? '🔵' : attackDir; 
       let className = 'boss-attack-arrow';
       if (isHeavyAttack) className += ' boss-attack-yellow';
       else if (isBlockAttack) className += ' boss-attack-red';
       else if (isInvertedAttack) className += ' boss-attack-green';
       else if (isWaitAttack) className += ' boss-attack-purple'; // fialový čekání
+      else if (isLiarAttack) className += ' boss-attack-blue'; // modrý Lhář
       arrow.className = className;
     }
     const counterIcon = $('mbCounterAttack');
@@ -351,6 +353,7 @@
     mb.isBlockAttack = isBlockAttack;
     mb.isInvertedAttack = isInvertedAttack;
     mb.isWaitAttack = isWaitAttack;
+    mb.isLiarAttack = isLiarAttack;
     const playerEl = $('mbPlayerFigure');
     if (playerEl) playerEl.className = 'boss-fight-player';
 
@@ -428,9 +431,22 @@
         setTimeout(() => mapBattleTurn(), 500);
       }
     } else {
-      // Zákeřný útok (červený štít), inverzní útok nebo čekání: úhyb/pohyb = zásah
+      // Zákeřný (modrý/Lhář), inverzní útok nebo čekání: úhyb/pohyb = zásah
       if (mapBattleState.isBlockAttack) {
         onMapHit(); // swipe = hit (nezabránilo se)
+      } else if (mapBattleState.isLiarAttack) {
+        // Lhář: šipka ukazuje, co NESMÍš udělat (odlišný od inverzního)
+        if (dir === mapBattleState.currentAttack) {
+          onMapHit(); // stejný směr = zásah
+        } else {
+          sfxHit(); // jiný směr = úspěch
+          const baseDmg = mapBattleState.baseDmg || (10 + Math.floor(state.hero.level * 3) + (ITEM_MAP[state.hero.equip.weapon]||ITEM_MAP['fists']).baseDmg);
+          const dmg = Math.round(baseDmg * (0.8 + Math.random() * 0.4));
+          mapBattleState.bossHp -= Math.max(1, dmg);
+          if (mapBattleState.bossHp <= 0) { endMapBattle(true); return; }
+          $('mbHint').textContent = '✅ Lhář úspěšný! (≠ šipka)';
+          if (mapBattleState.bossHp > 0) setTimeout(() => mapBattleTurn(), 500);
+        }
       } else if (mapBattleState.isInvertedAttack) {
         // Inverzní útok: musíš swipnout opak směru, jinak zásah
         const inverseMap = { '⬆️':'⬇️', '⬇️':'⬆️', '⬅️':'➡️', '➡️':'⬅️' };
