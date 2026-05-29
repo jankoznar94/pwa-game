@@ -165,6 +165,7 @@
 
   function updateMapBattleUI() {
     const mb = mapBattleState;
+    console.log('updateMapBattleUI:', mb.locId, mb.isBoss, mb.currentAttack, mb.isHeavyAttack);
     if (mb.isBoss) {
       $('mbEnemyName').textContent = `${mb.loc.boss.face} ${mb.loc.boss.name}`;
       $('mbLocation').textContent = `BOSS ${mb.loc.name}`;
@@ -341,6 +342,7 @@
       else if (isLiarAttack) className += ' boss-attack-red'; // Lhář: červený
       else if (isWaitAttack) className += ' boss-attack-purple'; // fialový čekání
       arrow.className = className;
+      console.log('mapBattleTurn arrow:', arrow.className);
     }
     const counterIcon = $('mbCounterAttack');
     if (counterIcon) counterIcon.classList.add('hidden');
