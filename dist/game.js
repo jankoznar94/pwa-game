@@ -568,13 +568,6 @@
       }
     }
 
-    // Show damage text under player
-    const playerDamageText = $('mbPlayerDamageText');
-    if (playerDamageText) {
-      playerDamageText.textContent = `-${amount}`;
-      playerDamageText.classList.remove('hidden');
-      setTimeout(() => playerDamageText.classList.add('hidden'), 600);
-    }
 
     $('mbHint').textContent = `💔 Zásah! -${amount}`;
     updateMapBattleUI();
