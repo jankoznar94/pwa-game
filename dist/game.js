@@ -723,8 +723,8 @@
 
     const weaponNames = { fists:'✊ Pěsti', dagger:'🗡️ Dýka', sword:'⚔️ Meč', flameSword:'🔥 Ohnivý meč' };
     const armorNames = { rags:'🧥 Hadry', leather:'🦺 Kožené', chainmail:'⛓️ Kroužková', plate:'🛡️ Plátová' };
-    $('equipWeapon').textContent = weaponNames[h.weapon] || '✊ Pěsti';
-    $('equipArmor').textContent = armorNames[h.armor] || '🧥 Hadry';
+    $('equipWeapon').textContent = weaponNames[h.equip.weapon] || '✊ Pěsti';
+    $('equipArmor').textContent = armorNames[h.equip.armor] || '🧥 Hadry';
   }
 
   // ===== TRAINING (minigames) =====
