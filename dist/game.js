@@ -18,13 +18,13 @@
 
   // ===== SPELLS =====
   const SKILLS = [
-    { id:'fireball', name:'Fireball', icon:'🔥', dungeon:'simon', dungeonName:'🌲 Les stínů', maxLv:10, desc:t=>t===0?'Zamčeno':`${t*2+3} dmg + ${t} DoT`, baseCd:6, cdR:0.3 },
-    { id:'shield', name:'Štít', icon:'🛡️', dungeon:'color', dungeonName:'🏜️ Pouštní nekropole', maxLv:10, desc:t=>t===0?'Zamčeno':`${t*10+10}% blok`, baseCd:9, cdR:0.3 },
-    { id:'heal', name:'Léčení', icon:'💚', dungeon:'grid', dungeonName:'⏳ Zřícenina času', maxLv:10, desc:t=>t===0?'Zamčeno':`+${t+2} HP`, baseCd:12, cdR:0.5 },
-    { id:'crit', name:'Kritik', icon:'🗡️', dungeon:'simon', dungeonName:'🌲 Les stínů', maxLv:10, desc:t=>t===0?'Zamčeno':`${t*5+10}% crit`, baseCd:0, cdR:0 },
-    { id:'clone', name:'Klon', icon:'🌀', dungeon:'color', dungeonName:'🏜️ Pouštní nekropole', maxLv:10, desc:t=>t===0?'Zamčeno':`${t*8+10}% klon`, baseCd:14, cdR:0.5 },
-    { id:'freeze', name:'Mráz', icon:'❄️', dungeon:'grid', dungeonName:'⏳ Zřícenina času', maxLv:10, desc:t=>t===0?'Zamčeno':`${t+1}k zpomalení`, baseCd:10, cdR:0.4 },
-    { id:'shadow', name:'Stín', icon:'🌑', dungeon:'simon', dungeonName:'🌲 Les stínů', maxLv:10, desc:t=>t===0?'Zamčeno':`${t*4+5} dmg`, baseCd:10, cdR:0.4 },
+    { id:'fireball', name:'Fireball', icon:'🔥', dungeon:'simon', dungeonName:'🌲 Les stínů', maxLv:10, desc:t=>t===0?'Zamčeno':`${t*2+3} dmg + ${t} DoT`, baseCd:6, cdR:0.3, minLevel:1 },
+    { id:'shield', name:'Štít', icon:'🛡️', dungeon:'color', dungeonName:'🏜️ Pouštní nekropole', maxLv:10, desc:t=>t===0?'Zamčeno':`${t*10+10}% blok`, baseCd:9, cdR:0.3, minLevel:3 },
+    { id:'heal', name:'Léčení', icon:'💚', dungeon:'grid', dungeonName:'⏳ Zřícenina času', maxLv:10, desc:t=>t===0?'Zamčeno':`+${t+2} HP`, baseCd:12, cdR:0.5, minLevel:5 },
+    { id:'crit', name:'Kritik', icon:'🗡️', dungeon:'simon', dungeonName:'🌲 Les stínů', maxLv:10, desc:t=>t===0?'Zamčeno':`${t*5+10}% crit`, baseCd:0, cdR:0, minLevel:2 },
+    { id:'clone', name:'Klon', icon:'🌀', dungeon:'color', dungeonName:'🏜️ Pouštní nekropole', maxLv:10, desc:t=>t===0?'Zamčeno':`${t*8+10}% klon`, baseCd:14, cdR:0.5, minLevel:4 },
+    { id:'freeze', name:'Mráz', icon:'❄️', dungeon:'grid', dungeonName:'⏳ Zřícenina času', maxLv:10, desc:t=>t===0?'Zamčeno':`${t+1}k zpomalení`, baseCd:10, cdR:0.4, minLevel:6 },
+    { id:'shadow', name:'Stín', icon:'🌑', dungeon:'simon', dungeonName:'🌲 Les stínů', maxLv:10, desc:t=>t===0?'Zamčeno':`${t*4+5} dmg`, baseCd:10, cdR:0.4, minLevel:8 },
   ];
   const SKILL_MAP = {}; SKILLS.forEach(s => SKILL_MAP[s.id] = s);
   function skillXpToLevel(lv) { return 3 + lv * 2; }
@@ -555,11 +555,20 @@
       state.wins = (state.wins || 0) + 1;
 
       if (!mb.isBoss) {
-        // Monster killed, advance progress
+        // Monster killed, advance progress + XP
         const p = (state.locationProgress[locId] || 0) + 1;
         state.locationProgress[locId] = p;
+        state.hero.xp = (state.hero.xp || 0) + 1;
+        // Level up: xp >= level * 3
+        if (state.hero.xp >= state.hero.level * 3) {
+          state.hero.xp = 0;
+          state.hero.level++;
+          state.hero.maxHp = 100 + Math.floor(state.hero.level * 10);
+          state.hero.baseDmg = 10 + Math.floor(state.hero.level * 3);
+          sfxLevelUp();
+          showScreen('hero');
+        }
         if (p >= mb.loc.monsters) {
-          // All monsters done, now boss
           $('resultIcon').textContent = '👹';
           $('resultTitle').textContent = `Všech ${mb.loc.monsters} nestvůr poraženo!`;
           $('resultMsg').textContent = `Teď na tebe čeká ${mb.loc.boss.name}!`;
@@ -567,12 +576,21 @@
         } else {
           $('resultIcon').textContent = '✅';
           $('resultTitle').textContent = 'Nestvůra poražena!';
-          $('resultMsg').textContent = `Postup: ${p}/${mb.loc.monsters}`;
+          $('resultMsg').textContent = `Postup: ${p}/${mb.loc.monsters} | ✨ XP: ${state.hero.xp}`;
           $('resultBtn').innerHTML = `<button class="btn btn-primary" onclick="game.enterLocation(${locId})">🚀 Další</button><button class="btn btn-secondary" onclick="game.showScreen('map')">🌍 Mapa</button>`;
         }
       } else {
-        // Boss defeated
+        // Boss defeated — výrazně více XP
         state.bossesDefeated[locId] = true;
+        state.hero.xp = (state.hero.xp || 0) + 5; // +5 XP za bossa
+        // Level up check
+        if (state.hero.xp >= state.hero.level * 3) {
+          state.hero.xp = 0;
+          state.hero.level++;
+          state.hero.maxHp = 100 + Math.floor(state.hero.level * 10);
+          state.hero.baseDmg = 10 + Math.floor(state.hero.level * 3);
+          sfxLevelUp();
+        }
         const r = mb.loc.reward;
         if (r.gold) state.hero.gold = (state.hero.gold || 0) + r.gold;
         if (r.weapon && state.hero.equip.weapon === 'fists') state.hero.equip.weapon = r.weapon;
@@ -604,14 +622,15 @@
       const lv = state.skills[sk.id]||0, xp = state.skillXp[sk.id]||0, needed = skillXpToLevel(lv);
       const pct = lv >= sk.maxLv ? 100 : Math.min(xp/needed*100,100);
       const maxed = lv >= sk.maxLv;
-      return `<div class="dungeon-card ${maxed?'completed':''}" onclick="game.enterTraining('${sk.id}')">
+      const locked = state.hero.level < sk.minLevel;
+      return `<div class="dungeon-card ${maxed?'completed':''} ${locked?'locked':''}" onclick="${locked?'':`game.enterTraining('${sk.id}')`}">
         <div class="flex-between">
-          <div class="dungeon-name">${sk.icon} ${sk.dungeonName}</div>
+          <div class="dungeon-name">${sk.icon} ${sk.dungeonName} ${locked?'🔒':'✅'}</div>
           <span class="badge ${sk.dungeon}">${sk.name}</span>
         </div>
-        <div class="dungeon-progress-wrap"><div class="dungeon-progress-bar" style="width:${pct}%;background:${maxed?'#2ecc71':'#4a7dff'}"></div></div>
+        <div class="dungeon-progress-wrap"><div class="dungeon-progress-bar" style="width:${pct}%;background:${maxed?'#2ecc71':locked?'#555':'#4a7dff'}"></div></div>
         <div class="flex-between" style="margin-top:4px;font-size:12px;color:#8888aa">
-          <span>${maxed?'✅ MAX':`Lv.${lv} ${xp}/${needed}XP`}</span>
+          <span>${maxed?'MAX':locked?`🔒 Lv.${sk.minLevel}+`:`Lv.${lv} ${xp}/${needed}XP`}</span>
           <span>${sk.desc(lv)}</span>
         </div>
       </div>`;
@@ -655,6 +674,7 @@
   function enterTraining(skillId) {
     const sk = SKILL_MAP[skillId];
     if (!sk) return;
+    if (state.hero.level < sk.minLevel) { showMessage(`🔒 Potřebuješ ${sk.icon} Lv.${sk.minLevel}`); return; }
     const lv = state.skills[skillId] || 0;
     if (lv >= sk.maxLv) { showMessage('✅ MAX level!'); return; }
     trainingState = { skillId, skill: sk, level: Math.min(10, lv + 1), round: 0, ended: false, firstRound: true, playerHp: 1 };
