@@ -20,38 +20,48 @@
   let bgmState = { playing: false, timeout: null, drone: null };
   const BGM_VOL = 0.07;
 
-  function bgmNote(freq, startSec, durSec) {
-    try {
-      initAudio();
-      const o = audioCtx.createOscillator();
-      const g = audioCtx.createGain();
-      o.type = 'triangle';
-      o.frequency.value = freq;
-      const s = startSec;
-      g.gain.setValueAtTime(BGM_VOL, s);
-      g.gain.setValueAtTime(BGM_VOL, s + durSec - 0.04);
-      g.gain.exponentialRampToValueAtTime(0.001, s + durSec);
-      o.connect(g);
-      g.connect(audioCtx.destination);
-      o.start(s);
-      o.stop(s + durSec);
-    } catch(e) {}
+  function bgmPlay(notes, startSec, durSec) {
+    // notes může být číslo (jedna nota) nebo pole (akord)
+    const freqs = Array.isArray(notes) ? notes : [notes];
+    freqs.forEach(freq => {
+      if (freq <= 0) return;
+      try {
+        initAudio();
+        const o = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        o.type = 'triangle';
+        o.frequency.value = freq;
+        const s = startSec;
+        g.gain.setValueAtTime(BGM_VOL, s);
+        g.gain.setValueAtTime(BGM_VOL, s + durSec - 0.04);
+        g.gain.exponentialRampToValueAtTime(0.001, s + durSec);
+        o.connect(g);
+        g.connect(audioCtx.destination);
+        o.start(s);
+        o.stop(s + durSec);
+      } catch(e) {}
+    });
   }
 
-  // A moll dungeon theme — [frekvence, délka_v_sekundách], 0 = pauza
+  // A moll dungeon theme — [frekvence|pole_frekvencí, délka]
+  // pole frekvencí = akord (všechny noty zahraj současně)
   const bgmMelody = [
     // === Sloka 1 ===
     440, 0.5, 0, 0.1, 523, 0.5, 0, 0.1, 494, 0.5, 0, 0.1, 440, 0.5, 0, 0.1,
-    392, 0.5, 0, 0.1, 330, 0.5, 0, 0.1, 294, 0.5, 0, 0.1, 349, 0.5, 0, 0.1,
-    330, 0.5, 0, 0.1, 220, 0.5, 0, 0.1, 440, 0.5, 0, 0.1, 523, 0.5, 0, 0.1,
-    494, 0.5, 0, 0.1, 440, 0.5, 0, 0.1, 392, 0.5, 0, 0.1, 330, 0.5, 0, 0.1,
+    392, 0.5, 0, 0.1, 330, 0.5, [220,262,330], 0.6, 0, 0.2,
+    294, 0.5, 0, 0.1, 349, 0.5, 0, 0.1,
+    330, 0.5, 0, 0.1, 220, 0.5, 0, 0.1,
+    440, 0.5, 0, 0.1, 523, 0.5, 0, 0.1, 494, 0.5, 0, 0.1, 440, 0.5, 0, 0.1,
+    392, 0.5, 0, 0.1, 330, 0.5, [220,262,330], 0.6, 0, 0.2,
     349, 0.5, 0, 0.1, 294, 0.5, 0, 0.1, 330, 0.5, 0, 0.1, 440, 1.0, 0, 0.3,
     // === Sloka 2 ===
     523, 0.5, 0, 0.1, 494, 0.5, 0, 0.1, 440, 0.5, 0, 0.1, 392, 0.5, 0, 0.1,
-    349, 0.5, 0, 0.1, 330, 0.5, 0, 0.1, 294, 0.5, 0, 0.1, 349, 0.5, 0, 0.1,
+    349, 0.5, 0, 0.1, 330, 0.5, [262,330,392], 0.6, 0, 0.2,
+    294, 0.5, 0, 0.1, 349, 0.5, 0, 0.1,
     330, 0.5, 0, 0.1, 294, 0.5, 0, 0.1, 262, 0.5, 0, 0.1, 330, 0.5, 0, 0.1,
     523, 0.5, 0, 0.1, 494, 0.5, 0, 0.1, 440, 0.5, 0, 0.1, 392, 0.5, 0, 0.1,
-    440, 0.5, 0, 0.1, 330, 0.5, 0, 0.1, 440, 1.5, 0, 1.0,
+    440, 0.5, 0, 0.1, 330, 0.5, [220,262,330], 0.6, 0, 0.2,
+    440, 1.5, 0, 1.0,
   ];
 
   function scheduleBGMLoop() {
@@ -59,8 +69,10 @@
     const now = audioCtx.currentTime;
     let t = 0;
     for (let i = 0; i < bgmMelody.length; i += 2) {
-      const f = bgmMelody[i], d = bgmMelody[i + 1];
-      if (f > 0) bgmNote(f, now + t, d);
+      const notes = bgmMelody[i], d = bgmMelody[i + 1];
+      if (typeof notes === 'number' ? notes > 0 : notes.length > 0) {
+        bgmPlay(notes, now + t, d);
+      }
       t += d;
     }
     bgmState.timeout = setTimeout(scheduleBGMLoop, (t - 0.05) * 1000);
@@ -484,6 +496,7 @@
     mb.isInvertedAttack = attack.type === 'inverted';
     mb.isLiarAttack = attack.type === 'liar';
     mb.isWaitAttack = attack.type === 'wait';
+    mb._hitProcessed = false; // reset guard pro aktuální útok
 
     const windowTime = mb.frozen > 0 ? attack.windowTime * 1.5 : attack.windowTime;
 
@@ -619,12 +632,7 @@
     // GUARD: pokud _sequenceTimer už je null, útok už byl vyřešen (timer propadl)
     if (mb._sequenceTimer === null) return;
 
-    clearTimeout(mb._sequenceTimer);
-    clearTimeout(mb._ringTimer);
-    mb._ringTimer = null;
-    mb._sequenceTimer = null;
-
-    // Animace pohybu
+    // Animace pohybu (ještě před vyhodnocením, ať vidíš pohyb)
     const playerEl = $('mbPlayerFigure');
     if (playerEl) {
       playerEl.className = dir === '⬆️' ? 'boss-fight-player swipe-up' : dir === '⬇️' ? 'boss-fight-player swipe-down' : dir === '⬅️' ? 'boss-fight-player swipe-left' : 'boss-fight-player swipe-right';
@@ -634,7 +642,7 @@
     let correct = false;
 
     if (attack.type === 'block') {
-      // Block = musí štít, swipováním se nedá uhnout
+      // Block = musí štít, swipováním se nedá uhnout — clearujeme až po volání onMapHit
       onMapHit();
       return;
     } else if (attack.type === 'wait') {
@@ -643,17 +651,29 @@
       return;
     } else if (attack.type === 'liar') {
       // Lhář: správně je NESMÍT swipnout do šipky
+      clearTimeout(mb._sequenceTimer);
+      clearTimeout(mb._ringTimer);
+      mb._ringTimer = null;
+      mb._sequenceTimer = null;
       if (dir !== attack.dir) {
         correct = true;
       }
     } else if (attack.type === 'inverted') {
       // Inverzní: musíš swipnout opačný směr
+      clearTimeout(mb._sequenceTimer);
+      clearTimeout(mb._ringTimer);
+      mb._ringTimer = null;
+      mb._sequenceTimer = null;
       const inverseMap = { '⬆️':'⬇️', '⬇️':'⬆️', '⬅️':'➡️', '➡️':'⬅️' };
       if (dir === inverseMap[attack.dir]) {
         correct = true;
       }
     } else {
       // Normal / heavy: musíš uhnout do směru šipky
+      clearTimeout(mb._sequenceTimer);
+      clearTimeout(mb._ringTimer);
+      mb._ringTimer = null;
+      mb._sequenceTimer = null;
       if (dir === attack.dir) {
         correct = true;
       }
@@ -680,8 +700,8 @@
     }
     if (!mb.isBlockAttack) { $('mbHint').textContent = '⚠️ Štít tu teď nepotřebuješ!'; return; }
 
-    // GUARD: pokud _sequenceTimer už je null, útok už byl vyřešen
-    if (mb._sequenceTimer === null) return;
+    // GUARD: útok už byl zpracován (timer propadl)
+    if (mb._hitProcessed) return;
 
     clearTimeout(mb._sequenceTimer);
     clearTimeout(mb._ringTimer);
@@ -743,8 +763,9 @@
   function onMapHit() {
     if (mapBattleState.ended) return;
     const mb = mapBattleState;
-    // GUARD: pokud _sequenceTimer už je null, tohle je druhé volání (např. timer+swipe ve stejném ticku)
-    if (mb._sequenceTimer === null) return;
+    // GUARD: pokud _hitProcessed, tohle je druhé volání (např. timer+swipe ve stejném ticku)
+    if (mb._hitProcessed) return;
+    mb._hitProcessed = true;
     clearTimeout(mb._sequenceTimer);
     clearTimeout(mb._ringTimer);
     mb._ringTimer = null;
