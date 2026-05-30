@@ -214,11 +214,14 @@ body.battle-active { overflow: hidden; position: fixed; width: 100%; }
 .action-btn.active.attack-btn { border-color:#f1c40f; background:#1a1a2a; box-shadow:0 0 10px rgba(241,196,15,0.3); }
 .action-btn.active.block-btn { border-color:#3498db; background:#1a1a2a; box-shadow:0 0 10px rgba(52,152,219,0.3); }
 .action-btn:not(.active) { pointer-events:none; }
-.boss-hint { text-align:center;font-size:11px;color:#8888aa;margin:2px 0;min-height:0; }
+.boss-hint { text-align:center;font-size:11px;color:#8888aa;margin:2px 0;min-height:0;display:none; }
 .boss-touch-hint { text-align:center;font-size:10px;color:#555;margin:2px 0; }
 
 /* Player HP bar - below arena */
 .player-hp-bar { text-align:center;font-size:13px;color:#4a7dff;padding:4px 0;margin:2px 0;font-weight:bold; }
+
+/* Arena HP pod panáčkem */
+.player-arena-hp { position:absolute;bottom:-22px;left:50%;transform:translateX(-50%);font-size:12px;color:#4a7dff;font-weight:bold;white-space:nowrap;pointer-events:none; }
 
 /* Hero attributes */
 .hero-attr-row { display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid #1a1a3a;font-size:14px; }

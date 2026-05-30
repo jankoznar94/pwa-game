@@ -42,47 +42,106 @@
     });
   }
 
-  // Akordový loop: D moll → Hes moll → Es moll → D moll, o oktávu níž
-  // Dm: D(147) F(175) A(220) | Hes m: Bb(233) Db(277) F(349) | Es m: Eb(156) Gb(185) Bb(233)
-  const bgmChords = [
-    { freqs: [147,175,220], dur: 2 },
-    { freqs: [233,277,349], dur: 2 },
-    { freqs: [156,185,233], dur: 2 },
-    { freqs: [147,175,220], dur: 2 },
+  // Girei (Pain's Theme) — hlavní motiv v E moll
+  // triangle wave, pomalé dungeonové aranžmá
+  const bgmNotes = [
+    // Intro — tři krátké noty
+    { f: [494,659,587], dur: 0.5 }, // B4 E5 D5
+    { f: 0, dur: 0.3 },
+    // Hlavní melodie 1
+    { f: 659, dur: 0.4 }, // E5
+    { f: 587, dur: 0.3 }, // D5
+    { f: 494, dur: 0.5 }, // B4
+    { f: 0, dur: 0.2 },
+    { f: 392, dur: 0.3 }, // G4
+    { f: 440, dur: 0.3 }, // A4
+    { f: 494, dur: 0.5 }, // B4
+    { f: 0, dur: 0.2 },
+    { f: 659, dur: 0.4 }, // E5
+    { f: 587, dur: 0.3 }, // D5
+    { f: 523, dur: 0.3 }, // C5
+    { f: 494, dur: 0.5 }, // B4
+    { f: 0, dur: 0.2 },
+    { f: 440, dur: 0.3 }, // A4
+    { f: 494, dur: 0.3 }, // B4
+    { f: 587, dur: 0.5 }, // D5
+    { f: 0, dur: 0.2 },
+    { f: 587, dur: 0.3 }, // D5
+    { f: 523, dur: 0.3 }, // C5
+    { f: 494, dur: 0.4 }, // B4
+    { f: 440, dur: 0.3 }, // A4
+    { f: 392, dur: 0.6 }, // G4 — delší
+    { f: 0, dur: 0.3 },
+    // Hlavní melodie 2 (variace)
+    { f: 659, dur: 0.4 }, // E5
+    { f: 587, dur: 0.3 }, // D5
+    { f: 494, dur: 0.5 }, // B4
+    { f: 0, dur: 0.2 },
+    { f: 392, dur: 0.3 }, // G4
+    { f: 440, dur: 0.3 }, // A4
+    { f: 494, dur: 0.5 }, // B4
+    { f: 0, dur: 0.2 },
+    { f: 659, dur: 0.4 }, // E5
+    { f: 587, dur: 0.3 }, // D5
+    { f: 523, dur: 0.3 }, // C5
+    { f: 494, dur: 0.5 }, // B4
+    { f: 0, dur: 0.2 },
+    { f: 392, dur: 0.3 }, // G4
+    { f: 349, dur: 0.3 }, // F4
+    { f: 330, dur: 0.5 }, // E4
+    { f: 0, dur: 1.0 }, // pauza
   ];
-  // Délka jednoho loopu (sekundy)
-  const BGM_LOOP_DUR = bgmChords.reduce((s, c) => s + c.dur, 0);
+  const BGM_LOOP_DUR = bgmNotes.reduce((s, n) => s + n.dur, 0);
 
   function scheduleBGMLoop(fromTime) {
     if (!bgmState.playing || !audioCtx) return;
     let t = 0;
-    for (const chord of bgmChords) {
-      bgmPlay(chord.freqs, fromTime + t, chord.dur);
-      t += chord.dur;
+    for (const note of bgmNotes) {
+      if (note.f !== 0) {
+        bgmPlay(note.f, fromTime + t, note.dur);
+      }
+      t += note.dur;
     }
-    // Naplánovat další loop hned teď na audio časové ose (žádný setTimeout)
-    scheduleBGMLoop(fromTime + BGM_LOOP_DUR);
+    bgmState._nextTimer = setTimeout(() => {
+      scheduleBGMLoop(fromTime + BGM_LOOP_DUR);
+    }, 0);
   }
 
   function startDrone() {
     try {
       initAudio();
-      const o = audioCtx.createOscillator();
-      const g = audioCtx.createGain();
-      o.type = 'sine';
-      o.frequency.value = 55; // A1 (o oktávu níž)
-      g.gain.value = 0.012;
-      o.connect(g);
-      g.connect(audioCtx.destination);
-      o.start();
-      bgmState.drone = { osc: o, gain: g };
+      // E2 drone (pedál)
+      const o1 = audioCtx.createOscillator();
+      const g1 = audioCtx.createGain();
+      o1.type = 'sine';
+      o1.frequency.value = 82.4; // E2
+      g1.gain.value = 0.008;
+      o1.connect(g1);
+      g1.connect(audioCtx.destination);
+      o1.start();
+      // B2 drone (kvinta)
+      const o2 = audioCtx.createOscillator();
+      const g2 = audioCtx.createGain();
+      o2.type = 'sine';
+      o2.frequency.value = 123.5; // B2
+      g2.gain.value = 0.006;
+      o2.connect(g2);
+      g2.connect(audioCtx.destination);
+      o2.start();
+      bgmState.drone = { osc1: o1, gain1: g1, osc2: o2, gain2: g2 };
     } catch(e) {}
   }
 
   function stopDrone() {
     if (bgmState.drone) {
-      try { bgmState.drone.gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
-        bgmState.drone.osc.stop(audioCtx.currentTime + 0.4); } catch(e) {}
+      const d = bgmState.drone;
+      const fade = audioCtx.currentTime + 0.3;
+      try {
+        d.gain1.gain.exponentialRampToValueAtTime(0.001, fade);
+        d.osc1.stop(fade + 0.1);
+        d.gain2.gain.exponentialRampToValueAtTime(0.001, fade);
+        d.osc2.stop(fade + 0.1);
+      } catch(e) {}
       bgmState.drone = null;
     }
   }
@@ -101,6 +160,7 @@
 
   function stopBGM() {
     bgmState.playing = false;
+    if (bgmState._nextTimer) { clearTimeout(bgmState._nextTimer); bgmState._nextTimer = null; }
     // Drone ztlumíme, ostatní oscillatory dozní samy podle schedule
     stopDrone();
   }
@@ -294,8 +354,13 @@
     }
     const pHpPct = Math.round((mb.playerHp / mb.maxPlayerHp) * 100);
     const eHpPct = mb.isBoss ? Math.round((mb.bossHp / mb.maxBossHp) * 100) : Math.round((mb.bossHp / mb.maxBossHp) * 100);
-    $('mbPlayerHp').textContent = `❤️ ${mb.playerHp}/${mb.maxPlayerHp} (${pHpPct}%)`;
     $('mbEnemyHp').textContent = mb.isBoss ? `❤️ ${mb.bossHp}/${mb.maxBossHp} (${eHpPct}%)` : `👾 ${mb.bossHp}/${mb.maxBossHp}`;
+    // Arena HP pod panáčkem
+    const arenaHp = $('mbPlayerArenaHp');
+    if (arenaHp) {
+      arenaHp.textContent = `❤️ ${mb.playerHp}/${mb.maxPlayerHp}`;
+      arenaHp.classList.remove('hidden');
+    }
     const emoji = mb.isBoss ? mb.loc.boss.face : '👾';
     const fig = $('mbFigure');
     fig.textContent = emoji;
