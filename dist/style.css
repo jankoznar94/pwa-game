@@ -166,8 +166,9 @@ body.battle-active { overflow: hidden; position: fixed; width: 100%; }
   touch-action:none;
 }
 .boss-fight-boss { position:absolute;top:5px;left:50%;transform:translateX(-50%);font-size:48px;cursor:pointer;transition:0.1s; }
-.boss-fight-player { position:absolute;bottom:20px;left:50%;transform:translateX(-50%);font-size:28px;transition:0.08s;z-index:5; }
-.boss-fight-player .damage-text { position:absolute;top:-40px;left:50%;transform:translateX(-50%);color:#e74c3c;font-size:28px;font-weight:bold;animation:fadeDown 0.6s ease-out; }
+.boss-fight-player { position:absolute;bottom:40px;left:50%;transform:translateX(-50%);font-size:28px;transition:0.08s;z-index:5; }
+.boss-fight-player .damage-text { position:absolute;top:-60px;left:50%;transform:translateX(-50%);color:#e74c3c;font-size:28px;font-weight:bold;animation:fadeDown 0.6s ease-out; }
+.player-arena-hp { position:absolute;bottom:0;left:50%;transform:translateX(-50%);font-size:12px;color:#4a7dff;font-weight:bold;white-space:nowrap;pointer-events:none; }
 #mbDamageText.damage-text { position:absolute;top:65px;left:50%;transform:translateX(-50%);color:#f1c40f;font-size:28px;font-weight:bold;animation:fadeDown 0.6s ease-out; }
 @keyframes fadeUp { 0%{opacity:0;transform:translateX(-50%) translateY(10px)}100%{opacity:1;transform:translateX(-50%) translateY(0)} }
 @keyframes fadeDown { 0%{opacity:0;transform:translateX(-50%) translateY(-10px)}100%{opacity:1;transform:translateX(-50%) translateY(0)} }

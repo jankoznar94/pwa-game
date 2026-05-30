@@ -1340,6 +1340,8 @@
         else if (a.dataset.screen === 'inventory') showScreen('inventory');
         else if (a.dataset.screen === 'medals') showMedals();
         else if (a.dataset.screen === 'reset') resetGame();
+        // Inicializovat audio hned při prvním kliku (user gesture)
+        initAudio();
       });
     });
     showScreen('map');
