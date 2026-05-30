@@ -203,12 +203,15 @@ body.battle-active { overflow: hidden; position: fixed; width: 100%; }
   filter:drop-shadow(0 0 3px rgba(76,175,80,0.5));
 }
 .boss-action-bar {
-  display:flex;gap:0;justify-content:center;margin:6px 0;
+  position:absolute;bottom:8px;left:0;right:0;display:flex;
+  justify-content:space-between;padding:0 12px;z-index:25;
+  pointer-events:none;
 }
-.action-btn {
-  width:48px;height:48px;border-radius:10px;font-size:24px;cursor:pointer;
+.action-btn.in-arena {
+  width:56px;height:56px;border-radius:14px;font-size:30px;cursor:pointer;
   display:flex;align-items:center;justify-content:center;
-  border:2px solid #2a2a4a;background:#1a1a3a;transition:0.15s;opacity:0.3;
+  border:3px solid #2a2a4a;background:#1a1a3a;transition:0.15s;opacity:0.3;
+  pointer-events:auto;
 }
 .action-btn.active { opacity:1; border-color:#4a7dff; background:#1a1a3a; }
 .action-btn.active.attack-btn { border-color:#f1c40f; background:#1a1a2a; }
