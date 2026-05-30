@@ -489,11 +489,19 @@
     mb._attackWindowTimer = setTimeout(() => {
       if (mapBattleState.ended) return;
       $('mbHint').textContent = '⏰ Zmeškal jsi! Další sekvence...';
-      const actInfo2 = $('mbActionInfo');
-      if (actInfo2) actInfo2.classList.add('hidden');
-      updateActionButtons();
-      setTimeout(() => mapBattleTurn(), 500);
+      missedAttackWindow();
     }, atkTime);
+  }
+
+  function missedAttackWindow() {
+    if (mapBattleState.ended) return;
+    const mb = mapBattleState;
+    mb.inAttackWindow = false;
+    const actInfo2 = $('mbActionInfo');
+    if (actInfo2) actInfo2.classList.add('hidden');
+    updateActionButtons();
+    resetTimerRing();
+    setTimeout(() => mapBattleTurn(), 800);
   }
 
   function onMapDodge(dir) {
@@ -501,7 +509,13 @@
     const mb = mapBattleState;
     const attack = mb.sequence[mb.sequenceIndex];
     if (!attack) return;
-    if (mb.inAttackWindow) return; // útočné okno, ne dodge
+    if (mb.inAttackWindow) {
+      // Při útočném okně: swipe = promarněná šance
+      clearTimeout(mb._attackWindowTimer);
+      $('mbHint').textContent = '❌ Zmeškal jsi! Měl jsi udeřit ⚔️';
+      missedAttackWindow();
+      return;
+    }
 
     clearTimeout(mb._sequenceTimer);
 
@@ -552,6 +566,13 @@
   function onMapBlock() {
     if (mapBattleState.ended) return;
     const mb = mapBattleState;
+    if (mb.inAttackWindow) {
+      // Během útočného okna: blok = promarněná šance
+      clearTimeout(mb._attackWindowTimer);
+      $('mbHint').textContent = '❌ Zmačkl jsi štít! Měl jsi udeřit ⚔️';
+      missedAttackWindow();
+      return;
+    }
     if (!mb.isBlockAttack) { $('mbHint').textContent = '⚠️ Štít tu teď nepotřebuješ!'; return; }
 
     clearTimeout(mb._sequenceTimer);
