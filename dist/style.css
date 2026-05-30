@@ -184,7 +184,7 @@ body {
 @keyframes counterPulse { 0%,100%{transform:translate(-50%,-50%) scale(1);opacity:1}50%{transform:translate(-50%,-50%) scale(1.2);opacity:0.7} }
 .shield-block-icon {
   position:absolute;bottom:10px;right:10px;font-size:48px;transform:translate(0,0);z-index:15;
-  display:none;color:#3498db;cursor:pointer;animation:shieldPulse 0.8s ease-out infinite;
+  color:#3498db;cursor:pointer;animation:shieldPulse 0.8s ease-out infinite;
 }
 @keyframes shieldPulse { 0%,100%{transform:scale(1);opacity:1}50%{transform:scale(0.8);opacity:0.7} }
 .attack-timer-ring {

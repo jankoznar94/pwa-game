@@ -352,9 +352,6 @@
     }
     const counterIcon = $('mbCounterAttack');
     if (counterIcon) counterIcon.classList.add('hidden');
-    const shieldIcon = $('mbShieldIcon');
-    if (shieldIcon) shieldIcon.classList.add('hidden');
-
     mb.isAttacking = true;
     mb.currentAttack = attackDir;
     mb.isHeavyAttack = isHeavyAttack;
@@ -362,6 +359,12 @@
     mb.isInvertedAttack = isInvertedAttack;
     mb.isWaitAttack = isWaitAttack;
     mb.isLiarAttack = isLiarAttack;
+    // Zobrazit štít jen při zákeřném útoku
+    const shieldIcon = $('mbShieldIcon');
+    if (shieldIcon) {
+      if (isBlockAttack) shieldIcon.classList.remove('hidden');
+      else shieldIcon.classList.add('hidden');
+    }
     const playerEl = $('mbPlayerFigure');
     if (playerEl) playerEl.className = 'boss-fight-player';
 
@@ -433,7 +436,7 @@
         setTimeout(() => mapBattleTurn(), 500);
       } else {
         // Boss fáze — RPG poškození podle typu útoku
-        let attackMult = mapBattleState.isHeavyAttack ? 1.5 : 1.0;
+        let attackMult = mapBattleState.isHeavyAttack ? 2.0 : 1.0;
         const dmg = Math.round(baseDmg * attackMult * (0.8 + Math.random() * 0.4));
         // Show damage text over boss
         const damageText = $('mbDamageText');
@@ -474,7 +477,7 @@
         } else {
           sfxHit(); // jiný směr = úspěch
           const baseDmg = mapBattleState.baseDmg || (10 + Math.floor(state.hero.level * 3) + (ITEM_MAP[state.hero.equip.weapon]||ITEM_MAP['fists']).baseDmg);
-          const dmg = Math.round(baseDmg * 1.25 * (0.8 + Math.random() * 0.4));
+          const dmg = Math.round(baseDmg * 1.5 * (0.8 + Math.random() * 0.4));
           mapBattleState.bossHp -= Math.max(1, dmg);
           if (mapBattleState.bossHp <= 0) { endMapBattle(true); return; }
           $('mbHint').textContent = '✅ Lhář úspěšný! (≠ šipka)';
@@ -487,7 +490,7 @@
         if (dir === requiredDir) {
           sfxHit(); // úspěšný inverzní úhyb
           const baseDmg = mapBattleState.baseDmg || (10 + Math.floor(state.hero.level * 3) + (ITEM_MAP[state.hero.equip.weapon]||ITEM_MAP['fists']).baseDmg);
-          const dmg = Math.round(baseDmg * 1.25 * (0.8 + Math.random() * 0.4));
+          const dmg = Math.round(baseDmg * 1.5 * (0.8 + Math.random() * 0.4));
           mapBattleState.bossHp -= Math.max(1, dmg);
           if (mapBattleState.bossHp <= 0) { endMapBattle(true); return; }
           $('mbHint').textContent = '✅ Inverzní úhyb!';
