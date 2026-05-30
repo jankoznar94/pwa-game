@@ -68,6 +68,7 @@
     ['simonTimeout'].forEach(k => { if (minigameState[k]) { clearTimeout(minigameState[k]); delete minigameState[k]; } });
     if (mapBattleState && mapBattleState._attackTimer) { clearTimeout(mapBattleState._attackTimer); mapBattleState._attackTimer = null; }
     if (mapBattleState && mapBattleState._sequenceTimer) { clearTimeout(mapBattleState._sequenceTimer); mapBattleState._sequenceTimer = null; }
+    if (mapBattleState && mapBattleState._ringTimer) { clearTimeout(mapBattleState._ringTimer); mapBattleState._ringTimer = null; }
     if (mapBattleState && mapBattleState._attackWindowTimer) { clearTimeout(mapBattleState._attackWindowTimer); mapBattleState._attackWindowTimer = null; }
   }
 
@@ -156,6 +157,7 @@
       playerHp: playerMaxHp, maxPlayerHp: playerMaxHp,
       ended: false, turn: 0, isAttacking: false,
       stunned: 0, frozen: 0, dot: 0, shieldActive: null,
+      _ringTimer: null, _sequenceTimer: null, _attackWindowTimer: null,
       spellCooldowns: {},
       // Sekvence: hráč musí přežít várku útoků, pak může udeřit
       sequence: [], sequenceIndex: 0, inAttackWindow: false,
@@ -425,7 +427,7 @@
 
     // Timer ring - animace
     const seqIdxWhenStarted = mb.sequenceIndex;
-    setTimeout(() => {
+    mb._ringTimer = setTimeout(() => {
       if (mapBattleState.ended) return;
       if (mb.sequenceIndex !== seqIdxWhenStarted) return;
       if (!mb.currentAttack) return;
@@ -441,6 +443,8 @@
   function advanceSequence() {
     if (mapBattleState.ended) return;
     const mb = mapBattleState;
+    clearTimeout(mb._ringTimer);
+    mb._ringTimer = null;
     mb.currentAttack = null;
     mb.isHeavyAttack = false;
     mb.isBlockAttack = false;
@@ -484,7 +488,7 @@
     // Timer ring pro útočné okno (~2.7s)
     const atkTime = 2700;
     const atkCircle = resetTimerRing();
-    setTimeout(() => {
+    mb._ringTimer = setTimeout(() => {
       if (mapBattleState.ended) return;
       if (!mb.inAttackWindow) return;
       startTimerRing(atkCircle, atkTime);
@@ -500,6 +504,8 @@
   function missedAttackWindow() {
     if (mapBattleState.ended) return;
     const mb = mapBattleState;
+    clearTimeout(mb._ringTimer);
+    mb._ringTimer = null;
     mb.inAttackWindow = false;
     const actInfo2 = $('mbActionInfo');
     if (actInfo2) actInfo2.classList.add('hidden');
@@ -522,6 +528,9 @@
     }
 
     clearTimeout(mb._sequenceTimer);
+    clearTimeout(mb._ringTimer);
+    mb._ringTimer = null;
+    mb._sequenceTimer = null;
 
     // Animace pohybu
     const playerEl = $('mbPlayerFigure');
@@ -580,6 +589,9 @@
     if (!mb.isBlockAttack) { $('mbHint').textContent = '⚠️ Štít tu teď nepotřebuješ!'; return; }
 
     clearTimeout(mb._sequenceTimer);
+    clearTimeout(mb._ringTimer);
+    mb._ringTimer = null;
+    mb._sequenceTimer = null;
     sfxHit();
     $('mbHint').textContent = '🛡️ Štít zablokoval útok!';
     advanceSequence();
@@ -637,6 +649,9 @@
     if (mapBattleState.ended) return;
     const mb = mapBattleState;
     clearTimeout(mb._sequenceTimer);
+    clearTimeout(mb._ringTimer);
+    mb._ringTimer = null;
+    mb._sequenceTimer = null;
 
     const baseBossDmg = Math.max(5, 2 + mb.turn * 2);
     const bossDmg = Math.round(baseBossDmg * (0.8 + Math.random() * 0.4));
