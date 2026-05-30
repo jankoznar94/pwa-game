@@ -66,6 +66,8 @@
     if (minigameState.countdownInterval) { clearInterval(minigameState.countdownInterval); minigameState.countdownInterval = null; }
     ['simonTimeout'].forEach(k => { if (minigameState[k]) { clearTimeout(minigameState[k]); delete minigameState[k]; } });
     if (mapBattleState && mapBattleState._attackTimer) { clearTimeout(mapBattleState._attackTimer); mapBattleState._attackTimer = null; }
+    if (mapBattleState && mapBattleState._sequenceTimer) { clearTimeout(mapBattleState._sequenceTimer); mapBattleState._sequenceTimer = null; }
+    if (mapBattleState && mapBattleState._attackWindowTimer) { clearTimeout(mapBattleState._attackWindowTimer); mapBattleState._attackWindowTimer = null; }
   }
 
   const SAVE_KEY = 'dungeonRecallV6';
@@ -153,7 +155,11 @@
       playerHp: playerMaxHp, maxPlayerHp: playerMaxHp,
       ended: false, turn: 0, isAttacking: false,
       stunned: 0, frozen: 0, dot: 0, shieldActive: null,
-      spellCooldowns: {}
+      spellCooldowns: {},
+      // Sekvence: hráč musí přežít várku útoků, pak může udeřit
+      sequence: [], sequenceIndex: 0, inAttackWindow: false,
+      currentAttack: null, isHeavyAttack: false, isBlockAttack: false,
+      isInvertedAttack: false, isWaitAttack: false, isLiarAttack: false
     };
     SKILLS.forEach(sk => { const l = state.skills[sk.id]||0; if (l>0) mapBattleState.spellCooldowns[sk.id]=0; });
 
@@ -185,7 +191,7 @@
     const oldDt = fig.querySelector('#mbDamageText');
     fig.innerHTML = emoji;
     if (oldDt) fig.appendChild(oldDt);
-    $('mbHint').textContent = mb.isBoss ? `⬆️⬇️⬅️➡️ uhni! Černá = útok (70%) | Žlutá = heavy (20%) → 2x meč | Červená = Lhář (15%+): swipe≠šipka! | Zelená = opak směru | Fialový ⏳: čekáni` : `⬆️⬇️⬅️➡️ uhni! Nestvůra ${mb.loc.monsters-mb.progress}/${mb.loc.monsters}`;
+    $('mbHint').textContent = mb.isBoss ? `Sekvence útoků — přežij a pak udeř!` : `⬆️⬇️⬅️➡️ uhni! Nestvůra ${mb.loc.monsters-mb.progress}/${mb.loc.monsters}`;
 
     // Update counterattack icon position (center of arena)
     const counterIcon = $('mbCounterAttack');
@@ -227,18 +233,6 @@
     let startX, startY;
     const handlers = [];
 
-    // Click handler for counterattack (PC)
-    const counterIcon = $('mbCounterAttack');
-    if (counterIcon) {
-      counterIcon.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (mapBattleState && !mapBattleState.ended && mapBattleState.isHeavyAttack) {
-          onMapCounterAttack();
-        }
-      });
-    }
-    handlers.push(['click', (e) => { /* handled above */ }]);
-
     // Click handler for block shield icon
     const shieldIcon = $('mbShieldIcon');
     if (shieldIcon) {
@@ -251,19 +245,13 @@
     }
     handlers.push(['click', (e) => { /* handled above */ }]);
 
-    const ts = (e) => { if (mapBattleState.ended || mapBattleState.isAttacking) return; const t=e.touches[0]; startX=t.clientX; startY=t.clientY; };
+    const ts = (e) => { if (mapBattleState.ended || mapBattleState.sequence && mapBattleState.sequenceIndex < mapBattleState.sequence.length && !mapBattleState.inAttackWindow) return; const t=e.touches[0]; startX=t.clientX; startY=t.clientY; };
     const te = (e) => {
       if (mapBattleState.ended || !startX) return;
       const t = e.changedTouches[0];
       const dx = t.clientX - startX, dy = t.clientY - startY;
       startX = startY = null;
       if (Math.abs(dx)<20 && Math.abs(dy)<20) { 
-        // Check if clicking on counter-attack icon
-        const counterIcon = $('mbCounterAttack');
-        if (counterIcon && !counterIcon.classList.contains('hidden') && mapBattleState.isHeavyAttack) {
-          onMapCounterAttack();
-          return;
-        }
         onMapAttack();
         return; 
       }
@@ -288,15 +276,37 @@
   }
 
   function getDungeonAttackChances(locId) {
-    // Inverzní útoky se přidávají postupně s každým dungeonem
     if (locId === 0) return { normal: 70, heavy: 30, block: 0, inverted: 0, wait: 0, liar: 0 };
     if (locId === 1) return { normal: 70, heavy: 20, block: 10, inverted: 0, wait: 0, liar: 0 };
     if (locId === 2) return { normal: 50, heavy: 20, block: 15, inverted: 15, wait: 0, liar: 0 };
-    if (locId === 3) return { normal: 40, heavy: 15, block: 15, inverted: 15, wait: 15, liar: 0 }; // 4. dungeon: čekání
+    if (locId === 3) return { normal: 40, heavy: 15, block: 15, inverted: 15, wait: 15, liar: 0 };
     if (locId === 4) return { normal: 35, heavy: 10, block: 15, inverted: 15, wait: 25, liar: 0 };
-    if (locId === 5) return { normal: 30, heavy: 10, block: 15, inverted: 15, wait: 15, liar: 15 }; // 5. dungeon: Lhář (modrý)
+    if (locId === 5) return { normal: 30, heavy: 10, block: 15, inverted: 15, wait: 15, liar: 15 };
     if (locId === 6) return { normal: 25, heavy: 5, block: 20, inverted: 20, wait: 15, liar: 15 };
     return { normal: 70, heavy: 20, block: 10, inverted: 0, wait: 0, liar: 0 };
+  }
+
+  function generateAttack(chances) {
+    const randTotal = chances.normal + chances.heavy + chances.block + chances.inverted + chances.wait + chances.liar;
+    const randNum = Math.random() * randTotal;
+    let type = 'normal';
+    if (randNum < chances.wait) { type = 'wait'; }
+    else if (randNum < chances.wait + chances.inverted) { type = 'inverted'; }
+    else if (randNum < chances.wait + chances.inverted + chances.block) { type = 'block'; }
+    else if (randNum < chances.wait + chances.inverted + chances.block + chances.heavy) { type = 'heavy'; }
+    else if (randNum < chances.wait + chances.inverted + chances.block + chances.heavy + chances.liar) { type = 'liar'; }
+    return { dir: DIRECTIONS[rand(0,3)], type, windowTime: 600 + rand(0, 300) };
+  }
+
+  function getAttackHint(attack) {
+    const dir = attack.dir;
+    if (attack.type === 'normal') return `${dir} ⚫ Normální — uhni!`;
+    if (attack.type === 'heavy') return `${dir} 🟡 Heavy — uhni (víc času)!`;
+    if (attack.type === 'block') return `🛡️ ${dir} 🔴 Zákeřný — použij ŠTÍT!`;
+    if (attack.type === 'inverted') return `${dir} 🟢 Inverzní — udělej OPAK!`;
+    if (attack.type === 'liar') return `${dir} 🔴 Lhář — NESMÍŠ do šipky!`;
+    if (attack.type === 'wait') return `⏳ Fialový — POČKEJ!`;
+    return `${dir} uhni!`;
   }
 
   function mapBattleTurn() {
@@ -318,57 +328,86 @@
     if (mb.stunned > 0) { mb.stunned--; setTimeout(() => mapBattleTurn(), 600); return; }
     if (mb.frozen > 0) mb.frozen--;
 
-    const attackDir = DIRECTIONS[rand(0,3)];
-    // Zpomalím útoky pro nižší levely — base 900ms, snížení podle turn, frozen * 1.5
-    // Bossy: minime 900ms, zpomalují se pomaleji než monsters (turn*10 místo *15)
-    const speed = Math.max(500, 900 - mb.turn * 10);
+    // Generovat sekvenci 5-10 útoků
     const chances = getDungeonAttackChances(mb.locId);
-    const randTotal = chances.normal + chances.heavy + chances.block + chances.inverted + chances.wait + chances.liar;
-    const randNum = Math.random() * randTotal;
-    let isHeavyAttack = false, isBlockAttack = false, isInvertedAttack = false, isWaitAttack = false, isLiarAttack = false;
-    if (randNum < chances.wait) { isWaitAttack = true; }
-    else if (randNum < chances.wait + chances.inverted) { isInvertedAttack = true; }
-    else if (randNum < chances.wait + chances.inverted + chances.block) { isBlockAttack = true; }
-    else if (randNum < chances.wait + chances.inverted + chances.block + chances.heavy) { isHeavyAttack = true; }
-    else if (randNum < chances.wait + chances.inverted + chances.block + chances.heavy + chances.liar) { isLiarAttack = true; }
-    // else: normal attack
-    const windowTime = mb.frozen > 0 ? speed * 1.5 : (isHeavyAttack ? speed * 2.5 : (isInvertedAttack || isWaitAttack || isLiarAttack ? speed * 1.5 : (isBlockAttack ? speed * 1.5 : speed)));
-
-    // Uložíme windowTime pro pozdější použití (counterattack timeout)
-    mb.windowTime = windowTime;
-
-    const arrow = $('mbArrow');
-    if (arrow) {
-      arrow.setAttribute('class', 'boss-attack-arrow'); // reset tříd na SVG
-      // Nastavit rotaci podle směru šipky (použiji translate + rotate)
-      const rotation = { '⬆️': 0, '⬇️': 180, '⬅️': -90, '➡️': 90 }[attackDir] || 0;
-      arrow.style.transform = `translate(-50%, -50%) rotate(${rotation}deg)`;
-      // Přidat barvu do classListu (funguje i na SVG)
-      if (isHeavyAttack) arrow.classList.add('boss-attack-yellow');
-      else if (isBlockAttack) arrow.classList.add('boss-attack-red');
-      else if (isInvertedAttack) arrow.classList.add('boss-attack-green');
-      else if (isLiarAttack) arrow.classList.add('boss-attack-red');
-      else if (isWaitAttack) arrow.classList.add('boss-attack-purple');
+    const seqLen = 5 + rand(0, 5);
+    mb.sequence = [];
+    for (let i = 0; i < seqLen; i++) {
+      mb.sequence.push(generateAttack(chances));
     }
+    mb.sequenceIndex = 0;
+    mb.inAttackWindow = false;
+    mb.isAttacking = true;
+
+    // Reset UI
+    const arrow = $('mbArrow');
+    if (arrow) arrow.setAttribute('class', 'boss-attack-arrow hidden');
     const counterIcon = $('mbCounterAttack');
     if (counterIcon) counterIcon.classList.add('hidden');
-    mb.isAttacking = true;
-    mb.currentAttack = attackDir;
-    mb.isHeavyAttack = isHeavyAttack;
-    mb.isBlockAttack = isBlockAttack;
-    mb.isInvertedAttack = isInvertedAttack;
-    mb.isWaitAttack = isWaitAttack;
-    mb.isLiarAttack = isLiarAttack;
-    // Zobrazit štít jen při zákeřném útoku
     const shieldIcon = $('mbShieldIcon');
-    if (shieldIcon) {
-      if (isBlockAttack) shieldIcon.classList.remove('hidden');
-      else shieldIcon.classList.add('hidden');
-    }
+    if (shieldIcon) shieldIcon.classList.add('hidden');
     const playerEl = $('mbPlayerFigure');
     if (playerEl) playerEl.className = 'boss-fight-player';
+    mb._sequenceTimer = null;
 
-    // Animace časového proužku (kolečko se vybarvuje s časem) — SVG stroke-dashoffset
+    $('mbHint').textContent = `⚔️ Sekvence ${mb.sequence.length} útoků — přežij!`;
+    // Schovat štít, ukáže se až při block útoku
+    const shield = $('mbShieldIcon');
+    if (shield) shield.classList.add('hidden');
+
+    // Začít první útok sekvence
+    playSequenceAttack();
+  }
+
+  function playSequenceAttack() {
+    if (mapBattleState.ended) return;
+    const mb = mapBattleState;
+    if (mb.sequenceIndex >= mb.sequence.length) {
+      // Sekvence dokončena — otevřít útočné okno
+      openAttackWindow();
+      return;
+    }
+    if (mb.inAttackWindow) return;
+    if (mb.playerHp <= 0) { endMapBattle(false); return; }
+    if (mb.bossHp <= 0) { endMapBattle(true); return; }
+
+    const attack = mb.sequence[mb.sequenceIndex];
+
+    // Nastavit aktuální útok
+    mb.currentAttack = attack.dir;
+    mb.isHeavyAttack = attack.type === 'heavy';
+    mb.isBlockAttack = attack.type === 'block';
+    mb.isInvertedAttack = attack.type === 'inverted';
+    mb.isLiarAttack = attack.type === 'liar';
+    mb.isWaitAttack = attack.type === 'wait';
+
+    const windowTime = mb.frozen > 0 ? attack.windowTime * 1.5 : attack.windowTime;
+
+    // Zobrazit šipku
+    const arrow = $('mbArrow');
+    if (arrow) {
+      arrow.setAttribute('class', 'boss-attack-arrow');
+      const rotation = { '⬆️': 0, '⬇️': 180, '⬅️': -90, '➡️': 90 }[attack.dir] || 0;
+      arrow.style.transform = `translate(-50%, -50%) rotate(${rotation}deg)`;
+      if (attack.type === 'heavy') arrow.classList.add('boss-attack-yellow');
+      else if (attack.type === 'block') arrow.classList.add('boss-attack-red');
+      else if (attack.type === 'inverted') arrow.classList.add('boss-attack-green');
+      else if (attack.type === 'liar') arrow.classList.add('boss-attack-red');
+      else if (attack.type === 'wait') arrow.classList.add('boss-attack-purple');
+    }
+
+    // Štít pro block útok
+    const shield = $('mbShieldIcon');
+    if (shield) {
+      if (attack.type === 'block') shield.classList.remove('hidden');
+      else shield.classList.add('hidden');
+    }
+
+    // Hint
+    const seqStr = `[${mb.sequenceIndex+1}/${mb.sequence.length}]`;
+    $('mbHint').textContent = `${seqStr} ${getAttackHint(attack)}`;
+
+    // Timer ring
     const ring = $('mbTimerRing');
     if (ring) {
       const circle = ring.querySelector('.timer-circle');
@@ -379,18 +418,30 @@
       }
     }
 
-    mb._attackTimer = setTimeout(() => {
+    mb._sequenceTimer = setTimeout(() => {
       if (mapBattleState.ended) return;
+      // Hráč nestihl zareagovat = zásah
       onMapHit();
     }, windowTime);
   }
 
-  function onMapDodge(dir) {
-    if (mapBattleState.ended || !mapBattleState.isAttacking) return;
-    clearTimeout(mapBattleState._attackTimer);
-    mapBattleState.isAttacking = false;
+  function advanceSequence() {
+    if (mapBattleState.ended) return;
+    const mb = mapBattleState;
+    // Reset stavu aktuálního útoku
+    mb.currentAttack = null;
+    mb.isHeavyAttack = false;
+    mb.isBlockAttack = false;
+    mb.isInvertedAttack = false;
+    mb.isWaitAttack = false;
+    mb.isLiarAttack = false;
 
-    // Reset animace časového proužku (po úhybu se kruh zruší na nevybarvený stav)
+    const shield = $('mbShieldIcon');
+    if (shield) shield.classList.add('hidden');
+    const arrow = $('mbArrow');
+    if (arrow) arrow.setAttribute('class', 'boss-attack-arrow hidden');
+
+    // Ring reset
     const ring = $('mbTimerRing');
     if (ring) {
       const circle = ring.querySelector('.timer-circle');
@@ -400,170 +451,171 @@
       }
     }
 
-    const arrow = $('mbArrow');
-    if (arrow) arrow.setAttribute('class', 'boss-attack-arrow hidden');
+    mb.sequenceIndex++;
 
+    if (mb.playerHp <= 0) { endMapBattle(false); return; }
+    if (mb.bossHp <= 0) { endMapBattle(true); return; }
+
+    // Malá pauza mezi útoky
+    setTimeout(() => playSequenceAttack(), 300);
+  }
+
+  function openAttackWindow() {
+    if (mapBattleState.ended) return;
+    const mb = mapBattleState;
+    mb.inAttackWindow = true;
+    mb.isAttacking = false; // nečeká na dodge, čeká na útok
+
+    $('mbHint').textContent = '⚔️ ÚTOČ! Klikni na arénu nebo stiskni Mezerník!';
+    $('mbArrow').setAttribute('class', 'boss-attack-arrow hidden');
+    const shield = $('mbShieldIcon');
+    if (shield) shield.classList.add('hidden');
+    const ring = $('mbTimerRing');
+    if (ring) {
+      const circle = ring.querySelector('.timer-circle');
+      if (circle) {
+        circle.style.transition = 'none';
+        circle.style.strokeDashoffset = '176';
+      }
+    }
+
+    // Hráč má 3 vteřiny na útok, jinak další sekvence
+    mb._attackWindowTimer = setTimeout(() => {
+      if (mapBattleState.ended) return;
+      $('mbHint').textContent = '⏰ Zmeškal jsi! Další sekvence...';
+      setTimeout(() => mapBattleTurn(), 500);
+    }, 3000);
+  }
+
+  function onMapDodge(dir) {
+    if (mapBattleState.ended || !mapBattleState.sequence) return;
+    const mb = mapBattleState;
+    const attack = mb.sequence[mb.sequenceIndex];
+    if (!attack) return;
+    if (mb.inAttackWindow) return; // útočné okno, ne dodge
+
+    clearTimeout(mb._sequenceTimer);
+
+    // Animace pohybu
     const playerEl = $('mbPlayerFigure');
     if (playerEl) {
       playerEl.className = dir === '⬆️' ? 'boss-fight-player swipe-up' : dir === '⬇️' ? 'boss-fight-player swipe-down' : dir === '⬅️' ? 'boss-fight-player swipe-left' : 'boss-fight-player swipe-right';
       setTimeout(() => playerEl.className = 'boss-fight-player', 200);
     }
 
-    if (dir === mapBattleState.currentAttack) {
-      // Zákeřný útok nejde uhnout - musí se blokovat štítem
-      if (mapBattleState.isBlockAttack) {
-        clearTimeout(mapBattleState._attackTimer);
-        mapBattleState.isAttacking = false;
-        onMapHit();
-        return;
+    let correct = false;
+
+    if (attack.type === 'block') {
+      // Block = musí štít, swipováním se nedá uhnout
+      onMapHit();
+      return;
+    } else if (attack.type === 'wait') {
+      // Čekání: jakýkoli pohyb = zásah
+      onMapHit();
+      return;
+    } else if (attack.type === 'liar') {
+      // Lhář: správně je NESMÍT swipnout do šipky
+      if (dir !== attack.dir) {
+        correct = true;
       }
-      sfxHit();
-      // RPG poškození z úhybu (baseDmg ±20%)
-      const baseDmg = mapBattleState.baseDmg || (10 + Math.floor(state.hero.level * 3) + (ITEM_MAP[state.hero.equip.weapon]||ITEM_MAP['fists']).baseDmg);
-      if (!mapBattleState.isBoss) {
-        const dmg = Math.round(baseDmg * (0.8 + Math.random() * 0.4));
-        // Show damage text over boss
-        const damageText = $('mbDamageText');
-        if (damageText) {
-          damageText.textContent = `-${Math.max(1, dmg)}`;
-          damageText.classList.remove('hidden');
-          setTimeout(() => damageText.classList.add('hidden'), 600);
-        }
-        mapBattleState.bossHp -= Math.max(1, dmg);
-        if (mapBattleState.bossHp <= 0) { endMapBattle(true); return; }
-        $('mbHint').textContent = `✅ Úhyb! ${mapBattleState.bossHp} zbývá`;
-        updateMapBattleUI();
-        setTimeout(() => mapBattleTurn(), 500);
-      } else {
-        // Boss fáze — RPG poškození podle typu útoku
-        let attackMult = mapBattleState.isHeavyAttack ? 2.0 : 1.0;
-        const dmg = Math.round(baseDmg * attackMult * (0.8 + Math.random() * 0.4));
-        // Show damage text over boss
-        const damageText = $('mbDamageText');
-        if (damageText) {
-          damageText.textContent = `-${Math.max(1, dmg)}`;
-          damageText.classList.remove('hidden');
-          setTimeout(() => damageText.classList.add('hidden'), 600);
-        }
-        mapBattleState.bossHp -= Math.max(1, dmg);
-        if (mapBattleState.bossHp <= 0) { endMapBattle(true); return; }
-        const phase = mapBattleState.bossHp / mapBattleState.maxBossHp;
-        const hint = phase > 0.5 ? `✅ Úhyb! Boss ${mapBattleState.bossHp} HP zbývá` : '➡️ Boss slabí!';
-        $('mbHint').textContent = hint;
-        updateMapBattleUI();
-
-        // Counterattack: po úhybu od heavy útoku zobrazí meč
-        if (mapBattleState.isHeavyAttack) {
-          const counterIcon = $('mbCounterAttack');
-          if (counterIcon) {
-            counterIcon.classList.remove('hidden');
-            // Zaražený boss ×2 čas, ale jen pokud je aktuální útok
-            const counterWindowTime = mapBattleState.windowTime || 900;
-            mapBattleState._counterAttackWindow = counterWindowTime * 2;
-          }
-        }
-
-        setTimeout(() => mapBattleTurn(), 500);
+    } else if (attack.type === 'inverted') {
+      // Inverzní: musíš swipnout opačný směr
+      const inverseMap = { '⬆️':'⬇️', '⬇️':'⬆️', '⬅️':'➡️', '➡️':'⬅️' };
+      if (dir === inverseMap[attack.dir]) {
+        correct = true;
       }
     } else {
-      // Zákeřný (modrý/Lhář), inverzní útok nebo čekání: úhyb/pohyb = zásah
-      if (mapBattleState.isBlockAttack) {
-        onMapHit(); // swipe = hit (nezabránilo se)
-      } else if (mapBattleState.isLiarAttack) {
-        // Lhář: šipka ukazuje, co NESMÍš udělat (liar = červený, musí swipe=other direction)
-        // Štít a útok jsou zakázány u Lháře
-        if (dir === mapBattleState.currentAttack) {
-          onMapHit(); // stejný směr = zásah
-        } else {
-          sfxHit(); // jiný směr = úspěch
-          const baseDmg = mapBattleState.baseDmg || (10 + Math.floor(state.hero.level * 3) + (ITEM_MAP[state.hero.equip.weapon]||ITEM_MAP['fists']).baseDmg);
-          const dmg = Math.round(baseDmg * 1.5 * (0.8 + Math.random() * 0.4));
-          mapBattleState.bossHp -= Math.max(1, dmg);
-          if (mapBattleState.bossHp <= 0) { endMapBattle(true); return; }
-          $('mbHint').textContent = '✅ Lhář úspěšný! (≠ šipka)';
-          if (mapBattleState.bossHp > 0) setTimeout(() => mapBattleTurn(), 500);
-        }
-      } else if (mapBattleState.isInvertedAttack) {
-        // Inverzní útok: musíš swipnout opak směru, jinak zásah
-        const inverseMap = { '⬆️':'⬇️', '⬇️':'⬆️', '⬅️':'➡️', '➡️':'⬅️' };
-        const requiredDir = inverseMap[mapBattleState.currentAttack];
-        if (dir === requiredDir) {
-          sfxHit(); // úspěšný inverzní úhyb
-          const baseDmg = mapBattleState.baseDmg || (10 + Math.floor(state.hero.level * 3) + (ITEM_MAP[state.hero.equip.weapon]||ITEM_MAP['fists']).baseDmg);
-          const dmg = Math.round(baseDmg * 1.5 * (0.8 + Math.random() * 0.4));
-          mapBattleState.bossHp -= Math.max(1, dmg);
-          if (mapBattleState.bossHp <= 0) { endMapBattle(true); return; }
-          $('mbHint').textContent = '✅ Inverzní úhyb!';
-          if (mapBattleState.bossHp > 0) setTimeout(() => mapBattleTurn(), 500);
-        } else {
-          onMapHit(); // neúspěšný inverzní úhyb → zásah
-        }
-      } else if (mapBattleState.isWaitAttack) {
-        onMapHit(); // čekání: jakýkoli vstup = zásah
-      } else {
-        onMapHit();
+      // Normal / heavy: musíš uhnout do směru šipky
+      if (dir === attack.dir) {
+        correct = true;
       }
+    }
+
+    if (correct) {
+      sfxHit();
+      $('mbHint').textContent = `✅ ${getAttackHint(attack).split('—')[0]} — OK!`;
+      advanceSequence();
+    } else {
+      onMapHit();
     }
   }
 
   function onMapBlock() {
     if (mapBattleState.ended) return;
-    if (!mapBattleState.isBlockAttack) { $('mbHint').textContent = '⚠️ Štít tu teď nepotřebuješ!'; return; }
-    
-    clearTimeout(mapBattleState._attackTimer);
+    const mb = mapBattleState;
+    if (!mb.isBlockAttack) { $('mbHint').textContent = '⚠️ Štít tu teď nepotřebuješ!'; return; }
+
+    clearTimeout(mb._sequenceTimer);
     sfxHit();
-    $('mbHint').textContent = '🛡️ Štít zablokoval zákeřný útok!';
-    mapBattleState.isAttacking = false;
-    setTimeout(() => mapBattleTurn(), 500);
+    $('mbHint').textContent = '🛡️ Štít zablokoval útok!';
+    advanceSequence();
   }
 
   function onMapAttack() {
     if (mapBattleState.ended) return;
-    if (mapBattleState.isAttacking) { $('mbHint').textContent = '⚠️ Uhni nejdřív!'; return; }
-    // monster: pokračovat, něhodit hned končit
+    const mb = mapBattleState;
+    if (!mb.inAttackWindow) {
+      if (mb.sequence && mb.sequenceIndex < mb.sequence.length) {
+        $('mbHint').textContent = '⚠️ Nejdřív přežij sekvenci útoků!';
+      } else {
+        $('mbHint').textContent = '⚠️ Počkej na útočné okno!';
+      }
+      return;
+    }
 
-    const baseDmg = mapBattleState.baseDmg || (10 + Math.floor(state.hero.level * 3) + (ITEM_MAP[state.hero.equip.weapon]||ITEM_MAP['fists']).baseDmg);
+    // Hráč udeřil — zrušit timer okna
+    clearTimeout(mb._attackWindowTimer);
+
+    const baseDmg = mb.baseDmg || (10 + Math.floor(state.hero.level * 3) + (ITEM_MAP[state.hero.equip.weapon]||ITEM_MAP['fists']).baseDmg);
     const critChance = (state.skills.crit||0) * 5 + 10;
     const critMult = (state.skills.crit||0) * 0.2 + 1;
     let dmg = baseDmg;
-    if (Math.random() * 100 < critChance) { dmg = Math.round(dmg * critMult); $('mbHint').textContent = `💥 Kritik! ${dmg}`; }
-    else { $('mbHint').textContent = `⚔️ Útok! ${dmg}`; }
-    // Show damage text over boss
-    const bossDamageText = $('mbDamageText');
-    if (bossDamageText) {
-      bossDamageText.textContent = `-${dmg}`;
-      bossDamageText.classList.remove('hidden');
-      setTimeout(() => bossDamageText.classList.add('hidden'), 600);
-    }
-    mapBattleState.bossHp -= dmg;
+    if (Math.random() * 100 < critChance) { dmg = Math.round(dmg * critMult); $('mbHint').textContent = `💥 Kritik! ${dmg} poškození!`; }
+    else { $('mbHint').textContent = `⚔️ Útok! ${dmg} poškození!`; }
+
+    mb.bossHp -= dmg;
     sfxHit();
-    if (mapBattleState.bossHp <= 0) { endMapBattle(true); return; }
-    
-    // Boss pokračuje po útoku hráče, ale s delším cooldownem (vícero kol)
-    const phase = mapBattleState.bossHp / mapBattleState.maxBossHp;
-    if (phase > 0.5) { $('mbHint').textContent += ` — Boss ${mapBattleState.bossHp} HP zbývá`; }
-    else { $('mbHint').textContent += ' — Boss slabí!'; }
-    
+
+    // Damage text
+    const damageText = $('mbDamageText');
+    if (damageText) {
+      damageText.textContent = `-${dmg}`;
+      damageText.classList.remove('hidden');
+      setTimeout(() => damageText.classList.add('hidden'), 600);
+    }
+
+    if (mb.bossHp <= 0) { endMapBattle(true); return; }
     updateMapBattleUI();
-    setTimeout(() => mapBattleTurn(), 700); // delší cooldown
+    mb.inAttackWindow = false;
+
+    // Další sekvence
+    setTimeout(() => mapBattleTurn(), 500);
   }
 
   function onMapHit() {
     if (mapBattleState.ended) return;
     const mb = mapBattleState;
+    clearTimeout(mb._sequenceTimer);
+
     // RPG poškození: boss útočí turn*2 ±20%, hráč se brání štítem
-    const baseBossDmg = Math.max(5, 2 + mb.turn * 2); // růst s turnem
+    const baseBossDmg = Math.max(5, 2 + mb.turn * 2);
     const bossDmg = Math.round(baseBossDmg * (0.8 + Math.random() * 0.4));
     let amount = bossDmg;
     if (mb.shieldActive) {
       const block = mb.shieldActive;
-      if (block >= 100) { $('mbHint').textContent = '🛡️ Štít odrazil!'; mb.shieldActive = null; return; }
+      if (block >= 100) {
+        $('mbHint').textContent = '🛡️ Štít odrazil!'; mb.shieldActive = null;
+        // Po odražení pokračovat v sekvenci
+        advanceSequence();
+        return;
+      }
       amount = Math.max(1, Math.round(amount * (1 - block/100)));
       mb.shieldActive = null;
     }
     mb.playerHp -= amount;
     sfxPlayerHit();
-    // Show damage text on player
+
+    // Damage text na hráči
     const playerDamageText = $('mbPlayerDamageText');
     if (playerDamageText) {
       playerDamageText.textContent = `-${amount}`;
@@ -571,11 +623,11 @@
       setTimeout(() => playerDamageText.classList.add('hidden'), 600);
     }
 
-    // Reset counterattack icon
-    const counterIcon = $('mbCounterAttack');
-    if (counterIcon) counterIcon.classList.add('hidden');
-
-    // Reset animace časového proužku (po hitu se kruh zruší na nevybarvený stav)
+    // Reset UI
+    const arrow = $('mbArrow');
+    if (arrow) arrow.setAttribute('class', 'boss-attack-arrow hidden');
+    const shieldIcon = $('mbShieldIcon');
+    if (shieldIcon) shieldIcon.classList.add('hidden');
     const ring = $('mbTimerRing');
     if (ring) {
       const circle = ring.querySelector('.timer-circle');
@@ -584,36 +636,21 @@
         circle.style.strokeDashoffset = '176';
       }
     }
-
+    const counterIcon = $('mbCounterAttack');
+    if (counterIcon) counterIcon.classList.add('hidden');
 
     $('mbHint').textContent = `💔 Zásah! -${amount}`;
     updateMapBattleUI();
-    if (mb.playerHp <= 0) { endMapBattle(false); }
-    else { 
-      // Bossy/příšery: delší timeout po zásahu hráče (500ms -> 700ms)
-      setTimeout(() => mapBattleTurn(), mb.isBoss ? 700 : 600);
-    }
-  }
 
-  function onMapCounterAttack() {
-    if (mapBattleState.ended || !mapBattleState.isAttacking) return;
-    const mb = mapBattleState;
-    if (!mb.isHeavyAttack) return; // only after heavy attack
-    
-    const counterIcon = $('mbCounterAttack');
-    if (counterIcon) counterIcon.classList.add('hidden');
-    
-    // Deal bonus damage (2x base with 20% random variance)
-    const baseDmg = state.hero.baseDmg || 2;
-    const dmg = Math.round(baseDmg * 2 * (0.9 + Math.random() * 0.2));
-    mb.bossHp -= dmg;
-    sfxHit();
-    $('mbHint').textContent = `⚔️ Counterattack! ${dmg} dmg`;
-    
-    if (mb.bossHp <= 0) { endMapBattle(true); return; }
-    
-    // Resume boss attack after short delay
-    setTimeout(() => mapBattleTurn(), 300);
+    if (mb.playerHp <= 0) { endMapBattle(false); return; }
+
+    // Po zásahu pokračovat sekvencí (pokud není konec)
+    if (mb.sequence && mb.sequenceIndex < mb.sequence.length) {
+      setTimeout(() => advanceSequence(), 400);
+    } else {
+      // Už není sekvence nebo jsme na konci - nové kolo
+      setTimeout(() => mapBattleTurn(), 500);
+    }
   }
 
   function castMapSpell(spellId) {
