@@ -424,8 +424,11 @@
     $('mbHint').textContent = `${seqStr} ${getAttackHint(attack)}`;
 
     // Timer ring - animace
+    const seqIdxWhenStarted = mb.sequenceIndex;
     setTimeout(() => {
       if (mapBattleState.ended) return;
+      if (mb.sequenceIndex !== seqIdxWhenStarted) return;
+      if (!mb.currentAttack) return;
       startTimerRing(circle, windowTime);
     }, 30);
 
@@ -478,11 +481,12 @@
     $('mbHint').textContent = '⚔️ ÚTOČ! Klikni na ⚔️ nebo stiskni Mezerník!';
     $('mbArrow').setAttribute('class', 'boss-attack-arrow hidden');
 
-    // Timer ring pro útočné okno (delší čas ~4s)
-    const atkTime = 4000;
+    // Timer ring pro útočné okno (~2.7s)
+    const atkTime = 2700;
     const atkCircle = resetTimerRing();
     setTimeout(() => {
       if (mapBattleState.ended) return;
+      if (!mb.inAttackWindow) return;
       startTimerRing(atkCircle, atkTime);
     }, 30);
 
