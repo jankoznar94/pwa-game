@@ -172,7 +172,7 @@
   function resetGame() { state = defaultState(); saveGame(); showScreen('map'); }
 
   // ===== SCREENS =====
-  const SCREEN_IDS = { map:'mapScreen', mapBattle:'mapBattleScreen', tower:'towerScreen', hero:'heroScreen', battle:'battleScreen', result:'resultScreen', medals:'medalScreen' };
+  const SCREEN_IDS = { map:'mapScreen', mapBattle:'mapBattleScreen', tower:'towerScreen', hero:'heroScreen', battle:'battleScreen', result:'resultScreen', medals:'medalScreen', shop:'shopScreen', inventory:'inventoryScreen' };
   function showScreen(name) {
     cleanupTimers();
     if (name !== 'medals') { const m = $('medalScreen'); if (m) m.remove(); }
@@ -191,6 +191,8 @@
     if (name === 'map') renderMap();
     else if (name === 'tower') renderTower();
     else if (name === 'hero') renderHero();
+    else if (name === 'shop') renderShop();
+    else if (name === 'inventory') renderInventory();
   }
 
   function showMessage(msg) {
@@ -230,18 +232,28 @@
   function enterLocation(locId) {
     const loc = LOCATIONS[locId];
     if (!loc) return;
-    if (state.bossesDefeated[locId]) { showMessage('✅ Tato lokace je hotová!'); return; }
+    if (state.bossesDefeated[locId]) {
+      // Již dokončeno — umožníme opakování farmení
+      cleanupTimers();
+      startLocation(locId);
+      return;
+    }
     const sk = SKILL_MAP[loc.skill];
     const lv = state.skills[loc.skill] || 0;
     if (lv < loc.minSkill) { showMessage(`❌ Potřebuješ ${sk.icon} Lv.${loc.minSkill}`); return; }
     if (locId > 0 && !state.bossesDefeated[locId-1]) { showMessage('🔒 Nejdřív poraz předchozí lokaci!'); return; }
 
     cleanupTimers();
+    startLocation(locId);
+  }
+
+  function startLocation(locId) {
+    const loc = LOCATIONS[locId];
+    if (!loc) return;
     const progress = state.locationProgress[locId] || 0;
     const isBoss = progress >= loc.monsters;
-    // RPG HP system: hráč má stovky HP, bossové mají stovky/tisíce podle turn a výbavy
-    const basePlayerHp = Math.max(100, 3 + Math.floor(state.hero.level * 5)); // stoupá s levelem
-    const playerMaxHp = isBoss ? basePlayerHp + Math.floor(state.hero.level * 10) : basePlayerHp;
+    // RPG HP system: hráč má pevné maxHp z atributů a itemů
+    const playerMaxHp = state.hero.maxHp || 100;
     // Boss HP: monster ~50-100, boss rychleji stoupá (turn*20 + loc.boss.hp)
     const bossBaseHp = isBoss ? (progress >= loc.monsters ? 80 + Math.round(loc.boss.hp * 12) : 40 + progress * 12) : 30 + progress * 8;
 
@@ -870,7 +882,7 @@
           // XP se přidává až po dokončení lokace, zatím jen zobrazení
           $('resultIcon').textContent = '✅';
           $('resultTitle').textContent = 'Nestvůra poražena!';
-          $('resultMsg').textContent = `Postup: ${p}/${mb.loc.monsters} (+$${monsterGold})`;
+          $('resultMsg').textContent = `Postup: ${p}/${mb.loc.monsters} (+💰${monsterGold})`;
           $('resultBtn').innerHTML = `<button class="btn btn-primary" onclick="game.enterLocation(${locId})">🚀 Další</button><button class="btn btn-secondary" onclick="game.showScreen('map')">🌍 Mapa</button>`;
         }
       } else {
