@@ -373,22 +373,39 @@
 
     const windowTime = mb.frozen > 0 ? attack.windowTime * 1.5 : attack.windowTime;
 
-    // Zobrazit šipku
-    const arrow = $('mbArrow');
-    if (arrow) {
-      arrow.setAttribute('class', 'boss-attack-arrow');
-      const rotation = { '⬆️': 0, '⬇️': 180, '⬅️': -90, '➡️': 90 }[attack.dir] || 0;
-      arrow.style.transform = `translate(-50%, -50%) rotate(${rotation}deg)`;
-      if (attack.type === 'heavy') arrow.classList.add('boss-attack-yellow');
-      else if (attack.type === 'block') arrow.classList.add('boss-attack-red');
-      else if (attack.type === 'inverted') arrow.classList.add('boss-attack-green');
-      else if (attack.type === 'liar') arrow.classList.add('boss-attack-red');
-      else if (attack.type === 'wait') arrow.classList.add('boss-attack-purple');
+    // Reset kolečka
+    const ring = $('mbTimerRing');
+    if (ring) {
+      const circle = ring.querySelector('.timer-circle');
+      if (circle) {
+        circle.style.transition = 'none';
+        circle.style.strokeDashoffset = '176';
+      }
     }
 
-    // Schovat info ikonu (zobrazuje se jen při útoku/bloku)
+    // Zobrazit šipku nebo štít
     const actionInfo = $('mbActionInfo');
-    if (actionInfo) actionInfo.classList.add('hidden');
+    const arrow = $('mbArrow');
+    if (attack.type === 'block') {
+      // Block útok: místo šipky ukážeme 🛡️ v kolečku
+      if (arrow) arrow.setAttribute('class', 'boss-attack-arrow hidden');
+      if (actionInfo) {
+        actionInfo.textContent = '🛡️';
+        actionInfo.classList.remove('hidden');
+      }
+    } else {
+      // Ostatní útoky: šipka
+      if (actionInfo) actionInfo.classList.add('hidden');
+      if (arrow) {
+        arrow.setAttribute('class', 'boss-attack-arrow');
+        const rotation = { '⬆️': 0, '⬇️': 180, '⬅️': -90, '➡️': 90 }[attack.dir] || 0;
+        arrow.style.transform = `translate(-50%, -50%) rotate(${rotation}deg)`;
+        if (attack.type === 'heavy') arrow.classList.add('boss-attack-yellow');
+        else if (attack.type === 'inverted') arrow.classList.add('boss-attack-green');
+        else if (attack.type === 'liar') arrow.classList.add('boss-attack-red');
+        else if (attack.type === 'wait') arrow.classList.add('boss-attack-purple');
+      }
+    }
 
     // Update action buttons
     updateActionButtons();
@@ -396,16 +413,17 @@
     const seqStr = `[${mb.sequenceIndex+1}/${mb.sequence.length}]`;
     $('mbHint').textContent = `${seqStr} ${getAttackHint(attack)}`;
 
-    // Timer ring
-    const ring = $('mbTimerRing');
-    if (ring) {
-      const circle = ring.querySelector('.timer-circle');
-      if (circle) {
-        circle.style.transition = `stroke-dashoffset ${windowTime}ms linear`;
-        circle.style.strokeDashoffset = '176';
-        setTimeout(() => circle.style.strokeDashoffset = '0', 10);
+    // Timer ring - animace
+    setTimeout(() => {
+      if (mapBattleState.ended) return;
+      if (ring) {
+        const circle = ring.querySelector('.timer-circle');
+        if (circle) {
+          circle.style.transition = `stroke-dashoffset ${windowTime}ms linear`;
+          circle.style.strokeDashoffset = '0';
+        }
       }
-    }
+    }, 30);
 
     mb._sequenceTimer = setTimeout(() => {
       if (mapBattleState.ended) return;
@@ -469,9 +487,13 @@
     if (ring) {
       const circle = ring.querySelector('.timer-circle');
       if (circle) {
-        circle.style.transition = `stroke-dashoffset ${atkTime}ms linear`;
+        circle.style.transition = 'none';
         circle.style.strokeDashoffset = '176';
-        setTimeout(() => circle.style.strokeDashoffset = '0', 10);
+        setTimeout(() => {
+          if (mapBattleState.ended) return;
+          circle.style.transition = `stroke-dashoffset ${atkTime}ms linear`;
+          circle.style.strokeDashoffset = '0';
+        }, 30);
       }
     }
 
@@ -563,6 +585,19 @@
 
     // Hráč udeřil — zrušit timer okna
     clearTimeout(mb._attackWindowTimer);
+
+    // Reset kolečka
+    const ring = $('mbTimerRing');
+    if (ring) {
+      const circle = ring.querySelector('.timer-circle');
+      if (circle) {
+        circle.style.transition = 'none';
+        circle.style.strokeDashoffset = '176';
+      }
+    }
+    const info = $('mbActionInfo');
+    if (info) info.classList.add('hidden');
+    updateActionButtons();
 
     const baseDmg = mb.baseDmg || (10 + Math.floor(state.hero.level * 3) + (ITEM_MAP[state.hero.equip.weapon]||ITEM_MAP['fists']).baseDmg);
     const critChance = (state.skills.crit||0) * 5 + 10;
