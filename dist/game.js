@@ -500,8 +500,8 @@
     mb._attackWindowTimer = setTimeout(() => {
       if (mapBattleState.ended) return;
       $('mbHint').textContent = '⏰ Zmeškal jsi! Další sekvence...';
-      const info = $('mbActionInfo');
-      if (info) info.classList.add('hidden');
+      const actInfo2 = $('mbActionInfo');
+      if (actInfo2) actInfo2.classList.add('hidden');
       updateActionButtons();
       setTimeout(() => mapBattleTurn(), 500);
     }, atkTime);
@@ -595,8 +595,8 @@
         circle.style.strokeDashoffset = '176';
       }
     }
-    const info = $('mbActionInfo');
-    if (info) info.classList.add('hidden');
+    const actInfo = $('mbActionInfo');
+    if (actInfo) actInfo.classList.add('hidden');
     updateActionButtons();
 
     const baseDmg = mb.baseDmg || (10 + Math.floor(state.hero.level * 3) + (ITEM_MAP[state.hero.equip.weapon]||ITEM_MAP['fists']).baseDmg);
@@ -620,8 +620,7 @@
     if (mb.bossHp <= 0) { endMapBattle(true); return; }
     updateMapBattleUI();
     mb.inAttackWindow = false;
-    const info = $('mbActionInfo');
-    if (info) info.classList.add('hidden');
+    $('mbActionInfo').classList.add('hidden');
     updateActionButtons();
 
     setTimeout(() => mapBattleTurn(), 500);
