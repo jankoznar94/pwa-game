@@ -203,19 +203,16 @@ body.battle-active { overflow: hidden; position: fixed; width: 100%; }
   filter:drop-shadow(0 0 3px rgba(76,175,80,0.5));
 }
 .boss-action-bar {
-  position:absolute;bottom:8px;left:0;right:0;display:flex;
-  justify-content:space-between;padding:0 12px;z-index:25;
-  pointer-events:none;
+  display:flex;gap:12px;justify-content:center;margin:4px 0;z-index:25;
 }
-.action-btn.in-arena {
-  width:56px;height:56px;border-radius:14px;font-size:30px;cursor:pointer;
+.action-btn {
+  width:64px;height:52px;border-radius:14px;font-size:28px;cursor:pointer;
   display:flex;align-items:center;justify-content:center;
   border:3px solid #2a2a4a;background:#1a1a3a;transition:0.15s;opacity:0.3;
-  pointer-events:auto;
 }
-.action-btn.active { opacity:1; border-color:#4a7dff; background:#1a1a3a; }
-.action-btn.active.attack-btn { border-color:#f1c40f; background:#1a1a2a; }
-.action-btn.active.block-btn { border-color:#3498db; background:#1a1a2a; }
+.action-btn.active { opacity:1; border-color:#4a7dff; background:#1a1a2a; }
+.action-btn.active.attack-btn { border-color:#f1c40f; background:#1a1a2a; box-shadow:0 0 10px rgba(241,196,15,0.3); }
+.action-btn.active.block-btn { border-color:#3498db; background:#1a1a2a; box-shadow:0 0 10px rgba(52,152,219,0.3); }
 .action-btn:not(.active) { pointer-events:none; }
 .boss-hint { text-align:center;font-size:11px;color:#8888aa;margin:2px 0; }
 .boss-touch-hint { text-align:center;font-size:10px;color:#555;margin:2px 0; }
