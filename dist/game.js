@@ -250,7 +250,7 @@
       const dx = t.clientX - startX, dy = t.clientY - startY;
       startX = startY = null;
       if (Math.abs(dx)<20 && Math.abs(dy)<20) { 
-        onMapAttack();
+        // krátký tap na aréně = nic, útok jen přes ⚔️ tlačítko
         return; 
       }
       let dir;
@@ -319,7 +319,8 @@
 
   function startTimerRing(circle, durationMs) {
     if (!circle) return;
-    circle.getBoundingClientRect(); // force reflow
+    // force reflow - oddělí reset od animace
+    void circle.offsetHeight;
     circle.style.transition = `stroke-dashoffset ${durationMs}ms linear`;
     circle.style.strokeDashoffset = '0';
   }
@@ -425,14 +426,8 @@
     const seqStr = `[${mb.sequenceIndex+1}/${mb.sequence.length}]`;
     $('mbHint').textContent = `${seqStr} ${getAttackHint(attack)}`;
 
-    // Timer ring - animace
-    const seqIdxWhenStarted = mb.sequenceIndex;
-    mb._ringTimer = setTimeout(() => {
-      if (mapBattleState.ended) return;
-      if (mb.sequenceIndex !== seqIdxWhenStarted) return;
-      if (!mb.currentAttack) return;
-      startTimerRing(circle, windowTime);
-    }, 30);
+    // Timer ring - animace (synchronně, bez setTimeout)
+    startTimerRing(circle, windowTime);
 
     mb._sequenceTimer = setTimeout(() => {
       if (mapBattleState.ended) return;
@@ -488,11 +483,7 @@
     // Timer ring pro útočné okno (~2.7s)
     const atkTime = 2700;
     const atkCircle = resetTimerRing();
-    mb._ringTimer = setTimeout(() => {
-      if (mapBattleState.ended) return;
-      if (!mb.inAttackWindow) return;
-      startTimerRing(atkCircle, atkTime);
-    }, 30);
+    startTimerRing(atkCircle, atkTime);
 
     mb._attackWindowTimer = setTimeout(() => {
       if (mapBattleState.ended) return;
