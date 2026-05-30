@@ -518,6 +518,9 @@
       return;
     }
 
+    // GUARD: pokud _sequenceTimer už je null, útok už byl vyřešen (timer propadl)
+    if (mb._sequenceTimer === null) return;
+
     clearTimeout(mb._sequenceTimer);
     clearTimeout(mb._ringTimer);
     mb._ringTimer = null;
@@ -579,6 +582,9 @@
     }
     if (!mb.isBlockAttack) { $('mbHint').textContent = '⚠️ Štít tu teď nepotřebuješ!'; return; }
 
+    // GUARD: pokud _sequenceTimer už je null, útok už byl vyřešen
+    if (mb._sequenceTimer === null) return;
+
     clearTimeout(mb._sequenceTimer);
     clearTimeout(mb._ringTimer);
     mb._ringTimer = null;
@@ -639,6 +645,8 @@
   function onMapHit() {
     if (mapBattleState.ended) return;
     const mb = mapBattleState;
+    // GUARD: pokud _sequenceTimer už je null, tohle je druhé volání (např. timer+swipe ve stejném ticku)
+    if (mb._sequenceTimer === null) return;
     clearTimeout(mb._sequenceTimer);
     clearTimeout(mb._ringTimer);
     mb._ringTimer = null;
