@@ -171,7 +171,7 @@
 
   function updateMapBattleUI() {
     const mb = mapBattleState;
-    console.log('updateMapBattleUI:', mb.locId, mb.isBoss, mb.currentAttack, mb.isHeavyAttack);
+    if (!mb.loc) return;
     if (mb.isBoss) {
       $('mbEnemyName').textContent = `${mb.loc.boss.face} ${mb.loc.boss.name}`;
       $('mbLocation').textContent = `BOSS ${mb.loc.name}`;
@@ -180,34 +180,16 @@
       $('mbEnemyName').textContent = `👾 Nestvůra (${left} zbývá)`;
       $('mbLocation').textContent = mb.loc.name;
     }
-    // RPG HP: zobrazovat jako čísla (protože budou stovky/tisíce)
     const pHpPct = Math.round((mb.playerHp / mb.maxPlayerHp) * 100);
     const eHpPct = mb.isBoss ? Math.round((mb.bossHp / mb.maxBossHp) * 100) : Math.round((mb.bossHp / mb.maxBossHp) * 100);
     $('mbPlayerHp').textContent = `❤️ ${mb.playerHp}/${mb.maxPlayerHp} (${pHpPct}%)`;
     $('mbEnemyHp').textContent = mb.isBoss ? `❤️ ${mb.bossHp}/${mb.maxBossHp} (${eHpPct}%)` : `👾 ${mb.bossHp}/${mb.maxBossHp}`;
     const emoji = mb.isBoss ? mb.loc.boss.face : '👾';
     const fig = $('mbFigure');
-    // Zachovat existující damage text element, aby ho innerHTML nesmazal
     const oldDt = fig.querySelector('#mbDamageText');
     fig.innerHTML = emoji;
     if (oldDt) fig.appendChild(oldDt);
     $('mbHint').textContent = mb.isBoss ? `Sekvence útoků — přežij a pak udeř!` : `⬆️⬇️⬅️➡️ uhni! Nestvůra ${mb.loc.monsters-mb.progress}/${mb.loc.monsters}`;
-
-    // Update counterattack icon position (center of arena)
-    const counterIcon = $('mbCounterAttack');
-    if (counterIcon) {
-      counterIcon.style.top = '50%';
-      counterIcon.style.left = '50%';
-      counterIcon.style.transform = 'translate(-50%, -50%)';
-    }
-
-    // Update shield block icon position (bottom-right)
-    const shieldIcon = $('mbShieldIcon');
-    if (shieldIcon) {
-      shieldIcon.style.bottom = '10px';
-      shieldIcon.style.right = '10px';
-      shieldIcon.style.transform = 'translate(0, 0)';
-    }
 
     // Spells
     const container = $('mbSpells');
@@ -224,6 +206,14 @@
     });
   }
 
+  function updateActionButtons() {
+    const mb = mapBattleState;
+    const atk = $('mbAttackBtn');
+    const blk = $('mbBlockBtn');
+    if (atk) { if (mb.inAttackWindow) atk.classList.add('active'); else atk.classList.remove('active'); }
+    if (blk) { if (mb.isBlockAttack) blk.classList.add('active'); else blk.classList.remove('active'); }
+  }
+
   function setupMapBattleInput() {
     const arena = $('mbArena');
     if (!arena) return;
@@ -233,19 +223,25 @@
     let startX, startY;
     const handlers = [];
 
-    // Click handler for block shield icon
-    const shieldIcon = $('mbShieldIcon');
-    if (shieldIcon) {
-      shieldIcon.addEventListener('click', (e) => {
+    // Click handler for attack button
+    const atkBtn = $('mbAttackBtn');
+    if (atkBtn) {
+      atkBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        if (mapBattleState && !mapBattleState.ended && mapBattleState.isBlockAttack) {
-          onMapBlock();
-        }
+        onMapAttack();
       });
     }
-    handlers.push(['click', (e) => { /* handled above */ }]);
 
-    const ts = (e) => { if (mapBattleState.ended || mapBattleState.sequence && mapBattleState.sequenceIndex < mapBattleState.sequence.length && !mapBattleState.inAttackWindow) return; const t=e.touches[0]; startX=t.clientX; startY=t.clientY; };
+    // Click handler for block button
+    const blkBtn = $('mbBlockBtn');
+    if (blkBtn) {
+      blkBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        onMapBlock();
+      });
+    }
+
+    const ts = (e) => { if (mapBattleState.ended) return; const t=e.touches[0]; startX=t.clientX; startY=t.clientY; };
     const te = (e) => {
       if (mapBattleState.ended || !startX) return;
       const t = e.changedTouches[0];
@@ -295,7 +291,7 @@
     else if (randNum < chances.wait + chances.inverted + chances.block) { type = 'block'; }
     else if (randNum < chances.wait + chances.inverted + chances.block + chances.heavy) { type = 'heavy'; }
     else if (randNum < chances.wait + chances.inverted + chances.block + chances.heavy + chances.liar) { type = 'liar'; }
-    return { dir: DIRECTIONS[rand(0,3)], type, windowTime: 600 + rand(0, 300) };
+    return { dir: DIRECTIONS[rand(0,3)], type, windowTime: 800 + rand(0, 300) };
   }
 
   function getAttackHint(attack) {
@@ -342,18 +338,14 @@
     // Reset UI
     const arrow = $('mbArrow');
     if (arrow) arrow.setAttribute('class', 'boss-attack-arrow hidden');
-    const counterIcon = $('mbCounterAttack');
-    if (counterIcon) counterIcon.classList.add('hidden');
-    const shieldIcon = $('mbShieldIcon');
-    if (shieldIcon) shieldIcon.classList.add('hidden');
+    const actionInfo = $('mbActionInfo');
+    if (actionInfo) { actionInfo.classList.add('hidden'); actionInfo.textContent = ''; }
     const playerEl = $('mbPlayerFigure');
     if (playerEl) playerEl.className = 'boss-fight-player';
     mb._sequenceTimer = null;
+    updateActionButtons();
 
     $('mbHint').textContent = `⚔️ Sekvence ${mb.sequence.length} útoků — přežij!`;
-    // Schovat štít, ukáže se až při block útoku
-    const shield = $('mbShieldIcon');
-    if (shield) shield.classList.add('hidden');
 
     // Začít první útok sekvence
     playSequenceAttack();
@@ -363,7 +355,6 @@
     if (mapBattleState.ended) return;
     const mb = mapBattleState;
     if (mb.sequenceIndex >= mb.sequence.length) {
-      // Sekvence dokončena — otevřít útočné okno
       openAttackWindow();
       return;
     }
@@ -373,7 +364,6 @@
 
     const attack = mb.sequence[mb.sequenceIndex];
 
-    // Nastavit aktuální útok
     mb.currentAttack = attack.dir;
     mb.isHeavyAttack = attack.type === 'heavy';
     mb.isBlockAttack = attack.type === 'block';
@@ -396,14 +386,13 @@
       else if (attack.type === 'wait') arrow.classList.add('boss-attack-purple');
     }
 
-    // Štít pro block útok
-    const shield = $('mbShieldIcon');
-    if (shield) {
-      if (attack.type === 'block') shield.classList.remove('hidden');
-      else shield.classList.add('hidden');
-    }
+    // Schovat info ikonu (zobrazuje se jen při útoku/bloku)
+    const actionInfo = $('mbActionInfo');
+    if (actionInfo) actionInfo.classList.add('hidden');
 
-    // Hint
+    // Update action buttons
+    updateActionButtons();
+
     const seqStr = `[${mb.sequenceIndex+1}/${mb.sequence.length}]`;
     $('mbHint').textContent = `${seqStr} ${getAttackHint(attack)}`;
 
@@ -420,7 +409,6 @@
 
     mb._sequenceTimer = setTimeout(() => {
       if (mapBattleState.ended) return;
-      // Hráč nestihl zareagovat = zásah
       onMapHit();
     }, windowTime);
   }
@@ -428,7 +416,6 @@
   function advanceSequence() {
     if (mapBattleState.ended) return;
     const mb = mapBattleState;
-    // Reset stavu aktuálního útoku
     mb.currentAttack = null;
     mb.isHeavyAttack = false;
     mb.isBlockAttack = false;
@@ -436,12 +423,12 @@
     mb.isWaitAttack = false;
     mb.isLiarAttack = false;
 
-    const shield = $('mbShieldIcon');
-    if (shield) shield.classList.add('hidden');
     const arrow = $('mbArrow');
     if (arrow) arrow.setAttribute('class', 'boss-attack-arrow hidden');
+    const actionInfo = $('mbActionInfo');
+    if (actionInfo) actionInfo.classList.add('hidden');
+    updateActionButtons();
 
-    // Ring reset
     const ring = $('mbTimerRing');
     if (ring) {
       const circle = ring.querySelector('.timer-circle');
@@ -456,7 +443,6 @@
     if (mb.playerHp <= 0) { endMapBattle(false); return; }
     if (mb.bossHp <= 0) { endMapBattle(true); return; }
 
-    // Malá pauza mezi útoky
     setTimeout(() => playSequenceAttack(), 300);
   }
 
@@ -464,27 +450,39 @@
     if (mapBattleState.ended) return;
     const mb = mapBattleState;
     mb.inAttackWindow = true;
-    mb.isAttacking = false; // nečeká na dodge, čeká na útok
+    mb.isAttacking = false;
 
-    $('mbHint').textContent = '⚔️ ÚTOČ! Klikni na arénu nebo stiskni Mezerník!';
+    // Zobrazit ⚔️ info ikonu v kolečku
+    const actionInfo = $('mbActionInfo');
+    if (actionInfo) {
+      actionInfo.textContent = '⚔️';
+      actionInfo.classList.remove('hidden');
+    }
+    updateActionButtons();
+
+    $('mbHint').textContent = '⚔️ ÚTOČ! Klikni na ⚔️ nebo stiskni Mezerník!';
     $('mbArrow').setAttribute('class', 'boss-attack-arrow hidden');
-    const shield = $('mbShieldIcon');
-    if (shield) shield.classList.add('hidden');
+
+    // Timer ring pro útočné okno (delší čas ~4s)
+    const atkTime = 4000;
     const ring = $('mbTimerRing');
     if (ring) {
       const circle = ring.querySelector('.timer-circle');
       if (circle) {
-        circle.style.transition = 'none';
+        circle.style.transition = `stroke-dashoffset ${atkTime}ms linear`;
         circle.style.strokeDashoffset = '176';
+        setTimeout(() => circle.style.strokeDashoffset = '0', 10);
       }
     }
 
-    // Hráč má 3 vteřiny na útok, jinak další sekvence
     mb._attackWindowTimer = setTimeout(() => {
       if (mapBattleState.ended) return;
       $('mbHint').textContent = '⏰ Zmeškal jsi! Další sekvence...';
+      const info = $('mbActionInfo');
+      if (info) info.classList.add('hidden');
+      updateActionButtons();
       setTimeout(() => mapBattleTurn(), 500);
-    }, 3000);
+    }, atkTime);
   }
 
   function onMapDodge(dir) {
@@ -587,8 +585,10 @@
     if (mb.bossHp <= 0) { endMapBattle(true); return; }
     updateMapBattleUI();
     mb.inAttackWindow = false;
+    const info = $('mbActionInfo');
+    if (info) info.classList.add('hidden');
+    updateActionButtons();
 
-    // Další sekvence
     setTimeout(() => mapBattleTurn(), 500);
   }
 
@@ -597,7 +597,6 @@
     const mb = mapBattleState;
     clearTimeout(mb._sequenceTimer);
 
-    // RPG poškození: boss útočí turn*2 ±20%, hráč se brání štítem
     const baseBossDmg = Math.max(5, 2 + mb.turn * 2);
     const bossDmg = Math.round(baseBossDmg * (0.8 + Math.random() * 0.4));
     let amount = bossDmg;
@@ -605,7 +604,6 @@
       const block = mb.shieldActive;
       if (block >= 100) {
         $('mbHint').textContent = '🛡️ Štít odrazil!'; mb.shieldActive = null;
-        // Po odražení pokračovat v sekvenci
         advanceSequence();
         return;
       }
@@ -615,7 +613,6 @@
     mb.playerHp -= amount;
     sfxPlayerHit();
 
-    // Damage text na hráči
     const playerDamageText = $('mbPlayerDamageText');
     if (playerDamageText) {
       playerDamageText.textContent = `-${amount}`;
@@ -623,11 +620,11 @@
       setTimeout(() => playerDamageText.classList.add('hidden'), 600);
     }
 
-    // Reset UI
     const arrow = $('mbArrow');
     if (arrow) arrow.setAttribute('class', 'boss-attack-arrow hidden');
-    const shieldIcon = $('mbShieldIcon');
-    if (shieldIcon) shieldIcon.classList.add('hidden');
+    const actionInfo = $('mbActionInfo');
+    if (actionInfo) actionInfo.classList.add('hidden');
+    updateActionButtons();
     const ring = $('mbTimerRing');
     if (ring) {
       const circle = ring.querySelector('.timer-circle');

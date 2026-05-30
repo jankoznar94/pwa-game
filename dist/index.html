@@ -46,13 +46,16 @@
       <div class="boss-fight-boss" id="mbFigure">👾<span class="damage-text hidden" id="mbDamageText"></span></div>
       <div class="boss-fight-player" id="mbPlayerFigure">⚔️<span class="damage-text hidden" id="mbPlayerDamageText"></span></div>
       <svg id="mbArrow" class="boss-attack-arrow hidden" viewBox="0 0 16 16" width="40" height="40"><path d="M8 1L14 8L11 8L11 15L5 15L5 8L2 8L8 1Z" fill="currentColor"/></svg>
-      <div class="counter-attack-icon hidden" id="mbCounterAttack">⚔️</div>
-      <div class="shield-block-icon hidden" id="mbShieldIcon">🛡️</div>
       <div class="attack-timer-ring" id="mbTimerRing">
         <svg viewBox="0 0 64 64" width="64" height="64" style="transform:rotate(-90deg)"><circle cx="32" cy="32" r="28" stroke="#fff" stroke-width="3" fill="none" stroke-dasharray="176" stroke-dashoffset="176" class="timer-circle"/></svg>
+        <span class="action-info-icon hidden" id="mbActionInfo"></span>
       </div>
     </div>
-    <div class="boss-hint" id="mbHint">⬆️⬇️⬅️➡️ uhni! Černá šipka = útok | Žlutá šipka = heavy (úhyb → meč = útok)</div>
+    <div class="boss-action-bar">
+      <div class="action-btn attack-btn" id="mbAttackBtn">⚔️</div>
+      <div class="action-btn block-btn" id="mbBlockBtn">🛡️</div>
+    </div>
+    <div class="boss-hint" id="mbHint">⬆️⬇️⬅️➡️ uhni! Sekvence útoků — přežij a pak udeř!</div>
     <div class="mb-spells" id="mbSpells"></div>
   </div>
 </div>
