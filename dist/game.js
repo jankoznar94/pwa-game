@@ -61,6 +61,7 @@
   let _activeIntervals = [];
 
   function cleanupTimers() {
+    document.body.classList.remove('battle-active');
     _activeIntervals.forEach(id => { try { clearInterval(id); } catch {} }); _activeIntervals = [];
     if (minigameState.timerInterval) { clearInterval(minigameState.timerInterval); minigameState.timerInterval = null; }
     if (minigameState.countdownInterval) { clearInterval(minigameState.countdownInterval); minigameState.countdownInterval = null; }
@@ -164,6 +165,7 @@
     SKILLS.forEach(sk => { const l = state.skills[sk.id]||0; if (l>0) mapBattleState.spellCooldowns[sk.id]=0; });
 
     showScreen('mapBattle');
+    document.body.classList.add('battle-active');
     updateMapBattleUI();
     setupMapBattleInput();
     setTimeout(() => mapBattleTurn(), 400);
@@ -305,6 +307,23 @@
     return `${dir} uhni!`;
   }
 
+  function resetTimerRing() {
+    const ring = $('mbTimerRing');
+    if (!ring) return null;
+    const circle = ring.querySelector('.timer-circle');
+    if (!circle) return null;
+    circle.style.transition = 'none';
+    circle.style.strokeDashoffset = '176';
+    return circle;
+  }
+
+  function startTimerRing(circle, durationMs) {
+    if (!circle) return;
+    circle.getBoundingClientRect(); // force reflow
+    circle.style.transition = `stroke-dashoffset ${durationMs}ms linear`;
+    circle.style.strokeDashoffset = '0';
+  }
+
   function mapBattleTurn() {
     if (mapBattleState.ended) return;
     const mb = mapBattleState;
@@ -374,14 +393,7 @@
     const windowTime = mb.frozen > 0 ? attack.windowTime * 1.5 : attack.windowTime;
 
     // Reset kolečka
-    const ring = $('mbTimerRing');
-    if (ring) {
-      const circle = ring.querySelector('.timer-circle');
-      if (circle) {
-        circle.style.transition = 'none';
-        circle.style.strokeDashoffset = '176';
-      }
-    }
+    const circle = resetTimerRing();
 
     // Zobrazit šipku nebo štít
     const actionInfo = $('mbActionInfo');
@@ -416,13 +428,7 @@
     // Timer ring - animace
     setTimeout(() => {
       if (mapBattleState.ended) return;
-      if (ring) {
-        const circle = ring.querySelector('.timer-circle');
-        if (circle) {
-          circle.style.transition = `stroke-dashoffset ${windowTime}ms linear`;
-          circle.style.strokeDashoffset = '0';
-        }
-      }
+      startTimerRing(circle, windowTime);
     }, 30);
 
     mb._sequenceTimer = setTimeout(() => {
@@ -447,14 +453,7 @@
     if (actionInfo) actionInfo.classList.add('hidden');
     updateActionButtons();
 
-    const ring = $('mbTimerRing');
-    if (ring) {
-      const circle = ring.querySelector('.timer-circle');
-      if (circle) {
-        circle.style.transition = 'none';
-        circle.style.strokeDashoffset = '176';
-      }
-    }
+    resetTimerRing();
 
     mb.sequenceIndex++;
 
@@ -483,19 +482,11 @@
 
     // Timer ring pro útočné okno (delší čas ~4s)
     const atkTime = 4000;
-    const ring = $('mbTimerRing');
-    if (ring) {
-      const circle = ring.querySelector('.timer-circle');
-      if (circle) {
-        circle.style.transition = 'none';
-        circle.style.strokeDashoffset = '176';
-        setTimeout(() => {
-          if (mapBattleState.ended) return;
-          circle.style.transition = `stroke-dashoffset ${atkTime}ms linear`;
-          circle.style.strokeDashoffset = '0';
-        }, 30);
-      }
-    }
+    const atkCircle = resetTimerRing();
+    setTimeout(() => {
+      if (mapBattleState.ended) return;
+      startTimerRing(atkCircle, atkTime);
+    }, 30);
 
     mb._attackWindowTimer = setTimeout(() => {
       if (mapBattleState.ended) return;
@@ -587,14 +578,7 @@
     clearTimeout(mb._attackWindowTimer);
 
     // Reset kolečka
-    const ring = $('mbTimerRing');
-    if (ring) {
-      const circle = ring.querySelector('.timer-circle');
-      if (circle) {
-        circle.style.transition = 'none';
-        circle.style.strokeDashoffset = '176';
-      }
-    }
+    resetTimerRing();
     const actInfo = $('mbActionInfo');
     if (actInfo) actInfo.classList.add('hidden');
     updateActionButtons();
@@ -659,14 +643,7 @@
     const actionInfo = $('mbActionInfo');
     if (actionInfo) actionInfo.classList.add('hidden');
     updateActionButtons();
-    const ring = $('mbTimerRing');
-    if (ring) {
-      const circle = ring.querySelector('.timer-circle');
-      if (circle) {
-        circle.style.transition = 'none';
-        circle.style.strokeDashoffset = '176';
-      }
-    }
+    resetTimerRing();
     const counterIcon = $('mbCounterAttack');
     if (counterIcon) counterIcon.classList.add('hidden');
 
