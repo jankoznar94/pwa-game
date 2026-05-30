@@ -838,9 +838,9 @@
     $('heroAttrPts').textContent = pts;
     const strBtn = $('heroUpStr');
     const vitBtn = $('heroUpVit');
-    if (strBtn) strBtn.textContent = `⬆️ Síla (${strCost}💰)` + (pts > 0 ? '' : ` — 🔒`);
+    if (strBtn) strBtn.textContent = `⬆️ Síla` + (pts > 0 ? '' : ` 🔒`);
     if (strBtn) strBtn.style.opacity = pts > 0 ? '1' : '0.3';
-    if (vitBtn) vitBtn.textContent = `⬆️ Vitalita (${vitCost}💰)` + (pts > 0 ? '' : ` — 🔒`);
+    if (vitBtn) vitBtn.textContent = `⬆️ Vitalita` + (pts > 0 ? '' : ` 🔒`);
     if (vitBtn) vitBtn.style.opacity = pts > 0 ? '1' : '0.3';
 
     $('skillGrid').innerHTML = SKILLS.map(sk => {
