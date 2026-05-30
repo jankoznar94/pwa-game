@@ -188,9 +188,7 @@
     $('mbEnemyHp').textContent = mb.isBoss ? `❤️ ${mb.bossHp}/${mb.maxBossHp} (${eHpPct}%)` : `👾 ${mb.bossHp}/${mb.maxBossHp}`;
     const emoji = mb.isBoss ? mb.loc.boss.face : '👾';
     const fig = $('mbFigure');
-    const oldDt = fig.querySelector('#mbDamageText');
-    fig.innerHTML = emoji;
-    if (oldDt) fig.appendChild(oldDt);
+    fig.textContent = emoji;
     $('mbHint').textContent = mb.isBoss ? `Sekvence útoků — přežij a pak udeř!` : `⬆️⬇️⬅️➡️ uhni! Nestvůra ${mb.loc.monsters-mb.progress}/${mb.loc.monsters}`;
 
     // Spells
