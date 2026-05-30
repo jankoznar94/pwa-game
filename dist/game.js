@@ -407,8 +407,15 @@
     }
 
     if (dir === mapBattleState.currentAttack) {
+      // Zákeřný útok nejde uhnout - musí se blokovat štítem
+      if (mapBattleState.isBlockAttack) {
+        clearTimeout(mapBattleState._attackTimer);
+        mapBattleState.isAttacking = false;
+        onMapHit();
+        return;
+      }
       sfxHit();
-      // Monster: RPG poškození z úhybu (baseDmg ±20%)
+      // RPG poškození z úhybu (baseDmg ±20%)
       const baseDmg = mapBattleState.baseDmg || (10 + Math.floor(state.hero.level * 3) + (ITEM_MAP[state.hero.equip.weapon]||ITEM_MAP['fists']).baseDmg);
       if (!mapBattleState.isBoss) {
         const dmg = Math.round(baseDmg * (0.8 + Math.random() * 0.4));
@@ -425,8 +432,9 @@
         updateMapBattleUI();
         setTimeout(() => mapBattleTurn(), 500);
       } else {
-        // Boss fáze — RPG poškození: baseDmg ±20%
-        const dmg = Math.round(baseDmg * (0.8 + Math.random() * 0.4));
+        // Boss fáze — RPG poškození podle typu útoku
+        let attackMult = mapBattleState.isHeavyAttack ? 1.5 : 1.0;
+        const dmg = Math.round(baseDmg * attackMult * (0.8 + Math.random() * 0.4));
         // Show damage text over boss
         const damageText = $('mbDamageText');
         if (damageText) {
@@ -466,7 +474,7 @@
         } else {
           sfxHit(); // jiný směr = úspěch
           const baseDmg = mapBattleState.baseDmg || (10 + Math.floor(state.hero.level * 3) + (ITEM_MAP[state.hero.equip.weapon]||ITEM_MAP['fists']).baseDmg);
-          const dmg = Math.round(baseDmg * (0.8 + Math.random() * 0.4));
+          const dmg = Math.round(baseDmg * 1.25 * (0.8 + Math.random() * 0.4));
           mapBattleState.bossHp -= Math.max(1, dmg);
           if (mapBattleState.bossHp <= 0) { endMapBattle(true); return; }
           $('mbHint').textContent = '✅ Lhář úspěšný! (≠ šipka)';
@@ -479,7 +487,7 @@
         if (dir === requiredDir) {
           sfxHit(); // úspěšný inverzní úhyb
           const baseDmg = mapBattleState.baseDmg || (10 + Math.floor(state.hero.level * 3) + (ITEM_MAP[state.hero.equip.weapon]||ITEM_MAP['fists']).baseDmg);
-          const dmg = Math.round(baseDmg * (0.8 + Math.random() * 0.4));
+          const dmg = Math.round(baseDmg * 1.25 * (0.8 + Math.random() * 0.4));
           mapBattleState.bossHp -= Math.max(1, dmg);
           if (mapBattleState.bossHp <= 0) { endMapBattle(true); return; }
           $('mbHint').textContent = '✅ Inverzní úhyb!';
@@ -499,10 +507,9 @@
     if (mapBattleState.ended) return;
     if (!mapBattleState.isBlockAttack) { $('mbHint').textContent = '⚠️ Štít tu teď nepotřebuješ!'; return; }
     
+    clearTimeout(mapBattleState._attackTimer);
     sfxHit();
     $('mbHint').textContent = '🛡️ Štít zablokoval zákeřný útok!';
-    const baseDmg = mapBattleState.baseDmg || (10 + Math.floor(state.hero.level * 3) + (ITEM_MAP[state.hero.equip.weapon]||ITEM_MAP['fists']).baseDmg);
-    mapBattleState.bossHp -= Math.max(1, Math.round(baseDmg * (0.8 + Math.random() * 0.4)));
     mapBattleState.isAttacking = false;
     setTimeout(() => mapBattleTurn(), 500);
   }
