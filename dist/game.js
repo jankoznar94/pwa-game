@@ -16,6 +16,93 @@
   const sfxBossDefeat=()=>{playTone(523,0.15,'sine',0.14);setTimeout(()=>playTone(659,0.15,'sine',0.14),100);setTimeout(()=>playTone(784,0.15,'sine',0.16),200);setTimeout(()=>playTone(1047,0.3,'sine',0.18),300);};
   const sfxLevelUp=()=>{playTone(392,0.1,'sine',0.12);setTimeout(()=>playTone(523,0.1,'sine',0.12),100);setTimeout(()=>playTone(659,0.12,'sine',0.14),200);setTimeout(()=>playTone(784,0.15,'sine',0.16),300);};
 
+  // ===== BACKGROUND MUSIC =====
+  let bgmState = { playing: false, timeout: null, drone: null };
+  const BGM_VOL = 0.07;
+
+  function bgmNote(freq, startSec, durSec) {
+    try {
+      initAudio();
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.type = 'triangle';
+      o.frequency.value = freq;
+      const s = startSec;
+      g.gain.setValueAtTime(BGM_VOL, s);
+      g.gain.setValueAtTime(BGM_VOL, s + durSec - 0.04);
+      g.gain.exponentialRampToValueAtTime(0.001, s + durSec);
+      o.connect(g);
+      g.connect(audioCtx.destination);
+      o.start(s);
+      o.stop(s + durSec);
+    } catch(e) {}
+  }
+
+  // A moll dungeon theme — [frekvence, délka_v_sekundách], 0 = pauza
+  const bgmMelody = [
+    // === Sloka 1 ===
+    440, 0.5, 0, 0.1, 523, 0.5, 0, 0.1, 494, 0.5, 0, 0.1, 440, 0.5, 0, 0.1,
+    392, 0.5, 0, 0.1, 330, 0.5, 0, 0.1, 294, 0.5, 0, 0.1, 349, 0.5, 0, 0.1,
+    330, 0.5, 0, 0.1, 220, 0.5, 0, 0.1, 440, 0.5, 0, 0.1, 523, 0.5, 0, 0.1,
+    494, 0.5, 0, 0.1, 440, 0.5, 0, 0.1, 392, 0.5, 0, 0.1, 330, 0.5, 0, 0.1,
+    349, 0.5, 0, 0.1, 294, 0.5, 0, 0.1, 330, 0.5, 0, 0.1, 440, 1.0, 0, 0.3,
+    // === Sloka 2 ===
+    523, 0.5, 0, 0.1, 494, 0.5, 0, 0.1, 440, 0.5, 0, 0.1, 392, 0.5, 0, 0.1,
+    349, 0.5, 0, 0.1, 330, 0.5, 0, 0.1, 294, 0.5, 0, 0.1, 349, 0.5, 0, 0.1,
+    330, 0.5, 0, 0.1, 294, 0.5, 0, 0.1, 262, 0.5, 0, 0.1, 330, 0.5, 0, 0.1,
+    523, 0.5, 0, 0.1, 494, 0.5, 0, 0.1, 440, 0.5, 0, 0.1, 392, 0.5, 0, 0.1,
+    440, 0.5, 0, 0.1, 330, 0.5, 0, 0.1, 440, 1.5, 0, 1.0,
+  ];
+
+  function scheduleBGMLoop() {
+    if (!bgmState.playing || !audioCtx) return;
+    const now = audioCtx.currentTime;
+    let t = 0;
+    for (let i = 0; i < bgmMelody.length; i += 2) {
+      const f = bgmMelody[i], d = bgmMelody[i + 1];
+      if (f > 0) bgmNote(f, now + t, d);
+      t += d;
+    }
+    bgmState.timeout = setTimeout(scheduleBGMLoop, (t - 0.05) * 1000);
+  }
+
+  function startDrone() {
+    try {
+      initAudio();
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.type = 'sine';
+      o.frequency.value = 110; // A2
+      g.gain.value = 0.025;
+      o.connect(g);
+      g.connect(audioCtx.destination);
+      o.start();
+      bgmState.drone = { osc: o, gain: g };
+    } catch(e) {}
+  }
+
+  function stopDrone() {
+    if (bgmState.drone) {
+      try { bgmState.drone.gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+        bgmState.drone.osc.stop(audioCtx.currentTime + 0.4); } catch(e) {}
+      bgmState.drone = null;
+    }
+  }
+
+  function startBGM() {
+    if (bgmState.playing) return;
+    bgmState.playing = true;
+    startDrone();
+    // first loop se schedules v dalším ticku, aby audioCtx byl ready
+    setTimeout(() => { if (bgmState.playing) scheduleBGMLoop(); }, 100);
+  }
+
+  function stopBGM() {
+    bgmState.playing = false;
+    if (bgmState.timeout) { clearTimeout(bgmState.timeout); bgmState.timeout = null; }
+    stopDrone();
+  }
+
   // ===== SPELLS =====
   const SKILLS = [
     { id:'fireball', name:'Fireball', icon:'🔥', dungeon:'simon', dungeonName:'🌲 Les stínů', maxLv:10, desc:t=>t===0?'Zamčeno':`${t*2+3} dmg + ${t} DoT`, baseCd:6, cdR:0.3, minLevel:1 },
@@ -94,6 +181,13 @@
       if (!el) return;
       if (id === SCREEN_IDS[name]) { el.classList.remove('hidden'); el.classList.add('active'); } else { el.classList.add('hidden'); el.classList.remove('active'); }
     });
+    // BGM — hraje na mapě a v hero obrazovce, stop při bitvě a resultu
+    if (name === 'map' || name === 'hero') {
+      // Zpoždění 50ms, aby se audioCtx stihl inicializovat přes user gesture
+      setTimeout(() => startBGM(), 50);
+    } else {
+      stopBGM();
+    }
     if (name === 'map') renderMap();
     else if (name === 'tower') renderTower();
     else if (name === 'hero') renderHero();
