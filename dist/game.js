@@ -17,10 +17,10 @@
   const sfxLevelUp=()=>{playTone(392,0.1,'sine',0.12);setTimeout(()=>playTone(523,0.1,'sine',0.12),100);setTimeout(()=>playTone(659,0.12,'sine',0.14),200);setTimeout(()=>playTone(784,0.15,'sine',0.16),300);};
 
   // ===== BACKGROUND MUSIC =====
-  let bgmState = { playing: false, timeout: null, drone: null };
-  const BGM_VOL = 0.07;
+  let bgmState = { playing: false, drone: null };
+  const BGM_VOL = 0.035;
 
-  function bgmPlay(notes, startSec, durSec) {
+  function bgmPlay(notes, when, durSec) {
     // notes může být číslo (jedna nota) nebo pole (akord)
     const freqs = Array.isArray(notes) ? notes : [notes];
     freqs.forEach(freq => {
@@ -31,39 +31,37 @@
         const g = audioCtx.createGain();
         o.type = 'triangle';
         o.frequency.value = freq;
-        const s = startSec;
-        g.gain.setValueAtTime(BGM_VOL, s);
-        g.gain.setValueAtTime(BGM_VOL, s + durSec - 0.04);
-        g.gain.exponentialRampToValueAtTime(0.001, s + durSec);
+        g.gain.setValueAtTime(BGM_VOL, when);
+        g.gain.setValueAtTime(BGM_VOL, when + durSec - 0.04);
+        g.gain.exponentialRampToValueAtTime(0.001, when + durSec);
         o.connect(g);
         g.connect(audioCtx.destination);
-        o.start(s);
-        o.stop(s + durSec);
+        o.start(when);
+        o.stop(when + durSec);
       } catch(e) {}
     });
   }
 
-  // Akordový loop: D moll → Hes moll → Es moll → D moll, každý 2s
-  // Dm: D(294) F(349) A(440) | Hes m: Bb(466) Db(554) F(698) | Es m: Eb(311) Gb(370) Bb(466)
-  const bgmMelody = [
-    [294,349,440], 2,
-    [466,554,698], 2,
-    [311,370,466], 2,
-    [294,349,440], 2,
+  // Akordový loop: D moll → Hes moll → Es moll → D moll, o oktávu níž
+  // Dm: D(147) F(175) A(220) | Hes m: Bb(233) Db(277) F(349) | Es m: Eb(156) Gb(185) Bb(233)
+  const bgmChords = [
+    { freqs: [147,175,220], dur: 2 },
+    { freqs: [233,277,349], dur: 2 },
+    { freqs: [156,185,233], dur: 2 },
+    { freqs: [147,175,220], dur: 2 },
   ];
+  // Délka jednoho loopu (sekundy)
+  const BGM_LOOP_DUR = bgmChords.reduce((s, c) => s + c.dur, 0);
 
-  function scheduleBGMLoop() {
+  function scheduleBGMLoop(fromTime) {
     if (!bgmState.playing || !audioCtx) return;
-    const now = audioCtx.currentTime;
     let t = 0;
-    for (let i = 0; i < bgmMelody.length; i += 2) {
-      const notes = bgmMelody[i], d = bgmMelody[i + 1];
-      if (typeof notes === 'number' ? notes > 0 : notes.length > 0) {
-        bgmPlay(notes, now + t, d);
-      }
-      t += d;
+    for (const chord of bgmChords) {
+      bgmPlay(chord.freqs, fromTime + t, chord.dur);
+      t += chord.dur;
     }
-    bgmState.timeout = setTimeout(scheduleBGMLoop, (t - 0.05) * 1000);
+    // Naplánovat další loop hned teď na audio časové ose (žádný setTimeout)
+    scheduleBGMLoop(fromTime + BGM_LOOP_DUR);
   }
 
   function startDrone() {
@@ -72,8 +70,8 @@
       const o = audioCtx.createOscillator();
       const g = audioCtx.createGain();
       o.type = 'sine';
-      o.frequency.value = 110; // A2
-      g.gain.value = 0.025;
+      o.frequency.value = 55; // A1 (o oktávu níž)
+      g.gain.value = 0.012;
       o.connect(g);
       g.connect(audioCtx.destination);
       o.start();
@@ -93,13 +91,17 @@
     if (bgmState.playing) return;
     bgmState.playing = true;
     startDrone();
-    // first loop se schedules v dalším ticku, aby audioCtx byl ready
-    setTimeout(() => { if (bgmState.playing) scheduleBGMLoop(); }, 100);
+    // Naplánovat loop od aktuální audio časové osy + malý offset
+    try {
+      initAudio();
+      const now = audioCtx.currentTime + 0.1;
+      scheduleBGMLoop(now);
+    } catch(e) {}
   }
 
   function stopBGM() {
     bgmState.playing = false;
-    if (bgmState.timeout) { clearTimeout(bgmState.timeout); bgmState.timeout = null; }
+    // Drone ztlumíme, ostatní oscillatory dozní samy podle schedule
     stopDrone();
   }
 
