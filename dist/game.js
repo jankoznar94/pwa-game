@@ -33,11 +33,11 @@
   const ITEMS = [
     { id:'fists', name:'Pěsti', type:'weapon', baseDmg:2, bonusHp:0, icon:'👊' },
     { id:'rags', name:'Hadry', type:'armor', baseDmg:0, bonusHp:0, icon:'rag' },
-    { id:'dagger', name:'Dýka', type:'weapon', baseDmg:5, bonusHp:0, icon:'🗡️' },
-    { id:'sword', name:'Meč', type:'weapon', baseDmg:8, bonusHp:0, icon:'⚔️' },
-    { id:'flameSword', name:'Plamenový meč', type:'weapon', baseDmg:12, bonusHp:0, icon:'🔥' },
-    { id:'chainmail', name:'Kroužková pletva', type:'armor', baseDmg:0, bonusHp:20, icon:'🛡️' },
-    { id:'plate', name:'Plná zbroj', type:'armor', baseDmg:0, bonusHp:40, icon:'🛡️' },
+    { id:'dagger', name:'Dýka', type:'weapon', baseDmg:5, bonusHp:0, cost:15, icon:'🗡️' },
+    { id:'sword', name:'Meč', type:'weapon', baseDmg:8, bonusHp:0, cost:30, icon:'⚔️' },
+    { id:'flameSword', name:'Plamenový meč', type:'weapon', baseDmg:12, bonusHp:0, cost:60, icon:'🔥' },
+    { id:'chainmail', name:'Kroužková pletva', type:'armor', baseDmg:0, bonusHp:20, cost:25, icon:'🛡️' },
+    { id:'plate', name:'Plná zbroj', type:'armor', baseDmg:0, bonusHp:40, cost:50, icon:'🛡️' },
   ];
   const ITEM_MAP = {}; ITEMS.forEach(i => ITEM_MAP[i.id] = i);
 
@@ -149,11 +149,11 @@
     const basePlayerHp = Math.max(100, 3 + Math.floor(state.hero.level * 5)); // stoupá s levelem
     const playerMaxHp = isBoss ? basePlayerHp + Math.floor(state.hero.level * 10) : basePlayerHp;
     // Boss HP: monster ~50-100, boss rychleji stoupá (turn*20 + loc.boss.hp)
-    const bossBaseHp = isBoss ? (progress >= loc.monsters ? 100 + Math.round(loc.boss.hp * 2 + progress * 25) : 100 + progress * 10) : 50 + progress * 10;
+    const bossBaseHp = isBoss ? (progress >= loc.monsters ? 80 + Math.round(loc.boss.hp * 12) : 40 + progress * 12) : 30 + progress * 8;
 
     mapBattleState = {
       locId, loc, isBoss, progress,
-      bossHp: bossBaseHp, maxBossHp: isBoss ? Math.round(bossBaseHp * 2) : bossBaseHp,
+      bossHp: bossBaseHp, maxBossHp: bossBaseHp,
       playerHp: playerMaxHp, maxPlayerHp: playerMaxHp,
       ended: false, turn: 0, isAttacking: false,
       stunned: 0, frozen: 0, dot: 0, shieldActive: null,
@@ -495,6 +495,10 @@
   function missedAttackWindow() {
     if (mapBattleState.ended) return;
     const mb = mapBattleState;
+    // GUARD: už bylo zpracováno
+    if (!mb.inAttackWindow) return;
+    clearTimeout(mb._attackWindowTimer);
+    mb._attackWindowTimer = null;
     clearTimeout(mb._ringTimer);
     mb._ringTimer = null;
     mb.inAttackWindow = false;
@@ -749,6 +753,9 @@
         // Monster killed, advance progress
         const p = (state.locationProgress[locId] || 0) + 1;
         state.locationProgress[locId] = p;
+        // Gold za monstrum
+        const monsterGold = 2 + rand(0, 3);
+        state.hero.gold = (state.hero.gold || 0) + monsterGold;
         if (p >= mb.loc.monsters) {
           // All monsters done — XP z xpReward
           state.hero.xp = (state.hero.xp || 0) + mb.loc.xpReward;
@@ -760,7 +767,7 @@
           // XP se přidává až po dokončení lokace, zatím jen zobrazení
           $('resultIcon').textContent = '✅';
           $('resultTitle').textContent = 'Nestvůra poražena!';
-          $('resultMsg').textContent = `Postup: ${p}/${mb.loc.monsters}`;
+          $('resultMsg').textContent = `Postup: ${p}/${mb.loc.monsters} (+$${monsterGold})`;
           $('resultBtn').innerHTML = `<button class="btn btn-primary" onclick="game.enterLocation(${locId})">🚀 Další</button><button class="btn btn-secondary" onclick="game.showScreen('map')">🌍 Mapa</button>`;
         }
       } else {
