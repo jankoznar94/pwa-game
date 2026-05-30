@@ -823,12 +823,25 @@
     $('heroLevel').textContent = `Lv.${h.level}`;
     $('heroDeaths').textContent = state.deaths;
     $('heroWins').textContent = state.wins;
-    $('heroHp').textContent = h.playerHp || h.maxHp;
+    $('heroHp').textContent = h.hp || h.maxHp;
     $('heroMaxHp').textContent = h.maxHp;
-    $('heroDmg').textContent = h.baseDmg;
-    $('heroDef').textContent = h.armor === 'rags' ? 0 : h.armor === 'leather' ? 1 : h.armor === 'chainmail' ? 2 : h.armor === 'plate' ? 3 : 0;
+    $('heroDmg').textContent = getHeroDmg();
     $('heroGold').textContent = h.gold;
     $('totalSkillLevel').textContent = `${totalLv}/${SKILLS.length*10}`;
+
+    // Atributy
+    const strCost = ATTR_COST[Math.min(h.attrStr||0, ATTR_COST.length-1)] || 999;
+    const vitCost = ATTR_COST[Math.min(h.attrVit||0, ATTR_COST.length-1)] || 999;
+    const pts = h.attrPoints || 0;
+    $('heroAttrStr').textContent = (h.attrStr||0) + (h.equip.weapon !== 'fists' ? ` (s ${ITEM_MAP[h.equip.weapon]?.icon||''})` : '');
+    $('heroAttrVit').textContent = (h.attrVit||0) + (h.equip.armor !== 'rags' ? ` (s ${ITEM_MAP[h.equip.armor]?.icon||''})` : '');
+    $('heroAttrPts').textContent = pts;
+    const strBtn = $('heroUpStr');
+    const vitBtn = $('heroUpVit');
+    if (strBtn) strBtn.textContent = `⬆️ Síla (${strCost}💰)` + (pts > 0 ? '' : ` — 🔒`);
+    if (strBtn) strBtn.style.opacity = pts > 0 ? '1' : '0.3';
+    if (vitBtn) vitBtn.textContent = `⬆️ Vitalita (${vitCost}💰)` + (pts > 0 ? '' : ` — 🔒`);
+    if (vitBtn) vitBtn.style.opacity = pts > 0 ? '1' : '0.3';
 
     $('skillGrid').innerHTML = SKILLS.map(sk => {
       const lv = state.skills[sk.id]||0, xp = state.skillXp[sk.id]||0, needed = skillXpToLevel(lv);
@@ -846,6 +859,139 @@
     const armorNames = { rags:'🧥 Hadry', leather:'🦺 Kožené', chainmail:'⛓️ Kroužková', plate:'🛡️ Plátová' };
     $('equipWeapon').textContent = weaponNames[h.equip.weapon] || '✊ Pěsti';
     $('equipArmor').textContent = armorNames[h.equip.armor] || '🧥 Hadry';
+  }
+
+  function upgradeAttr(attr) {
+    const h = state.hero;
+    if ((h.attrPoints||0) <= 0) { showMessage('❌ Nemáš žádné atributové body!'); return; }
+    h.attrPoints--;
+    if (attr === 'str') {
+      h.attrStr = (h.attrStr||0) + 1;
+      h.baseDmg = getHeroDmg();
+      showMessage('💪 Síla +1! Poškození zvýšeno!');
+    } else {
+      h.attrVit = (h.attrVit||0) + 1;
+      h.maxHp = getHeroMaxHp();
+      h.hp = h.maxHp;
+      showMessage('❤️ Vitalita +1! Max HP zvýšeno!');
+    }
+    saveGame();
+    renderHero();
+  }
+
+  // ===== SHOP =====
+  function renderShop() {
+    const h = state.hero;
+    $('shopGold').textContent = `💰 ${h.gold} zlatých`;
+    $('shopList').innerHTML = ITEMS.filter(i => i.cost > 0).map(item => {
+      const owned = h.inventory.includes(item.id) || h.equip.weapon === item.id || h.equip.armor === item.id;
+      const canBuy = h.gold >= item.cost && !owned;
+      const stats = item.type === 'weapon' ? `⚔️+${item.baseDmg} dmg` : `❤️+${item.bonusHp} HP`;
+      return `<div class="shop-item" style="opacity:${owned?'0.4':'1'}">
+        <div><span style="font-size:24px">${item.icon}</span> <strong>${item.name}</strong></div>
+        <div style="font-size:12px;color:#8888aa">${stats}</div>
+        <div class="flex-between" style="margin-top:4px">
+          <span>💰 ${item.cost}</span>
+          ${owned ? '<span style="color:#2ecc71">✅ Vlastníš</span>' : canBuy ? `<button class="btn btn-primary" style="width:auto;padding:6px 14px;font-size:12px" onclick="game.buyItem('${item.id}')">Koupit</button>` : '<span style="color:#e94560">🔒 Málo💰</span>'}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function buyItem(itemId) {
+    const item = ITEM_MAP[itemId];
+    if (!item) return;
+    const h = state.hero;
+    if (h.gold < item.cost) { showMessage('❌ Nemáš dost zlata!'); return; }
+    if (h.inventory.includes(itemId)) { showMessage('❌ Už to máš!'); return; }
+    h.gold -= item.cost;
+    h.inventory.push(itemId);
+    saveGame();
+    showMessage(`✅ Koupil jsi ${item.icon} ${item.name}!`);
+    renderShop();
+  }
+
+  function sellItem(itemId) {
+    const item = ITEM_MAP[itemId];
+    if (!item || item.cost === 0) return;
+    const h = state.hero;
+    const idx = h.inventory.indexOf(itemId);
+    if (idx === -1) { showMessage('❌ Tento předmět nemáš v inventáři!'); return; }
+    const sellPrice = Math.round(item.cost * 0.5);
+    h.inventory.splice(idx, 1);
+    h.gold += sellPrice;
+    saveGame();
+    showMessage(`💰 Prodáno ${item.icon} ${item.name} za ${sellPrice}💰`);
+    renderInventory();
+  }
+
+  // ===== INVENTORY =====
+  function renderInventory() {
+    const h = state.hero;
+    $('invGold').textContent = `💰 ${h.gold} zlatých`;
+    const container = $('invList');
+    if (h.inventory.length === 0) {
+      container.innerHTML = '<div style="text-align:center;color:#8888aa;padding:20px">📦 Inventář je prázdný</div>';
+    } else {
+      container.innerHTML = h.inventory.map((itemId, idx) => {
+        const item = ITEM_MAP[itemId];
+        if (!item) return '';
+        const isEquipped = h.equip.weapon === itemId || h.equip.armor === itemId;
+        const canEquip = !isEquipped;
+        const stats = item.type === 'weapon' ? `⚔️+${item.baseDmg} dmg` : `❤️+${item.bonusHp} HP`;
+        return `<div class="inv-item" style="opacity:${isEquipped?'0.7':'1'}">
+          <div><span style="font-size:24px">${item.icon}</span> <strong>${item.name}</strong></div>
+          <div style="font-size:12px;color:#8888aa">${stats}${isEquipped?' — ✅ Oblečeno':''}</div>
+          <div style="margin-top:4px;display:flex;gap:6px">
+            ${canEquip ? `<button class="btn btn-primary" style="width:auto;padding:6px 14px;font-size:12px" onclick="game.equipItem(${idx})">🎽 Obléci</button>` : `<button class="btn btn-primary" style="width:auto;padding:6px 14px;font-size:12px" onclick="game.unequipItem('${itemId}')">📦 Sundat</button>`}
+            <button class="btn btn-secondary" style="width:auto;padding:6px 14px;font-size:12px" onclick="game.sellItem('${itemId}')">💰 Prodat (${Math.round(item.cost*0.5)})</button>
+          </div>
+        </div>`;
+      }).join('');
+    }
+  }
+
+  function equipItem(invIdx) {
+    const h = state.hero;
+    const itemId = h.inventory[invIdx];
+    if (!itemId) return;
+    const item = ITEM_MAP[itemId];
+    if (!item) return;
+    if (item.type === 'weapon') {
+      if (h.equip.weapon !== 'fists') h.inventory.push(h.equip.weapon);
+      h.equip.weapon = itemId;
+    } else {
+      if (h.equip.armor !== 'rags') h.inventory.push(h.equip.armor);
+      h.equip.armor = itemId;
+    }
+    h.inventory.splice(invIdx, 1);
+    h.baseDmg = getHeroDmg();
+    h.maxHp = getHeroMaxHp();
+    h.hp = h.maxHp;
+    saveGame();
+    showMessage(`🎽 Oblékl jsi ${item.icon} ${item.name}!`);
+    renderInventory();
+  }
+
+  function unequipItem(itemId) {
+    const h = state.hero;
+    if (h.inventory.length >= 20) { showMessage('❌ Inventář je plný!'); return; }
+    const item = ITEM_MAP[itemId];
+    if (!item) return;
+    if (item.type === 'weapon') {
+      if (h.equip.weapon !== itemId) return;
+      h.equip.weapon = 'fists';
+    } else {
+      if (h.equip.armor !== itemId) return;
+      h.equip.armor = 'rags';
+    }
+    h.inventory.push(itemId);
+    h.baseDmg = getHeroDmg();
+    h.maxHp = getHeroMaxHp();
+    h.hp = h.maxHp;
+    saveGame();
+    showMessage(`📦 Sundal jsi ${item.icon} ${item.name} do inventáře!`);
+    renderInventory();
   }
 
   // ===== TRAINING (minigames) =====
@@ -980,8 +1126,12 @@
     if (!state.achievements) state.achievements = {};
     if (!state.bossesDefeated || state.bossesDefeated.length < 7) state.bossesDefeated = [false,false,false,false,false,false,false];
     if (!state.locationProgress || state.locationProgress.length < 7) state.locationProgress = [0,0,0,0,0,0,0];
-    if (!state.hero) state.hero = { level:1, xp:0, gold:0, hp:3, maxHp:3, baseDmg:2, weapon:'fists', armor:'rags' };
-    if (state.hero.maxHp === undefined) state.hero.maxHp = 3;
+    if (!state.hero) state.hero = { level:1, xp:0, gold:0, hp:100, maxHp:100, baseDmg:12, inventory:[], equip:{weapon:'fists',armor:'rags'}, attrStr:0, attrVit:0, attrPoints:0 };
+    if (state.hero.maxHp === undefined) state.hero.maxHp = getHeroMaxHp();
+    if (state.hero.hp === undefined) state.hero.hp = state.hero.maxHp;
+    if (state.hero.attrStr === undefined) state.hero.attrStr = 0;
+    if (state.hero.attrVit === undefined) state.hero.attrVit = 0;
+    if (state.hero.attrPoints === undefined) state.hero.attrPoints = 0;
 
     document.querySelectorAll('.nav-bar a').forEach(a => {
       a.addEventListener('click', (e) => {
@@ -989,6 +1139,8 @@
         if (a.dataset.screen === 'map') showScreen('map');
         else if (a.dataset.screen === 'tower') showScreen('tower');
         else if (a.dataset.screen === 'hero') showScreen('hero');
+        else if (a.dataset.screen === 'shop') showScreen('shop');
+        else if (a.dataset.screen === 'inventory') showScreen('inventory');
         else if (a.dataset.screen === 'medals') showMedals();
         else if (a.dataset.screen === 'reset') resetGame();
       });
@@ -998,7 +1150,8 @@
 
   window.game = {
     showScreen, enterLocation, enterTraining,
-    simonClick, colorInput, gridPick
+    simonClick, colorInput, gridPick,
+    upgradeAttr, buyItem, sellItem, equipItem, unequipItem
   };
   init();
 })();

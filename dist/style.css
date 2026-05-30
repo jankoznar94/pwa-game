@@ -167,8 +167,8 @@ body.battle-active { overflow: hidden; position: fixed; width: 100%; }
 }
 .boss-fight-boss { position:absolute;top:5px;left:50%;transform:translateX(-50%);font-size:48px;cursor:pointer;transition:0.1s; }
 .boss-fight-player { position:absolute;bottom:20px;left:50%;transform:translateX(-50%);font-size:28px;transition:0.08s;z-index:5; }
-.boss-fight-player .damage-text { position:absolute;top:-28px;left:50%;transform:translateX(-50%);color:#e74c3c;font-size:24px;font-weight:bold;animation:fadeDown 0.6s ease-out; }
-#mbDamageText.damage-text { position:absolute;top:60px;left:50%;transform:translateX(-50%);color:#f1c40f;font-size:24px;font-weight:bold;animation:fadeDown 0.6s ease-out; }
+.boss-fight-player .damage-text { position:absolute;top:-40px;left:50%;transform:translateX(-50%);color:#e74c3c;font-size:28px;font-weight:bold;animation:fadeDown 0.6s ease-out; }
+#mbDamageText.damage-text { position:absolute;top:65px;left:50%;transform:translateX(-50%);color:#f1c40f;font-size:28px;font-weight:bold;animation:fadeDown 0.6s ease-out; }
 @keyframes fadeUp { 0%{opacity:0;transform:translateX(-50%) translateY(10px)}100%{opacity:1;transform:translateX(-50%) translateY(0)} }
 @keyframes fadeDown { 0%{opacity:0;transform:translateX(-50%) translateY(-10px)}100%{opacity:1;transform:translateX(-50%) translateY(0)} }
 .boss-fight-player.swipe-up { transform:translate(-50%,-50px); }
@@ -216,6 +216,14 @@ body.battle-active { overflow: hidden; position: fixed; width: 100%; }
 .action-btn:not(.active) { pointer-events:none; }
 .boss-hint { text-align:center;font-size:11px;color:#8888aa;margin:2px 0;min-height:0;display:none; }
 .boss-touch-hint { text-align:center;font-size:10px;color:#555;margin:2px 0; }
+
+/* Hero attributes */
+.hero-attr-row { display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid #1a1a3a;font-size:14px; }
+.hero-attr-row:last-child { border-bottom:none; }
+
+/* Shop */
+.shop-item { background:#1a1a3a;border:1px solid #2a2a4a;border-radius:8px;padding:10px;margin:6px 0; }
+.inv-item { background:#1a1a3a;border:1px solid #2a2a4a;border-radius:8px;padding:10px;margin:6px 0; }
 
 /* Map battle spells */
 .mb-spells { display:flex;gap:4px;justify-content:center;flex-wrap:wrap;margin:4px 0; }

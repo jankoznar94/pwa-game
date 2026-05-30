@@ -11,10 +11,12 @@
 
 <nav class="nav-bar">
   <a href="#" data-screen="map" class="active">🌍 Mapa</a>
-  <a href="#" data-screen="tower">🔮 Věž magie</a>
+  <a href="#" data-screen="tower">🔮 Věž</a>
   <a href="#" data-screen="hero">👤 Hrdina</a>
-  <a href="#" data-screen="medals">🏅 Úspěchy</a>
-  <a href="#" data-screen="reset">🔄 Reset</a>
+  <a href="#" data-screen="shop">🏪 Obchod</a>
+  <a href="#" data-screen="inventory">🎒 Inventář</a>
+  <a href="#" data-screen="medals">🏅</a>
+  <a href="#" data-screen="reset">🔄</a>
 </nav>
 
 <!-- ===== MAP ===== -->
@@ -79,10 +81,20 @@
     </div>
     <div class="card-subtitle">💀 <span id="heroDeaths">0</span> proher · 🏆 <span id="heroWins">0</span> výher</div>
     <div class="hero-stats-row">
-      <span>❤️ <span id="heroHp">3</span>/<span id="heroMaxHp">3</span></span>
-      <span>⚔️ <span id="heroDmg">1</span></span>
-      <span>🛡️ <span id="heroDef">0</span></span>
+      <span>❤️ <span id="heroHp">100</span>/<span id="heroMaxHp">100</span></span>
+      <span>⚔️ <span id="heroDmg">12</span></span>
       <span>💰 <span id="heroGold">0</span></span>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">💪 Atributy <span style="font-size:12px;color:#f1c40f">(body: <span id="heroAttrPts">0</span>)</span></div>
+    <div class="hero-attr-row">
+      <span>💪 Síla: <span id="heroAttrStr">0</span></span>
+      <button class="btn btn-primary" style="width:auto;padding:4px 10px;font-size:11px" id="heroUpStr" onclick="game.upgradeAttr('str')">⬆️ Síla (10💰)</button>
+    </div>
+    <div class="hero-attr-row">
+      <span>❤️ Vitalita: <span id="heroAttrVit">0</span></span>
+      <button class="btn btn-primary" style="width:auto;padding:4px 10px;font-size:11px" id="heroUpVit" onclick="game.upgradeAttr('vit')">⬆️ Vitalita (10💰)</button>
     </div>
   </div>
   <div class="card">
@@ -107,6 +119,30 @@
     <div class="result-sub" id="resultMsg"></div>
     <div id="resultBtn" class="mt-10"></div>
   </div>
+</div>
+
+<!-- ===== SHOP ===== -->
+<div id="shopScreen" class="container hidden">
+  <div class="card">
+    <div class="flex-between">
+      <span class="card-title">🏪 Obchod</span>
+      <span id="shopGold">💰 0 zlatých</span>
+    </div>
+    <div class="card-subtitle">Nakup lepší výbavu za zlaťáky</div>
+  </div>
+  <div id="shopList"></div>
+</div>
+
+<!-- ===== INVENTORY ===== -->
+<div id="inventoryScreen" class="container hidden">
+  <div class="card">
+    <div class="flex-between">
+      <span class="card-title">🎒 Inventář</span>
+      <span id="invGold">💰 0 zlatých</span>
+    </div>
+    <div class="card-subtitle">Prohlížej, oblékej a prodávej předměty</div>
+  </div>
+  <div id="invList"></div>
 </div>
 
 <!-- ===== TRAINING BATTLE (minigames) ===== -->
