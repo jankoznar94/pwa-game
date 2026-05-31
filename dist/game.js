@@ -142,25 +142,28 @@
   function startDrone() {
     try {
       initAudio();
-      // E2 drone (pedál)
-      const o1 = audioCtx.createOscillator();
-      const g1 = audioCtx.createGain();
-      o1.type = 'sine';
-      o1.frequency.value = 82.4; // E2
-      g1.gain.value = 0.008;
-      o1.connect(g1);
-      g1.connect(audioCtx.destination);
-      o1.start();
-      // B2 drone (kvinta)
-      const o2 = audioCtx.createOscillator();
-      const g2 = audioCtx.createGain();
-      o2.type = 'sine';
-      o2.frequency.value = 123.5; // B2
-      g2.gain.value = 0.006;
-      o2.connect(g2);
-      g2.connect(audioCtx.destination);
-      o2.start();
-      bgmState.drone = { osc1: o1, gain1: g1, osc2: o2, gain2: g2 };
+      ensureRunning().then(() => {
+        if (!bgmState.playing) return;
+        // E2 drone (pedál)
+        const o1 = audioCtx.createOscillator();
+        const g1 = audioCtx.createGain();
+        o1.type = 'sine';
+        o1.frequency.value = 82.4; // E2
+        g1.gain.value = 0.008;
+        o1.connect(g1);
+        g1.connect(audioCtx.destination);
+        o1.start();
+        // B2 drone (kvinta)
+        const o2 = audioCtx.createOscillator();
+        const g2 = audioCtx.createGain();
+        o2.type = 'sine';
+        o2.frequency.value = 123.5; // B2
+        g2.gain.value = 0.006;
+        o2.connect(g2);
+        g2.connect(audioCtx.destination);
+        o2.start();
+        bgmState.drone = { osc1: o1, gain1: g1, osc2: o2, gain2: g2 };
+      });
     } catch(e) {}
   }
 
