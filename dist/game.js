@@ -68,54 +68,75 @@
     });
   }
 
-  // Girei (Pain's Theme) — hlavní motiv v E moll
-  // triangle wave, pomalé dungeonové aranžmá
+  // Girei (Pain's Theme) — Yasuharu Takanashi
+  // triangle wave, 135 BPM, ~21s loop
   const bgmNotes = [
-    // Intro — tři krátké noty
-    { f: [494,659,587], dur: 0.5 }, // B4 E5 D5
-    { f: 0, dur: 0.3 },
-    // Hlavní melodie 1
-    { f: 659, dur: 0.4 }, // E5
-    { f: 587, dur: 0.3 }, // D5
-    { f: 494, dur: 0.5 }, // B4
-    { f: 0, dur: 0.2 },
-    { f: 392, dur: 0.3 }, // G4
-    { f: 440, dur: 0.3 }, // A4
-    { f: 494, dur: 0.5 }, // B4
-    { f: 0, dur: 0.2 },
-    { f: 659, dur: 0.4 }, // E5
-    { f: 587, dur: 0.3 }, // D5
-    { f: 523, dur: 0.3 }, // C5
-    { f: 494, dur: 0.5 }, // B4
-    { f: 0, dur: 0.2 },
-    { f: 440, dur: 0.3 }, // A4
-    { f: 494, dur: 0.3 }, // B4
-    { f: 587, dur: 0.5 }, // D5
-    { f: 0, dur: 0.2 },
-    { f: 587, dur: 0.3 }, // D5
-    { f: 523, dur: 0.3 }, // C5
-    { f: 494, dur: 0.4 }, // B4
-    { f: 440, dur: 0.3 }, // A4
-    { f: 392, dur: 0.6 }, // G4 — delší
-    { f: 0, dur: 0.3 },
-    // Hlavní melodie 2 (variace)
-    { f: 659, dur: 0.4 }, // E5
-    { f: 587, dur: 0.3 }, // D5
-    { f: 494, dur: 0.5 }, // B4
-    { f: 0, dur: 0.2 },
-    { f: 392, dur: 0.3 }, // G4
-    { f: 440, dur: 0.3 }, // A4
-    { f: 494, dur: 0.5 }, // B4
-    { f: 0, dur: 0.2 },
-    { f: 659, dur: 0.4 }, // E5
-    { f: 587, dur: 0.3 }, // D5
-    { f: 523, dur: 0.3 }, // C5
-    { f: 494, dur: 0.5 }, // B4
-    { f: 0, dur: 0.2 },
-    { f: 392, dur: 0.3 }, // G4
-    { f: 349, dur: 0.3 }, // F4
-    { f: 330, dur: 0.5 }, // E4
-    { f: 0, dur: 1.0 }, // pauza
+    // Intro — drone (A1+E2+A2) jede na pozadí z startDrone(), 3s než začne melodie
+    { f: 0, dur: 3.00 },
+    // === Hlavní melodie A (1. fráze) ===
+    { f: 440.0, dur: 0.22 }, // A4
+    { f: 261.6, dur: 0.22 }, // C4 (harmonie)
+    { f: 329.6, dur: 0.33 }, // E4 (harmonie)
+    { f: 659.3, dur: 0.22 }, // E5
+    { f: 261.6, dur: 0.22 }, // C4
+    { f: 0, dur: 0.11 },
+    { f: 587.3, dur: 0.22 }, // D5
+    { f: 0, dur: 0.22 },
+    { f: 740.0, dur: 0.44 }, // F#5
+    { f: 0, dur: 0.56 },
+    { f: 587.3, dur: 0.22 }, // D5
+    { f: 0, dur: 0.28 },
+    { f: 659.3, dur: 0.33 }, // E5
+    { f: 0, dur: 0.56 },
+    { f: 261.6, dur: 0.22 }, // C4
+    { f: 0, dur: 1.33 },
+    { f: 261.6, dur: 0.22 }, // C4
+    { f: 0, dur: 0.78 },
+    // === Hlavní melodie A (2. fráze, vyšší) ===
+    { f: 659.3, dur: 0.22 }, // E5
+    { f: 0, dur: 0.22 },
+    { f: [261.6, 659.3], dur: 0.22 }, // C4+E5
+    { f: 0, dur: 0.22 },
+    { f: 587.3, dur: 0.22 }, // D5
+    { f: 0, dur: 0.33 },
+    { f: 784.0, dur: 0.56 }, // G5
+    { f: 0, dur: 0.33 },
+    { f: 740.0, dur: 0.11 }, // F#5
+    { f: 0, dur: 0.33 },
+    { f: 659.3, dur: 0.33 }, // E5
+    { f: 0, dur: 0.67 },
+    { f: 261.6, dur: 0.22 }, // C4
+    { f: 0, dur: 1.22 },
+    { f: 261.6, dur: 0.22 }, // C4
+    { f: 0, dur: 0.78 },
+    // === Hlavní melodie A (3. fráze) ===
+    { f: 440.0, dur: 0.22 }, // A4
+    { f: 0, dur: 0.22 },
+    { f: [261.6, 659.3], dur: 0.22 }, // C4+E5
+    { f: 0, dur: 0.22 },
+    { f: 587.3, dur: 0.22 }, // D5
+    { f: 0, dur: 0.33 },
+    { f: 740.0, dur: 0.56 }, // F#5
+    { f: 0, dur: 0.33 },
+    { f: 587.3, dur: 0.22 }, // D5
+    { f: 0, dur: 0.33 },
+    { f: 659.3, dur: 0.44 }, // E5
+    { f: 0, dur: 0.44 },
+    { f: 261.6, dur: 0.22 }, // C4
+    { f: 0, dur: 1.22 },
+    { f: 261.6, dur: 0.22 }, // C4
+    { f: 0, dur: 0.78 },
+    // === Závěr fráze ===
+    { f: 659.3, dur: 0.22 }, // E5
+    { f: 0, dur: 0.22 },
+    { f: [261.6, 587.3], dur: 0.22 }, // C4+D5
+    { f: 0, dur: 0.22 },
+    { f: 659.3, dur: 0.22 }, // E5
+    { f: 0, dur: 0.22 },
+    { f: 587.3, dur: 0.33 }, // D5
+    { f: 0, dur: 0.56 },
+    { f: 493.9, dur: 0.11 }, // B4
+    // Konec loopu
   ];
   const BGM_LOOP_DUR = bgmNotes.reduce((s, n) => s + n.dur, 0);
 
@@ -144,25 +165,34 @@
       initAudio();
       ensureRunning().then(() => {
         if (!bgmState.playing) return;
-        // E2 drone (pedál)
+        // A1 drone (pedál) — podle Girei MIDI
         const o1 = audioCtx.createOscillator();
         const g1 = audioCtx.createGain();
         o1.type = 'sine';
-        o1.frequency.value = 82.4; // E2
+        o1.frequency.value = 55.0; // A1
         g1.gain.value = 0.008;
         o1.connect(g1);
         g1.connect(audioCtx.destination);
         o1.start();
-        // B2 drone (kvinta)
+        // E2 drone (kvinta)
         const o2 = audioCtx.createOscillator();
         const g2 = audioCtx.createGain();
         o2.type = 'sine';
-        o2.frequency.value = 123.5; // B2
+        o2.frequency.value = 82.4; // E2
         g2.gain.value = 0.006;
         o2.connect(g2);
         g2.connect(audioCtx.destination);
         o2.start();
-        bgmState.drone = { osc1: o1, gain1: g1, osc2: o2, gain2: g2 };
+        // A2 drone (oktáva)
+        const o3 = audioCtx.createOscillator();
+        const g3 = audioCtx.createGain();
+        o3.type = 'sine';
+        o3.frequency.value = 110.0; // A2
+        g3.gain.value = 0.006;
+        o3.connect(g3);
+        g3.connect(audioCtx.destination);
+        o3.start();
+        bgmState.drone = { osc1: o1, gain1: g1, osc2: o2, gain2: g2, osc3: o3, gain3: g3 };
       });
     } catch(e) {}
   }
@@ -176,6 +206,7 @@
         d.osc1.stop(fade + 0.1);
         d.gain2.gain.exponentialRampToValueAtTime(0.001, fade);
         d.osc2.stop(fade + 0.1);
+        if (d.gain3) { d.gain3.gain.exponentialRampToValueAtTime(0.001, fade); d.osc3.stop(fade + 0.1); }
       } catch(e) {}
       bgmState.drone = null;
     }
