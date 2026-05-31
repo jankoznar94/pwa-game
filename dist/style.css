@@ -164,6 +164,7 @@ body.battle-active { overflow: hidden; position: fixed; width: 100%; }
   background:#0a0a1a;
   border:1px solid #2a2a4a;border-radius:10px;overflow:hidden;margin:8px 0;
   touch-action:none;
+  transition:box-shadow 0.25s ease-out;
 }
 .boss-fight-boss { position:absolute;top:5px;left:50%;transform:translateX(-50%);font-size:48px;cursor:pointer;transition:0.1s; }
 .boss-fight-player { position:absolute;bottom:40px;left:50%;transform:translateX(-50%);font-size:28px;transition:0.08s;z-index:5; }

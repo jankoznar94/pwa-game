@@ -734,10 +734,8 @@
     arena.style.boxShadow = shadow;
     if (mapBattleState._glowTimer) clearTimeout(mapBattleState._glowTimer);
     mapBattleState._glowTimer = setTimeout(() => {
-      arena.style.transition = 'box-shadow 0.15s ease-out';
       arena.style.boxShadow = '';
-      setTimeout(() => { arena.style.transition = ''; }, 150);
-    }, 300);
+    }, 250);
   }
 
   function onMapDodge(dir) {
