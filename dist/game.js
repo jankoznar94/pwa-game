@@ -7,20 +7,31 @@
 
   // ===== AUDIO =====
   let audioCtx = null;
-  let _audioReady = false;
+  let _audioInitErr = false;
   function initAudio() {
+    if (_audioInitErr) return;
     try {
       if (!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
-      if (audioCtx.state==='suspended') audioCtx.resume();
-      _audioReady = true;
-      // Pokud čeká BGM na spuštění, spustíme
-      if (bgmState && bgmState._pending && !bgmState.playing) {
-        bgmState._pending = false;
-        startBGM();
-      }
-    } catch(e) {}
+    } catch(e) { _audioInitErr = true; }
   }
-  function playTone(f,d,t='sine',v=0.15) { try{initAudio();if (!_audioReady||!audioCtx) return;const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type=t;o.frequency.value=f;g.gain.value=v;g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+d);o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+d)}catch{}}
+  function ensureRunning() {
+    if (!audioCtx || _audioInitErr) return Promise.resolve();
+    if (audioCtx.state === 'running') return Promise.resolve();
+    return audioCtx.resume().catch(() => {});
+  }
+  function playTone(f,d,t='sine',v=0.15) {
+    if (!audioCtx || _audioInitErr) { initAudio(); if (!audioCtx) return; }
+    ensureRunning().then(() => {
+      try {
+        const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+        o.type=t;o.frequency.value=f;
+        g.gain.value=v;
+        g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+d);
+        o.connect(g);g.connect(audioCtx.destination);
+        o.start(audioCtx.currentTime);o.stop(audioCtx.currentTime+d);
+      } catch(e) {}
+    });
+  }
   const sfxHit=()=>playTone(220,0.12,'sawtooth',0.08);
   const sfxPlayerHit=()=>playTone(140,0.2,'square',0.10);
   const sfxSuccess=()=>{playTone(523,0.1,'sine',0.12);setTimeout(()=>playTone(659,0.1,'sine',0.12),80);setTimeout(()=>playTone(784,0.15,'sine',0.14),160);};
@@ -32,25 +43,28 @@
   let bgmState = { playing: false, drone: null };
   const BGM_VOL = 0.035;
 
-  function bgmPlay(notes, when, durSec) {
+  function bgmPlay(notes, durSec) {
     // notes může být číslo (jedna nota) nebo pole (akord)
     const freqs = Array.isArray(notes) ? notes : [notes];
-    freqs.forEach(freq => {
-      if (freq <= 0) return;
-      try {
-        initAudio();
-        const o = audioCtx.createOscillator();
-        const g = audioCtx.createGain();
-        o.type = 'triangle';
-        o.frequency.value = freq;
-        g.gain.setValueAtTime(BGM_VOL, when);
-        g.gain.setValueAtTime(BGM_VOL, when + durSec - 0.04);
-        g.gain.exponentialRampToValueAtTime(0.001, when + durSec);
-        o.connect(g);
-        g.connect(audioCtx.destination);
-        o.start(when);
-        o.stop(when + durSec);
-      } catch(e) {}
+    ensureRunning().then(() => {
+      if (!bgmState.playing) return;
+      freqs.forEach(freq => {
+        if (freq <= 0) return;
+        try {
+          const o = audioCtx.createOscillator();
+          const g = audioCtx.createGain();
+          o.type = 'triangle';
+          o.frequency.value = freq;
+          const now = audioCtx.currentTime;
+          g.gain.setValueAtTime(BGM_VOL, now);
+          g.gain.setValueAtTime(BGM_VOL, now + durSec - 0.04);
+          g.gain.exponentialRampToValueAtTime(0.001, now + durSec);
+          o.connect(g);
+          g.connect(audioCtx.destination);
+          o.start(now);
+          o.stop(now + durSec);
+        } catch(e) {}
+      });
     });
   }
 
@@ -105,18 +119,24 @@
   ];
   const BGM_LOOP_DUR = bgmNotes.reduce((s, n) => s + n.dur, 0);
 
-  function scheduleBGMLoop(fromTime) {
-    if (!bgmState.playing || !audioCtx) return;
-    let t = 0;
+  function scheduleBGMLoop() {
+    if (!bgmState.playing) return;
+    let totalDelay = 0;
     for (const note of bgmNotes) {
       if (note.f !== 0) {
-        bgmPlay(note.f, fromTime + t, note.dur);
+        const delay = totalDelay;
+        const dur = note.dur;
+        bgmState._timeouts.push(setTimeout(() => {
+          if (!bgmState.playing) return;
+          bgmPlay(note.f, dur);
+        }, delay * 1000));
       }
-      t += note.dur;
+      totalDelay += note.dur;
     }
-    bgmState._nextTimer = setTimeout(() => {
-      scheduleBGMLoop(fromTime + BGM_LOOP_DUR);
-    }, 0);
+    // Schedule next loop
+    bgmState._timeouts.push(setTimeout(() => {
+      if (bgmState.playing) scheduleBGMLoop();
+    }, totalDelay * 1000));
   }
 
   function startDrone() {
@@ -161,19 +181,20 @@
   function startBGM() {
     if (bgmState.playing) return;
     bgmState.playing = true;
+    bgmState._timeouts = [];
     startDrone();
-    // Naplánovat loop od aktuální audio časové osy + malý offset
-    try {
-      initAudio();
-      const now = audioCtx.currentTime + 0.1;
-      scheduleBGMLoop(now);
-    } catch(e) {}
+    // Ensure audio context is running first, then schedule
+    initAudio();
+    ensureRunning().then(() => {
+      if (!bgmState.playing) return;
+      // Zpoždění 100ms, aby se audioCtx stabilizoval po resume
+      setTimeout(() => { if (bgmState.playing) scheduleBGMLoop(); }, 100);
+    });
   }
 
   function stopBGM() {
     bgmState.playing = false;
-    if (bgmState._nextTimer) { clearTimeout(bgmState._nextTimer); bgmState._nextTimer = null; }
-    // Drone ztlumíme, ostatní oscillatory dozní samy podle schedule
+    if (bgmState._timeouts) { bgmState._timeouts.forEach(id => { try { clearTimeout(id); } catch {} }); bgmState._timeouts = []; }
     stopDrone();
   }
 
@@ -258,13 +279,10 @@
     });
     // BGM — hraje na mapě a v hero obrazovce
     if (name === 'map' || name === 'hero') {
-      initAudio(); // synchronně — funguje pokud jsme v user gesture
-      if (_audioReady && audioCtx && audioCtx.state === 'running') {
-        startBGM();
-      } else {
-        // audio ještě není ready — počkáme na user interakci (nav klik)
-        bgmState._pending = true;
-      }
+      initAudio(); // synchronně — vytvoří audioCtx pokud neexistuje
+      startBGM();
+    } else if (name === 'mapBattle') {
+      // V bitevní obrazovce necháme BGM dál hrát (subtle), nestopujeme
     } else {
       stopBGM();
     }
@@ -702,16 +720,20 @@
   }
 
   function doArenaGlow(dir, correct) {
-    const sideMap = { '⬆️': 'up', '⬇️': 'down', '⬅️': 'left', '➡️': 'right' };
-    const side = sideMap[dir];
-    if (!side) return;
-    const el = $(`arenaGlow${side.charAt(0).toUpperCase()+side.slice(1)}`);
-    if (!el) return;
-    el.className = `arena-glow arena-glow-${side} ${correct ? 'glow-correct' : 'glow-wrong'}`;
+    const arena = $('mbArena');
+    if (!arena) return;
+    const color = correct ? 'rgba(46,204,113,' : 'rgba(233,69,96,';
+    let shadow = '';
+    if (dir === '⬆️') shadow = `inset 0 16px 16px -8px ${color}0.6)`;
+    else if (dir === '⬇️') shadow = `inset 0 -16px 16px -8px ${color}0.6)`;
+    else if (dir === '⬅️') shadow = `inset 16px 0 16px -8px ${color}0.6)`;
+    else if (dir === '➡️') shadow = `inset -16px 0 16px -8px ${color}0.6)`;
+    arena.style.boxShadow = shadow;
     if (mapBattleState._glowTimer) clearTimeout(mapBattleState._glowTimer);
     mapBattleState._glowTimer = setTimeout(() => {
-      const els = ['Up','Down','Left','Right'];
-      els.forEach(s => { const e = $(`arenaGlow${s}`); if (e) e.className = `arena-glow arena-glow-${s.toLowerCase()}`; });
+      arena.style.transition = 'box-shadow 0.15s ease-out';
+      arena.style.boxShadow = '';
+      setTimeout(() => { arena.style.transition = ''; }, 150);
     }, 300);
   }
 

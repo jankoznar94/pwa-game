@@ -199,17 +199,6 @@ body.battle-active { overflow: hidden; position: fixed; width: 100%; }
   transition:stroke-dashoffset 0.6s linear;
   filter:drop-shadow(0 0 3px rgba(76,175,80,0.5));
 }
-/* Arena glow efekty - barevná zář po stranách */
-.arena-glow {
-  position:absolute;z-index:3;pointer-events:none;
-  opacity:0;transition:opacity 0.2s ease-out, box-shadow 0.2s ease-out;
-}
-.arena-glow-up { top:0;left:0;right:0;height:8px;border-radius:10px 10px 0 0; }
-.arena-glow-down { bottom:0;left:0;right:0;height:8px;border-radius:0 0 10px 10px; }
-.arena-glow-left { left:0;top:0;bottom:0;width:8px;border-radius:10px 0 0 10px; }
-.arena-glow-right { right:0;top:0;bottom:0;width:8px;border-radius:0 10px 10px 0; }
-.arena-glow.glow-correct { opacity:1;box-shadow:0 0 20px 8px rgba(46,204,113,0.6);background:rgba(46,204,113,0.3); }
-.arena-glow.glow-wrong { opacity:1;box-shadow:0 0 20px 8px rgba(233,69,96,0.6);background:rgba(233,69,96,0.3); }
 .boss-action-bar {
   display:flex;gap:12px;justify-content:center;margin:4px 0;z-index:25;
 }
