@@ -69,74 +69,108 @@
   }
 
   // Girei (Pain's Theme) — Yasuharu Takanashi
-  // triangle wave, 135 BPM, ~21s loop
+  // triangle wave, 135 BPM. Loop ~36s: intro pad 3-16s + melodie 17-36s
   const bgmNotes = [
-    // Intro — drone (A1+E2+A2) jede na pozadí z startDrone(), 3s než začne melodie
-    { f: 0, dur: 3.00 },
-    // === Hlavní melodie A (1. fráze) ===
-    { f: 440.0, dur: 0.22 }, // A4
-    { f: 261.6, dur: 0.22 }, // C4 (harmonie)
-    { f: 329.6, dur: 0.33 }, // E4 (harmonie)
-    { f: 659.3, dur: 0.22 }, // E5
-    { f: 261.6, dur: 0.22 }, // C4
-    { f: 0, dur: 0.11 },
+    // === PAD INTRO — sustained akordy (3-17s) ===
+    { f: 0, dur: 2.80 },
+    // 2.80s: A4 → E5 → D5 (rychlý nástup)
+    { f: 440.0, dur: 0.11 }, // A4
+    { f: 0, dur: 0.34 },
+    { f: 659.3, dur: 0.11 }, // E5
+    { f: 0, dur: 0.32 },
+    { f: 587.3, dur: 0.11 }, // D5
+    { f: 0, dur: 0.32 },
+    // 4.10s: D5+F#5 sustained
+    { f: [587.3, 740.0], dur: 0.67 }, // D5+F#5
+    { f: 0, dur: 0.49 },
+    // 5.27s: D5
+    { f: 587.3, dur: 0.11 },
+    { f: 0, dur: 0.24 },
+    // 5.62s: A4+C5+E5 sustained (~2.8s)
+    { f: [440.0, 523.3, 659.3], dur: 2.78 }, // A4+C5+E5
+    { f: 0, dur: 1.17 },
+    // 9.64s: A4 → C5 → E5 → D5 (druhá pad fráze)
+    { f: 440.0, dur: 0.11 }, // A4
+    { f: 0, dur: 0.34 },
+    { f: 523.3, dur: 0.11 }, // C5
+    { f: 0, dur: 0.32 },
+    { f: 659.3, dur: 0.11 }, // E5
+    { f: 0, dur: 0.36 },
+    // 11.00s: D5
+    { f: 587.3, dur: 0.22 },
+    { f: 0, dur: 0.78 },
+    // 12.00s: A4 sustained
+    { f: 440.0, dur: 2.44 },
+    { f: 0, dur: 2.83 },
+    // === MELODIE 1. fráze (17.27s) ===
+    // A4+E4+E5 → D5
+    { f: [261.6, 329.6, 440.0, 659.3], dur: 0.88 }, // C4+E4+A4+E5 (akordový nástup)
+    { f: 0, dur: 0.05 },
     { f: 587.3, dur: 0.22 }, // D5
-    { f: 0, dur: 0.22 },
+    { f: 0, dur: 0.30 },
+    // 18.72s: F#5 → D5 → E5
     { f: 740.0, dur: 0.44 }, // F#5
     { f: 0, dur: 0.56 },
     { f: 587.3, dur: 0.22 }, // D5
     { f: 0, dur: 0.28 },
     { f: 659.3, dur: 0.33 }, // E5
-    { f: 0, dur: 0.56 },
+    { f: 0, dur: 0.60 },
+    // C4 pad opakování
     { f: 261.6, dur: 0.22 }, // C4
-    { f: 0, dur: 1.33 },
+    { f: 0, dur: 1.25 },
     { f: 261.6, dur: 0.22 }, // C4
-    { f: 0, dur: 0.78 },
-    // === Hlavní melodie A (2. fráze, vyšší) ===
+    { f: 0, dur: 0.79 },
+    // === MELODIE 2. fráze (23.63s) ===
     { f: 659.3, dur: 0.22 }, // E5
-    { f: 0, dur: 0.22 },
-    { f: [261.6, 659.3], dur: 0.22 }, // C4+E5
-    { f: 0, dur: 0.22 },
+    { f: 0, dur: 0.23 },
+    { f: [261.6, 659.3], dur: 0.24 }, // C4+E5
+    { f: 0, dur: 0.25 },
     { f: 587.3, dur: 0.22 }, // D5
-    { f: 0, dur: 0.33 },
+    { f: 0, dur: 0.26 },
+    // 25.06s: G5 → F#5 → E5
     { f: 784.0, dur: 0.56 }, // G5
-    { f: 0, dur: 0.33 },
+    { f: 0, dur: 0.39 },
     { f: 740.0, dur: 0.11 }, // F#5
-    { f: 0, dur: 0.33 },
+    { f: 0, dur: 0.38 },
     { f: 659.3, dur: 0.33 }, // E5
-    { f: 0, dur: 0.67 },
+    { f: 0, dur: 0.62 },
+    // C4 pad
     { f: 261.6, dur: 0.22 }, // C4
-    { f: 0, dur: 1.22 },
+    { f: 0, dur: 1.20 },
     { f: 261.6, dur: 0.22 }, // C4
     { f: 0, dur: 0.78 },
-    // === Hlavní melodie A (3. fráze) ===
+    // === MELODIE 3. fráze (29.86s) ===
     { f: 440.0, dur: 0.22 }, // A4
-    { f: 0, dur: 0.22 },
-    { f: [261.6, 659.3], dur: 0.22 }, // C4+E5
-    { f: 0, dur: 0.22 },
+    { f: 0, dur: 0.20 },
+    { f: [261.6, 659.3], dur: 0.25 }, // C4+E5
+    { f: 0, dur: 0.25 },
     { f: 587.3, dur: 0.22 }, // D5
-    { f: 0, dur: 0.33 },
+    { f: 0, dur: 0.28 },
+    // 31.28s: F#5 → D5 → E5
     { f: 740.0, dur: 0.56 }, // F#5
-    { f: 0, dur: 0.33 },
+    { f: 0, dur: 0.40 },
     { f: 587.3, dur: 0.22 }, // D5
-    { f: 0, dur: 0.33 },
+    { f: 0, dur: 0.27 },
     { f: 659.3, dur: 0.44 }, // E5
     { f: 0, dur: 0.44 },
+    // C4 pad
     { f: 261.6, dur: 0.22 }, // C4
     { f: 0, dur: 1.22 },
     { f: 261.6, dur: 0.22 }, // C4
-    { f: 0, dur: 0.78 },
-    // === Závěr fráze ===
+    { f: 0, dur: 0.80 },
+    // === MELODIE 4. fráze (36.06s) ===
     { f: 659.3, dur: 0.22 }, // E5
-    { f: 0, dur: 0.22 },
-    { f: [261.6, 587.3], dur: 0.22 }, // C4+D5
+    { f: 0, dur: 0.23 },
+    { f: [261.6, 587.3], dur: 0.25 }, // C4+D5
     { f: 0, dur: 0.22 },
     { f: 659.3, dur: 0.22 }, // E5
-    { f: 0, dur: 0.22 },
+    { f: 0, dur: 0.25 },
+    // 37.45s: D5 → B4 → A4 (závěr)
     { f: 587.3, dur: 0.33 }, // D5
-    { f: 0, dur: 0.56 },
+    { f: 0, dur: 0.59 },
     { f: 493.9, dur: 0.11 }, // B4
-    // Konec loopu
+    { f: 0, dur: 0.32 },
+    { f: [261.6, 440.0], dur: 0.38 }, // C4+A4 (závěr)
   ];
   const BGM_LOOP_DUR = bgmNotes.reduce((s, n) => s + n.dur, 0);
 
@@ -1427,8 +1461,19 @@
         else if (a.dataset.screen === 'reset') resetGame();
         // Inicializovat audio hned při prvním kliku (user gesture)
         initAudio();
+        firstUserInteraction();
       });
     });
+    // Spustit audio při první user interakci (klik kamkoli)
+    let _firstInteraction = true;
+    function firstUserInteraction() {
+      if (!_firstInteraction) return;
+      _firstInteraction = false;
+      initAudio();
+      startBGM();
+    }
+    document.addEventListener('click', firstUserInteraction, { once: true });
+    document.addEventListener('touchstart', firstUserInteraction, { once: true });
     showScreen('map');
   }
 
