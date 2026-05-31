@@ -7,8 +7,20 @@
 
   // ===== AUDIO =====
   let audioCtx = null;
-  function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)(); if (audioCtx.state==='suspended') audioCtx.resume(); }
-  function playTone(f,d,t='sine',v=0.15) { try{initAudio();const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type=t;o.frequency.value=f;g.gain.value=v;g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+d);o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+d)}catch{}}
+  let _audioReady = false;
+  function initAudio() {
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+      if (audioCtx.state==='suspended') audioCtx.resume();
+      _audioReady = true;
+      // Pokud čeká BGM na spuštění, spustíme
+      if (bgmState && bgmState._pending && !bgmState.playing) {
+        bgmState._pending = false;
+        startBGM();
+      }
+    } catch(e) {}
+  }
+  function playTone(f,d,t='sine',v=0.15) { try{initAudio();if (!_audioReady||!audioCtx) return;const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type=t;o.frequency.value=f;g.gain.value=v;g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+d);o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+d)}catch{}}
   const sfxHit=()=>playTone(220,0.12,'sawtooth',0.08);
   const sfxPlayerHit=()=>playTone(140,0.2,'square',0.10);
   const sfxSuccess=()=>{playTone(523,0.1,'sine',0.12);setTimeout(()=>playTone(659,0.1,'sine',0.12),80);setTimeout(()=>playTone(784,0.15,'sine',0.14),160);};
@@ -219,6 +231,7 @@
     if (mapBattleState && mapBattleState._sequenceTimer) { clearTimeout(mapBattleState._sequenceTimer); mapBattleState._sequenceTimer = null; }
     if (mapBattleState && mapBattleState._ringTimer) { clearTimeout(mapBattleState._ringTimer); mapBattleState._ringTimer = null; }
     if (mapBattleState && mapBattleState._attackWindowTimer) { clearTimeout(mapBattleState._attackWindowTimer); mapBattleState._attackWindowTimer = null; }
+    if (mapBattleState && mapBattleState._glowTimer) { clearTimeout(mapBattleState._glowTimer); mapBattleState._glowTimer = null; }
   }
 
   const SAVE_KEY = 'dungeonRecallV6';
@@ -243,10 +256,15 @@
       if (!el) return;
       if (id === SCREEN_IDS[name]) { el.classList.remove('hidden'); el.classList.add('active'); } else { el.classList.add('hidden'); el.classList.remove('active'); }
     });
-    // BGM — hraje na mapě a v hero obrazovce, stop při bitvě a resultu
+    // BGM — hraje na mapě a v hero obrazovce
     if (name === 'map' || name === 'hero') {
-      // Zpoždění 50ms, aby se audioCtx stihl inicializovat přes user gesture
-      setTimeout(() => startBGM(), 50);
+      initAudio(); // synchronně — funguje pokud jsme v user gesture
+      if (_audioReady && audioCtx && audioCtx.state === 'running') {
+        startBGM();
+      } else {
+        // audio ještě není ready — počkáme na user interakci (nav klik)
+        bgmState._pending = true;
+      }
     } else {
       stopBGM();
     }
@@ -683,6 +701,20 @@
     setTimeout(() => mapBattleTurn(), 800);
   }
 
+  function doArenaGlow(dir, correct) {
+    const sideMap = { '⬆️': 'up', '⬇️': 'down', '⬅️': 'left', '➡️': 'right' };
+    const side = sideMap[dir];
+    if (!side) return;
+    const el = $(`arenaGlow${side.charAt(0).toUpperCase()+side.slice(1)}`);
+    if (!el) return;
+    el.className = `arena-glow arena-glow-${side} ${correct ? 'glow-correct' : 'glow-wrong'}`;
+    if (mapBattleState._glowTimer) clearTimeout(mapBattleState._glowTimer);
+    mapBattleState._glowTimer = setTimeout(() => {
+      const els = ['Up','Down','Left','Right'];
+      els.forEach(s => { const e = $(`arenaGlow${s}`); if (e) e.className = `arena-glow arena-glow-${s.toLowerCase()}`; });
+    }, 300);
+  }
+
   function onMapDodge(dir) {
     if (mapBattleState.ended || !mapBattleState.sequence) return;
     const mb = mapBattleState;
@@ -699,12 +731,8 @@
     // GUARD: pokud _sequenceTimer už je null, útok už byl vyřešen (timer propadl)
     if (mb._sequenceTimer === null) return;
 
-    // Animace pohybu (ještě před vyhodnocením, ať vidíš pohyb)
-    const playerEl = $('mbPlayerFigure');
-    if (playerEl) {
-      playerEl.className = dir === '⬆️' ? 'boss-fight-player swipe-up' : dir === '⬇️' ? 'boss-fight-player swipe-down' : dir === '⬅️' ? 'boss-fight-player swipe-left' : 'boss-fight-player swipe-right';
-      setTimeout(() => playerEl.className = 'boss-fight-player', 200);
-    }
+    // Zář strany (nahrazuje pohyb panáčka)
+    doArenaGlow(dir, false); // nejdřív červeně (default), přebarvíme na zelenou pokud correct
 
     let correct = false;
 
@@ -724,6 +752,7 @@
       mb._sequenceTimer = null;
       if (dir !== attack.dir) {
         correct = true;
+        doArenaGlow(dir, true);
       }
     } else if (attack.type === 'inverted') {
       // Inverzní: musíš swipnout opačný směr
@@ -734,6 +763,7 @@
       const inverseMap = { '⬆️':'⬇️', '⬇️':'⬆️', '⬅️':'➡️', '➡️':'⬅️' };
       if (dir === inverseMap[attack.dir]) {
         correct = true;
+        doArenaGlow(dir, true);
       }
     } else {
       // Normal / heavy: musíš uhnout do směru šipky
@@ -743,6 +773,7 @@
       mb._sequenceTimer = null;
       if (dir === attack.dir) {
         correct = true;
+        doArenaGlow(dir, true);
       }
     }
 

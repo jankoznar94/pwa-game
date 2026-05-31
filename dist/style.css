@@ -172,10 +172,6 @@ body.battle-active { overflow: hidden; position: fixed; width: 100%; }
 #mbDamageText.damage-text { position:absolute;top:65px;left:50%;transform:translateX(-50%);color:#f1c40f;font-size:28px;font-weight:bold;animation:fadeDown 0.6s ease-out; }
 @keyframes fadeUp { 0%{opacity:0;transform:translateX(-50%) translateY(10px)}100%{opacity:1;transform:translateX(-50%) translateY(0)} }
 @keyframes fadeDown { 0%{opacity:0;transform:translateX(-50%) translateY(-10px)}100%{opacity:1;transform:translateX(-50%) translateY(0)} }
-.boss-fight-player.swipe-up { transform:translate(-50%,-50px); }
-.boss-fight-player.swipe-down { transform:translate(-50%,15px); }
-.boss-fight-player.swipe-left { transform:translate(-70px,0); }
-.boss-fight-player.swipe-right { transform:translate(30px,0); }
 .boss-attack-arrow { position:absolute;top:50%;left:50%;width:40px;height:40px;transform-origin:center;transform-box:fill-box;transform:translate(-50%,-50%);z-index:10;animation:arrowPulse 0.3s ease-out; fill:currentColor; }
 @keyframes arrowPulse { 0%{opacity:0}100%{opacity:1} }
 .boss-attack-yellow { color:#f1c40f; fill:#f1c40f; }
@@ -203,6 +199,17 @@ body.battle-active { overflow: hidden; position: fixed; width: 100%; }
   transition:stroke-dashoffset 0.6s linear;
   filter:drop-shadow(0 0 3px rgba(76,175,80,0.5));
 }
+/* Arena glow efekty - barevná zář po stranách */
+.arena-glow {
+  position:absolute;z-index:3;pointer-events:none;
+  opacity:0;transition:opacity 0.2s ease-out, box-shadow 0.2s ease-out;
+}
+.arena-glow-up { top:0;left:0;right:0;height:8px;border-radius:10px 10px 0 0; }
+.arena-glow-down { bottom:0;left:0;right:0;height:8px;border-radius:0 0 10px 10px; }
+.arena-glow-left { left:0;top:0;bottom:0;width:8px;border-radius:10px 0 0 10px; }
+.arena-glow-right { right:0;top:0;bottom:0;width:8px;border-radius:0 10px 10px 0; }
+.arena-glow.glow-correct { opacity:1;box-shadow:0 0 20px 8px rgba(46,204,113,0.6);background:rgba(46,204,113,0.3); }
+.arena-glow.glow-wrong { opacity:1;box-shadow:0 0 20px 8px rgba(233,69,96,0.6);background:rgba(233,69,96,0.3); }
 .boss-action-bar {
   display:flex;gap:12px;justify-content:center;margin:4px 0;z-index:25;
 }
