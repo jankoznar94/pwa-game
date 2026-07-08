@@ -701,16 +701,10 @@
   }
   function getFloorMonsterSet(theme, floor) {
     const pool = MONSTER_DB[theme] || MONSTER_DB[0];
-    const result = [];
-    const poolSize = pool.length;
-    for (let i = 0; i < 5; i++) {
-      let idx;
-      do {
-        idx = Math.floor(Math.random() * poolSize);
-      } while (result.length > 0 && result[result.length - 1].idx === idx);
-      result.push({idx, face: pool[idx].face, name: pool[idx].name, type: pool[idx].type, attackType: pool[idx].attackType, theme: theme});
-    }
-    return result;
+    // Každé patro má fixně přiděleného jednoho nepřítele v pořadí bestiáře
+    const idx = Math.min(floor, pool.length - 1);
+    const m = pool[idx];
+    return [{idx, face: m.face, name: m.name, attackType: m.attackType, theme: theme}];
   }
   const DIRECTIONS = ['⬆️','⬇️','⬅️','➡️'];
   const DUNGEON_THEME_FILTERS = [
@@ -724,11 +718,11 @@
     { bg:'#0d122d', border:'#a8d8ea', borderGlow:'rgba(168,216,234,0.3)' },  // 4 Štíty — ledová modrá
   ];
   const LOCATIONS = [
-    { id:0, name:'Začarovaný les', icon:'🌲', theme:0, monsters:5, floors:10, xpReward:10, bossXp:30, boss:{name:'Lesní pán',face:'assets/monsters/forest_lord.png',hp:10,attackType:ATTACK_TYPES.CASTER}, reward:{gold:5,weapon:'dagger'}, resists:{fire:1.0, ice:1.0, nature:1.0} },
-    { id:1, name:'Pouštní říše', icon:'🏜️', theme:1, monsters:5, floors:10, xpReward:16, bossXp:50, boss:{name:'Faraon',face:'assets/monsters/desert_pharaoh.png',hp:14,attackType:ATTACK_TYPES.CASTER}, reward:{gold:12}, resists:{fire:1.5, ice:0.5, nature:1.0} },
-    { id:2, name:'Nemrtvá země', icon:'🦴', theme:2, monsters:5, floors:10, xpReward:24, bossXp:70, boss:{name:'Smrtka',face:'assets/monsters/reaper.png',hp:16,attackType:ATTACK_TYPES.CASTER}, reward:{gold:15,weapon:'sword'}, resists:{fire:0.5, ice:1.0, nature:1.5} },
-    { id:3, name:'Pekelné výspy', icon:'🔥', theme:3, monsters:5, floors:10, xpReward:50, bossXp:180, boss:{name:'Lucifer',face:'assets/monsters/lucifer_demon.png',hp:26,attackType:ATTACK_TYPES.CASTER}, reward:{gold:30}, resists:{fire:0.5, ice:1.5, nature:0.75} },
-    { id:4, name:'Mrazivé štíty', icon:'❄️', theme:4, monsters:5, floors:10, xpReward:40, bossXp:130, boss:{name:'Ledový titán',face:'assets/monsters/frost_titan.png',hp:22,attackType:ATTACK_TYPES.CASTER}, reward:{gold:25,armor:'chainmail'}, resists:{fire:1.5, ice:0.5, nature:1.0} },
+    { id:0, name:'Začarovaný les', icon:'🌲', theme:0, monsters:1, floors:8, boss:{name:'Lesní pán',face:'assets/monsters/forest_lord.png',hp:10,attackType:ATTACK_TYPES.CASTER} },
+    { id:1, name:'Pouštní říše', icon:'🏜️', theme:1, monsters:1, floors:8, boss:{name:'Faraon',face:'assets/monsters/desert_pharaoh.png',hp:14,attackType:ATTACK_TYPES.CASTER} },
+    { id:2, name:'Nemrtvá země', icon:'🦴', theme:2, monsters:1, floors:8, boss:{name:'Smrtka',face:'assets/monsters/reaper.png',hp:16,attackType:ATTACK_TYPES.CASTER} },
+    { id:3, name:'Pekelné výspy', icon:'🔥', theme:3, monsters:1, floors:8, boss:{name:'Lucifer',face:'assets/monsters/lucifer_demon.png',hp:26,attackType:ATTACK_TYPES.CASTER} },
+    { id:4, name:'Mrazivé štíty', icon:'❄️', theme:4, monsters:1, floors:8, boss:{name:'Ledový titán',face:'assets/monsters/frost_titan.png',hp:22,attackType:ATTACK_TYPES.CASTER} },
   ];
 
   // Skoková obtížnost — násobitel HP a damage podle dungeonu
@@ -900,7 +894,6 @@
       const unlocked = i === 0 || prevDone;
       const completed = state.bossesDefeated[i];
       const curFloor = state.floorProgress[i] || 0;
-      const curProgress = state.locationProgress[i] || 0;
       const expanded = _expandedDungeon === i;
       const theme = DUNGEON_THEMES[i] || DUNGEON_THEMES[0];
       let badgeHtml;
@@ -908,23 +901,23 @@
         badgeHtml = `<div class="map-loc-badge" style="background:${theme.border};color:${theme.bg}"><div class="badge-floor">✔</div><div class="badge-count">Hotovo</div></div>`;
       } else if (!unlocked) {
         badgeHtml = `<div class="map-loc-badge" style="background:${theme.border};color:${theme.bg}"><div class="badge-floor">🔒</div><div class="badge-count">Zamčeno</div></div>`;
-      } else if (curFloor >= 9) {
+      } else if (curFloor >= 7) {
         badgeHtml = `<div class="map-loc-badge" style="background:${theme.border};color:${theme.bg}"><div class="badge-floor">BOSS</div></div>`;
       } else {
-        badgeHtml = `<div class="map-loc-badge" style="background:${theme.border};color:${theme.bg}"><div class="badge-floor">P${curFloor+1}</div><div class="badge-count">${curProgress}/${loc.monsters}</div></div>`;
+        badgeHtml = `<div class="map-loc-badge" style="background:${theme.border};color:${theme.bg}"><div class="badge-floor">P${curFloor+1}</div></div>`;
       }
-      // Floor sub-cards P1-P10
+      // Floor sub-cards P1-P8
       let floorHtml = '';
       if (unlocked && expanded) {
-        for (let f = 0; f < 10; f++) {
-          const isBossFloor = f >= 9;
+        for (let f = 0; f < 8; f++) {
+          const isBossFloor = f >= 7;
           const floorDone = completed || f < curFloor;
           const lockedFloor = f > state.floorProgress[i] && !completed;
           let fIcon, fIconStyle, fText;
           if (floorDone) { fIcon = '✓'; fIconStyle = `color:${theme.border}`; fText = 'Hotovo'; }
           else if (lockedFloor) { fIcon = '🔒\uFE0E'; fIconStyle = `color:${theme.border}`; fText = 'Zamčeno'; }
           else if (isBossFloor) { fIcon = '👹'; fIconStyle = ''; fText = 'BOSS'; }
-          else if (f === curFloor) { fIcon = '●'; fIconStyle = ''; fText = `${loc.monsters - curProgress} zbývá`; }
+          else if (f === curFloor) { fIcon = '●'; fIconStyle = ''; fText = 'Aktivní'; }
           else { fIcon = '✓'; fIconStyle = `color:${theme.border}`; fText = ''; }
           floorHtml += `<div class="map-floor-card ${floorDone?'floor-done':lockedFloor?'floor-locked':'floor-active'}" style="border-color:${theme.border};background:linear-gradient(135deg,${theme.bg}bb,${theme.bg}66)" onclick="${lockedFloor?'':'game.enterLocation('+i+','+f+')'}">
             <span class="floor-card-icon"${fIconStyle ? ` style="${fIconStyle}"` : ''}>${fIcon}</span>
@@ -965,14 +958,10 @@
   function startLocation(locId) {
     const loc = LOCATIONS[locId];
     if (!loc) return;
-    const floor = state.floorProgress[locId] || 0; // 0-9 (0=patro1, 9=boss)
-    const progress = state.locationProgress[locId] || 0; // kills on current floor 0-4
-    const isBoss = floor >= 9; // boss v 10. patře
+    const floor = state.floorProgress[locId] || 0; // 0-7 (0=patro1, 7=boss)
+    const isBoss = floor >= 7; // boss v 8. patře
     // Každé nové patro resetuje HP hrdiny
-    if (progress === 0) {
-      state.hero.hp = 5;
-      state._floorLootDrops = []; // reset loot pro nové patro
-    }
+    state.hero.hp = 5;
     const playerMaxHp = 5;
     const playerHp = 5;
     // HP podle patra — segment-based: 1P=20, 2P=25, ..., 8P=55
@@ -980,10 +969,8 @@
     const bossHp = 20 + floor * 5;
     const bossBaseHp = isBoss ? bossHp : monsterHp;
 
-    // Sada monster pro celé patro — generuje se jen jednou na začátku patra
-    if (progress === 0 || !state._floorMonsters || state._floorMonsters.length === 0) {
-      state._floorMonsters = isBoss ? [] : getFloorMonsterSet(loc.theme, floor);
-    }
+    // Sada monster — 1 unikátní nepřítel podle patra
+    state._floorMonsters = isBoss ? [] : getFloorMonsterSet(loc.theme, floor);
     const floorMonsters = state._floorMonsters;
     // Zaznamenat setkání s monstry do bestiáře
     if (!isBoss) {
@@ -1002,7 +989,7 @@
       }
     }
     mapBattleState = {
-      locId, loc, isBoss, progress, floor,
+      locId, loc, isBoss, floor,
       bossHp: bossBaseHp, maxBossHp: bossBaseHp,
       playerHp: playerHp, maxPlayerHp: playerMaxHp,
       ended: false, turn: 0, isAttacking: false,
@@ -1014,12 +1001,12 @@
       _spellCooldownTicks: 0,
       _blizzardFreeAttacks: 0,
       floorMonsters,
-      monsterFace: isBoss ? loc.boss.face : floorMonsters[progress].face,
-      currentMonsterName: isBoss ? loc.boss.name : floorMonsters[progress].name,
-      monsterAttackType: isBoss ? (loc.boss.attackType || ATTACK_TYPES.MELEE) : (floorMonsters[progress].attackType || ATTACK_TYPES.MELEE),
+      monsterFace: isBoss ? loc.boss.face : floorMonsters[0].face,
+      currentMonsterName: isBoss ? loc.boss.name : floorMonsters[0].name,
+      monsterAttackType: isBoss ? (loc.boss.attackType || ATTACK_TYPES.MELEE) : (floorMonsters[0].attackType || ATTACK_TYPES.MELEE),
       monsterIcons: isBoss ? [] : floorMonsters.map(function(m){return m.face;}),
       monsterNames: isBoss ? [] : floorMonsters.map(function(m){return m.name;}),
-      monsterTheme: isBoss ? loc.theme : (floorMonsters[progress].theme !== undefined ? floorMonsters[progress].theme : loc.theme),
+      monsterTheme: isBoss ? loc.theme : (floorMonsters[0].theme !== undefined ? floorMonsters[0].theme : loc.theme),
       // Loot drops per monster (pro vizuální indikaci)
       _lootDrops: state._floorLootDrops || [],
       // Sekvence: hráč musí přežít várku útoků, pak může udeřit
@@ -1059,7 +1046,7 @@
     applySchoolColors();
     // Animace příchodu
     const newFig = $('mbFigure');
-    if (newFig && !mapBattleState.isBoss && mapBattleState.progress > 0) {
+    if (newFig && !mapBattleState.isBoss) {
       newFig.classList.remove('enemy-enter', 'enemy-idle', 'boss-idle', 'monster-dying');
       void newFig.offsetWidth;
       newFig.classList.add('monster-appear');
@@ -1122,27 +1109,6 @@
       const len = hpLabel.textContent.length;
       if (len > 7) hpLabel.style.fontSize = Math.max(14, Math.round(24 * 7 / len)) + 'px';
       else hpLabel.style.fontSize = '24px';
-    }
-    // Monster icons row
-    const iconRow = $('mbMonsterIcons');
-    if (iconRow) {
-      if (!mb.isBoss) {
-        iconRow.classList.remove('hidden');
-        iconRow.innerHTML = mb.monsterIcons.map((face, i) => {
-          const defeated = i < mb.progress;
-          let inner;
-          if (face.startsWith('assets/')) {
-            inner = '<div class="mini-portrait-frame" style="filter:'+DUNGEON_THEME_FILTERS[mb.monsterTheme]+'"><img src="'+face+'" alt="" class="mini-portrait-img"/></div>';
-          } else if (face.startsWith('<svg')) {
-            inner = face;
-          } else {
-            inner = face;
-          }
-          return `<span class="monster-icon${defeated?' defeated':''}">${inner}${defeated?'<span class="monster-icon-x">❌</span>':''}</span>`;
-        }).join('');
-      } else {
-        iconRow.classList.add('hidden');
-      }
     }
     // Arena HP bar na spodku
     const arenaHp = $('mbPlayerArenaHp');
@@ -3374,91 +3340,33 @@
     const mb = mapBattleState;
     const locId = mb.locId;
 
-    // Monster killed - regular enemy
+    // Monster killed - regular enemy (1 per floor)
     if (won && !mb.isBoss) {
       mapBattleState.ended = true;
       cleanupTimers();
-      const p = (state.locationProgress[locId] || 0) + 1;
-      state.locationProgress[locId] = p;
-      const monsterGold = 1 + rand(0, 2);
-      const xpGain = mb.loc.xpReward + mb.floor * 2;
-      state.hero.gold = (state.hero.gold || 0) + monsterGold;
-      state.hero.xp = (state.hero.xp || 0) + xpGain;
+      // Posun na další patro
+      const nextFloor = mb.floor + 1;
+      state.floorProgress[locId] = nextFloor;
+      state.locationProgress[locId] = 0;
       state.hero.hp = mb.playerHp;
       state.wins = (state.wins || 0) + 1;
-      const leveled = applyLevelUp();
-      // Loot roll za toto monstrum
-      const loot = rollLoot(locId, mb.floor);
-      state._floorLootDrops = state._floorLootDrops || [];
-      state._floorLootDrops.push(loot);
-      if (loot.type === 'item' || loot.type === 'boss') {
-        state.hero.inventory.push(loot.item.id);
-      }
-      if (loot.type === 'gold' || loot.type === 'boss') {
-        state.hero.gold = (state.hero.gold || 0) + (loot.gold || 0);
-      }
       saveGame();
       sfxSuccess();
-
-      if (p >= 5) {
-        // ALL 5 monsters killed -> result screen se sumarizací
-        mapBattleState.ended = true;
-        cleanupTimers();
-        const nextFloor = mb.floor + 1;
-        state.floorProgress[locId] = nextFloor;
-        state.locationProgress[locId] = 0;
-        saveGame();
-        // Sumarizace lootu
-        let totalLootGold = 0;
-        const lootItems = [];
-        (state._floorLootDrops || []).forEach(d => {
-          if (d.type === 'gold') totalLootGold += d.gold;
-          else if (d.type === 'item') { lootItems.push(d.item); }
-          else if (d.type === 'boss') { lootItems.push(d.item); totalLootGold += d.gold; }
-        });
-        state._floorLootDrops = []; // vyčistit po sumarizaci
-        $('resultIcon').textContent = '🎉';
-        $('resultTitle').textContent = 'Patro ' + (mb.floor+1) + ' dobyto!';
-        const floorXp = mb.loc.xpReward * 5 + mb.floor * 10;
-        const mistakes = (mb.floorMistakes || 0) + (mb.mistakes || 0);
-        const hpPct = Math.round((mb.playerHp / mb.maxPlayerHp) * 100);
-        $('resultMsg').innerHTML = '<div class="result-stats">'
-                  + '<div class="result-stat"><span class="result-stat-icon">📖</span><span class="result-stat-val">+' + floorXp + ' XP</span></div>'
-                  + '<div class="result-stat"><span class="result-stat-icon">❤️</span><span class="result-stat-val">' + mb.playerHp + '/' + mb.maxPlayerHp + '</span><span class="result-stat-sub">(' + hpPct + '%)</span></div>'
-                  + '<div class="result-stat"><span class="result-stat-icon">💰</span><span class="result-stat-val">+' + totalLootGold + '</span></div>'
-                  + '<div class="result-stat"><span class="result-stat-icon">❌</span><span class="result-stat-val">' + mistakes + '</span><span class="result-stat-sub">chyb</span></div>'
-                  + '<div class="result-tap">👆 klepni pro návrat</div>'
-                  + '</div>';
-        // Loot list — scroll okno s itemy
-        let lootListHtml = '';
-        if (lootItems.length > 0) {
-          lootItems.forEach(item => {
-            const r = RARITY[item.rarity] || RARITY.common;
-            lootListHtml += `<div class="loot-scroll-item"><span class="loot-scroll-icon">${renderItemIcon(item,24)}</span><span class="loot-scroll-name" style="color:${r.color}">${item.name}</span></div>`;
-          });
-        } else {
-          lootListHtml = '<div style="text-align:center;color:#555;font-size:12px;padding:8px">Žádné předměty</div>';
-        }
-        $('resultLootList').innerHTML = lootListHtml;
-        $('resultBtn').innerHTML = '';
-        $('resultScreen').onclick = function() { $('resultScreen').onclick = null; showScreen('map'); };
-        showScreen('result');
-        switchBGM('win');
-        return;
-      }
-      // Treasure popup pro normální monstrum (1-4)
-      showTreasurePopup(loot, xpGain, () => {
-        const fig2 = $('mbFigure');
-        if (fig2) fig2.classList.remove('monster-dying');
-        continueDungeon();
-      });
-      updateMapBattleUI();
-      // Animace smrti
-      const fig = $('mbFigure');
-      if (fig) {
-        fig.classList.remove('monster-appear');
-        fig.classList.add('monster-dying');
-      }
+      // Result screen
+      $('resultIcon').textContent = '🎉';
+      $('resultTitle').textContent = 'Patro ' + (mb.floor+1) + ' dobyto!';
+      const mistakes = (mb.floorMistakes || 0) + (mb.mistakes || 0);
+      const hpPct = Math.round((mb.playerHp / mb.maxPlayerHp) * 100);
+      $('resultMsg').innerHTML = '<div class="result-stats">'
+                + '<div class="result-stat"><span class="result-stat-icon">❤️</span><span class="result-stat-val">' + mb.playerHp + '/' + mb.maxPlayerHp + '</span><span class="result-stat-sub">(' + hpPct + '%)</span></div>'
+                + '<div class="result-stat"><span class="result-stat-icon">❌</span><span class="result-stat-val">' + mistakes + '</span><span class="result-stat-sub">chyb</span></div>'
+                + '<div class="result-tap">👆 klepni pro návrat</div>'
+                + '</div>';
+      $('resultLootList').innerHTML = '';
+      $('resultBtn').innerHTML = '';
+      $('resultScreen').onclick = function() { $('resultScreen').onclick = null; showScreen('map'); };
+      showScreen('result');
+      switchBGM('win');
       return;
     }
 
