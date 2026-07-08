@@ -2993,7 +2993,6 @@
   window.game = {
     showScreen, enterLocation, toggleDungeon,
     onMapRapidTap,
-    investTalent, activateSchool, resetTalents,
     startTutorial, stopTutorial, advanceTutorial, prevTutorialStep,
     toggleMapPause, toggleTutorialPause,
     renderBestiary,
