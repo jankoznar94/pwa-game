@@ -764,7 +764,7 @@
         });
       });
     });
-    const s = { talentLevels, activeSchool:null, talentPoints:0, hero:{name:'Dobrodruh',face:'hero',level:1,xp:0,hp:100,maxHp:100,mana:50,maxMana:50,baseDmg:12,inventory:[],equip:{weapon:'fists',armor:'rags',helmet:null,shield:null,ring1:null,amulet:null},attrStr:0,attrVit:0,attrDex:0,attrInt:0,attrPoints:0}, deaths:0, wins:0,
+    const s = { talentLevels, activeSchool:null, talentPoints:0, hero:{name:'Dobrodruh',face:'hero',level:1,xp:0,hp:100,maxHp:100,mana:50,maxMana:50,baseDmg:12,inventory:[],attrStr:0,attrVit:0,attrDex:0,attrInt:0,attrPoints:0}, deaths:0, wins:0,
       locationProgress:[0,0,0,0,0], bossesDefeated:[false,false,false,false,false], floorProgress:[0,0,0,0,0], spellUsedThisFloor:{}, lootItems:{}, encounteredMonsters:[] };
     return s;
   }
@@ -3366,9 +3366,6 @@
       state.floorProgress[locId] = 0;
       state.locationProgress[locId] = 0;
       applyLevelUp();
-      const r = mb.loc.reward;
-      if (r.weapon && state.hero.equip.weapon === 'fists') state.hero.equip.weapon = r.weapon;
-      if (r.armor && state.hero.equip.armor === 'rags') state.hero.equip.armor = r.armor;
       // Boss loot: zaručený item s vyšším tierem
       const bossLoot = rollLoot(locId, mb.floor, true);
       if (bossLoot.type === 'boss') {
@@ -4279,113 +4276,7 @@
     document.addEventListener('click', hideActions);
   }
 
-  function unequipSlot(slot) {
-    const h = state.hero;
-    const defaults = { weapon:'fists', armor:'rags', helmet:null, shield:null, ring1:null, amulet:null };
-    const current = h.equip[slot];
-    if (!current || current === defaults[slot]) return;
-    if (h.inventory.length >= 20) { showMessage('❌ Inventář je plný!'); return; }
-    h.inventory.push(current);
-    h.equip[slot] = defaults[slot];
-    h.baseDmg = getHeroDmg();
-    h.maxHp = getHeroMaxHp();
-    h.hp = h.maxHp;
-    saveGame();
-    renderInventory();
-    renderHero();
-  }
-
-  function equipItem(invIdx) {
-    const h = state.hero;
-    const itemId = h.inventory[invIdx];
-    if (!itemId) return;
-    const item = ITEM_MAP[itemId];
-    if (!item) return;
-    // Odstranit nový item z inventáře PRVNĚ (dřív než pushneme starý)
-    h.inventory.splice(invIdx, 1);
-    if (item.type === 'weapon') {
-      // Obouruční zbraň (blade tier 4+) vyhodí štít zpět do batohu
-      const isTwoHanded = item.weaponType === 'blade' && item.tier >= 4;
-      if (isTwoHanded && h.equip.shield) {
-        h.inventory.push(h.equip.shield);
-        h.equip.shield = null;
-      }
-      // Pokud má hráč štít a chce nasadit obouruční zbraň, štít je už vyhozen výše
-      if (h.equip.weapon !== 'fists') h.inventory.push(h.equip.weapon);
-      h.equip.weapon = itemId;
-    } else if (item.type === 'armor') {
-      if (h.equip.armor !== 'rags') h.inventory.push(h.equip.armor);
-      h.equip.armor = itemId;
-    } else if (item.type === 'helmet') {
-      if (h.equip.helmet) h.inventory.push(h.equip.helmet);
-      h.equip.helmet = itemId;
-    } else if (item.type === 'shield') {
-      // Štít nejde s obouruční zbraní — vyhodit zbraň zpět
-      const curWeapon = ITEM_MAP[h.equip.weapon];
-      const isTwoHanded = curWeapon && curWeapon.weaponType === 'blade' && curWeapon.tier >= 4;
-      if (isTwoHanded) {
-        h.inventory.push(h.equip.weapon);
-        h.equip.weapon = 'fists';
-      }
-      if (h.equip.shield) h.inventory.push(h.equip.shield);
-      h.equip.shield = itemId;
-    } else if (item.type === 'ring') {
-      if (!h.equip.ring1) {
-        h.equip.ring1 = itemId;
-      } else {
-        h.inventory.push(h.equip.ring1);
-        h.equip.ring1 = itemId;
-      }
-    } else if (item.type === 'amulet') {
-      if (h.equip.amulet) h.inventory.push(h.equip.amulet);
-      h.equip.amulet = itemId;
-    }
-    h.baseDmg = getHeroDmg();
-    h.maxHp = getHeroMaxHp();
-    h.hp = h.maxHp;
-    h.maxMana = getHeroMaxMana();
-    h.mana = h.maxMana;
-    saveGame();
-    showMessage(`🎽 Oblékl jsi ${item.icon} ${item.name}!`);
-    renderInventory();
-    renderHero();
-  }
-
-  function unequipItem(itemId) {
-    const h = state.hero;
-    if (h.inventory.length >= 20) { showMessage('❌ Inventář je plný!'); return; }
-    const item = ITEM_MAP[itemId];
-    if (!item) return;
-    const defaults = { weapon:'fists', armor:'rags', helmet:null, shield:null, ring1:null, amulet:null };
-    if (item.type === 'weapon') {
-      if (h.equip.weapon !== itemId) return;
-      h.equip.weapon = defaults.weapon;
-    } else if (item.type === 'armor') {
-      if (h.equip.armor !== itemId) return;
-      h.equip.armor = defaults.armor;
-    } else if (item.type === 'helmet') {
-      if (h.equip.helmet !== itemId) return;
-      h.equip.helmet = defaults.helmet;
-    } else if (item.type === 'shield') {
-      if (h.equip.shield !== itemId) return;
-      h.equip.shield = defaults.shield;
-    } else if (item.type === 'ring') {
-      if (h.equip.ring1 === itemId) h.equip.ring1 = defaults.ring1;
-      else return;
-    } else if (item.type === 'amulet') {
-      if (h.equip.amulet === itemId) h.equip.amulet = defaults.amulet;
-      else return;
-    } else return;
-    h.inventory.push(itemId);
-    h.baseDmg = getHeroDmg();
-    h.maxHp = getHeroMaxHp();
-    h.hp = h.maxHp;
-    h.maxMana = getHeroMaxMana();
-    h.mana = h.maxMana;
-    saveGame();
-    showMessage(`📦 Sundal jsi ${item.icon} ${item.name} do inventáře!`);
-    renderInventory();
-  }
+  function sellItem(itemId) {
 
   // ===== TRAINING (minigames) =====
   function enterTraining(skillId) {
@@ -4515,7 +4406,7 @@
     if (!state.bossesDefeated || state.bossesDefeated.length < LOCATIONS.length) state.bossesDefeated = Array(LOCATIONS.length).fill(false);
     if (!state.locationProgress || state.locationProgress.length < LOCATIONS.length) state.locationProgress = Array(LOCATIONS.length).fill(0);
     if (!state.floorProgress || state.floorProgress.length < LOCATIONS.length) state.floorProgress = Array(LOCATIONS.length).fill(0);
-    if (!state.hero) state.hero = { level:1, xp:0, hp:100, maxHp:100, mana:50, maxMana:50, baseDmg:12, inventory:[], equip:{weapon:'fists',armor:'rags'}, attrStr:0, attrVit:0, attrPoints:0 };
+    if (!state.hero) state.hero = { level:1, xp:0, hp:100, maxHp:100, mana:50, maxMana:50, baseDmg:12, inventory:[], attrStr:0, attrVit:0, attrPoints:0 };
     if (state.hero.maxHp === undefined) state.hero.maxHp = getHeroMaxHp();
     if (state.hero.hp === undefined) state.hero.hp = state.hero.maxHp;
     if (state.hero.attrStr === undefined) state.hero.attrStr = 0;
@@ -4639,7 +4530,7 @@
 
   window.game = {
     showScreen, enterLocation, toggleDungeon,
-    upgradeAttr, sellItem, sellSlotItem, equipItem, unequipItem, unequipSlot,
+    upgradeAttr, sellItem, sellSlotItem,
     onMapRapidTap,
     investTalent, activateSchool, resetTalents,
     startTutorial, stopTutorial, advanceTutorial, prevTutorialStep,
