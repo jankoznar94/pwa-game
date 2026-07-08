@@ -3005,6 +3005,7 @@
     }
     
     mb.bossHp -= dmg;
+    playSFX(getHitSfx());
     const dmgText = $('mbDamageText');
     if (dmgText) {
       dmgText.textContent = `-${dmg}`;
