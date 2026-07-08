@@ -1115,6 +1115,15 @@
       const fill = $('mbPlayerArenaStaminaFill');
       if (fill) fill.style.width = Math.max(0, Math.round((mb.dodgeCharges / mb.maxDodgeCharges) * 100)) + '%';
     }
+    // Segmenty dodge charges
+    const dodgeSegs = $('mbDodgeSegments');
+    if (dodgeSegs) {
+      let segHtml = '';
+      for (let i = 0; i < mb.maxDodgeCharges; i++) {
+        segHtml += '<div class="hp-seg"></div>';
+      }
+      dodgeSegs.innerHTML = segHtml;
+    }
     const emoji = mb.isBoss ? mb.loc.boss.face : mb.monsterFace;
     const fig = $('mbFigure');
     if (fig && emoji) {
