@@ -1283,7 +1283,7 @@
     // D2 (Poušť) — náhodná rychlost na začátku každého útoku, červená/zelená/modrá
     if (mb.locId === 1) {
       const r = Math.random();
-      const speed = r < 0.33 ? 1.05 : r < 0.66 ? 0.75 : 0.35;
+      const speed = r < 0.4 ? 1.05 : r < 0.8 ? 0.75 : 0.35;
       winTime = Math.round(winTime / speed);
       circle.style.stroke = speed >= 1 ? '#e94560' : speed >= 0.5 ? '#4caf50' : '#4a7dff';
     }
@@ -1291,41 +1291,38 @@
     // D4 (Pekelné výspy) — přehřívání + červená/zelená/modrá
     if (mb.locId === 3) {
       const r = Math.random();
-      const speed = r < 0.33 ? 1.05 : r < 0.66 ? 0.75 : 0.35;
+      const speed = r < 0.4 ? 1.05 : r < 0.8 ? 0.75 : 0.35;
       let baseWinTime = Math.round(winTime / speed);
       // Heat overlay — mírný, max 5% zrychlení při heat 10
       const heatMult = 1 + mb._heatLevel * 0.005;
       winTime = Math.round(baseWinTime / heatMult);
-      // Barva: základ červená/zelená/modrá, s heatem se posouvá
-      if (mb._heatLevel > 0) {
-        const heatPct = Math.min(mb._heatLevel / 10, 1);
-        let r2, g, b;
-        if (speed >= 1) {
-          // Červená → oranžová → žlutá
-          r2 = 233;
-          g = Math.round(69 + heatPct * (200 - 69));
-          b = Math.round(96 - heatPct * 96);
-        } else if (speed >= 0.5) {
-          // Zelená → světlejší zelená
-          r2 = Math.round(76 - heatPct * 30);
-          g = Math.round(175 + heatPct * 40);
-          b = Math.round(80 - heatPct * 20);
-        } else {
-          // Modrá → fialová
-          r2 = Math.round(74 + heatPct * (200 - 74));
-          g = Math.round(127 - heatPct * 60);
-          b = Math.round(255 - heatPct * 60);
-        }
+      // Barva: základ červená/zelená/modrá, s přehříváním se zesvětluje o 5%/bod
+      const heatBright = mb._heatLevel * 0.05;
+      if (speed >= 1) {
+        // Červená → světlejší červená
+        const r2 = Math.round(233 + (255 - 233) * heatBright);
+        const g = Math.round(69 + (255 - 69) * heatBright);
+        const b = Math.round(96 + (255 - 96) * heatBright);
+        circle.style.stroke = `rgb(${r2},${g},${b})`;
+      } else if (speed >= 0.5) {
+        // Zelená → světlejší zelená
+        const r2 = Math.round(76 + (255 - 76) * heatBright);
+        const g = Math.round(175 + (255 - 175) * heatBright);
+        const b = Math.round(80 + (255 - 80) * heatBright);
         circle.style.stroke = `rgb(${r2},${g},${b})`;
       } else {
-        circle.style.stroke = speed >= 1 ? '#e94560' : speed >= 0.5 ? '#4caf50' : '#4a7dff';
+        // Modrá → světlejší modrá
+        const r2 = Math.round(74 + (255 - 74) * heatBright);
+        const g = Math.round(127 + (255 - 127) * heatBright);
+        const b = Math.round(255 + (255 - 255) * heatBright);
+        circle.style.stroke = `rgb(${r2},${g},${b})`;
       }
     }
     
     // D5 (Mrazivé štíty) — červená/zelená/modrá + timer freeze (bez přehřívání)
     if (mb.locId === 4) {
       const r = Math.random();
-      const speed = r < 0.33 ? 1.05 : r < 0.66 ? 0.75 : 0.35;
+      const speed = r < 0.4 ? 1.05 : r < 0.8 ? 0.75 : 0.35;
       winTime = Math.round(winTime / speed);
       // Barva: červená = rychlejší, zelená = střední, modrá = pomalejší
       circle.style.stroke = speed >= 1 ? '#e94560' : speed >= 0.5 ? '#4caf50' : '#4a7dff';
