@@ -632,73 +632,65 @@
     return `<span style="font-size:${fs}px;display:inline-flex;align-items:center;vertical-align:middle;${border};border-radius:4px;padding:2px">${item.icon}</span>`;
   }
 
-  // ===== MONSTER TYPES =====
-  const MONSTER_TYPES = {
-    LIFESTEALER: 'lifestealer',
-    MANASTEALER: 'manastealer',
-    IMPROVER: 'improver',
-    CRITMASTER: 'critmaster',
-    POISON: 'poison'
-  };
+  // ===== MONSTER DB =====
   const ATTACK_TYPES = { MELEE: 'melee', CASTER: 'caster' };
-
   // ===== MONSTER DB =====
   // Každé monstrum má fixní face, name, type a attackType — nikdy se nemění
   const MONSTER_DB = [
     // Theme 0 — Les
     [
-      {face:'assets/monsters/troll_test_small.png',name:'Troll',type:MONSTER_TYPES.MANASTEALER,attackType:ATTACK_TYPES.MELEE},
-      {face:'assets/monsters/ent.png',name:'Ent',type:MONSTER_TYPES.IMPROVER,attackType:ATTACK_TYPES.MELEE},
-      {face:'assets/monsters/satyr.png',name:'Satyr',type:MONSTER_TYPES.IMPROVER,attackType:ATTACK_TYPES.CASTER},
-      {face:'assets/monsters/medved.png',name:'Medvěd',type:MONSTER_TYPES.CRITMASTER,attackType:ATTACK_TYPES.MELEE},
-      {face:'assets/monsters/vlk.png',name:'Vlk',type:MONSTER_TYPES.CRITMASTER,attackType:ATTACK_TYPES.MELEE},
-      {face:'assets/monsters/dryada.png',name:'Dryáda',type:MONSTER_TYPES.LIFESTEALER,attackType:ATTACK_TYPES.CASTER},
-      {face:'assets/monsters/lesni_rarach.png',name:'Lesní rarach',type:MONSTER_TYPES.LIFESTEALER,attackType:ATTACK_TYPES.MELEE},
-      {face:'assets/monsters/moc_alova_prisera.png',name:'Močálová příšera',type:MONSTER_TYPES.POISON,attackType:ATTACK_TYPES.CASTER},
+      {face:'assets/monsters/troll_test_small.png',name:'Troll',attackType:ATTACK_TYPES.MELEE},
+      {face:'assets/monsters/ent.png',name:'Ent',attackType:ATTACK_TYPES.MELEE},
+      {face:'assets/monsters/satyr.png',name:'Satyr',attackType:ATTACK_TYPES.CASTER},
+      {face:'assets/monsters/medved.png',name:'Medvěd',attackType:ATTACK_TYPES.MELEE},
+      {face:'assets/monsters/vlk.png',name:'Vlk',attackType:ATTACK_TYPES.MELEE},
+      {face:'assets/monsters/dryada.png',name:'Dryáda',attackType:ATTACK_TYPES.CASTER},
+      {face:'assets/monsters/lesni_rarach.png',name:'Lesní rarach',attackType:ATTACK_TYPES.MELEE},
+      {face:'assets/monsters/moc_alova_prisera.png',name:'Močálová příšera',attackType:ATTACK_TYPES.CASTER},
     ],
     // Theme 1 — Poušť
     [
-      {face:'assets/monsters/desert_scorpion.png',name:'Štír',type:MONSTER_TYPES.POISON,attackType:ATTACK_TYPES.MELEE},
-      {face:'assets/monsters/desert_worm.png',name:'Pouštní červ',type:MONSTER_TYPES.LIFESTEALER,attackType:ATTACK_TYPES.MELEE},
-      {face:'assets/monsters/desert_centaur.png',name:'Kentaur',type:MONSTER_TYPES.IMPROVER,attackType:ATTACK_TYPES.MELEE},
-      {face:'assets/monsters/desert_nomad.png',name:'Nomád',type:MONSTER_TYPES.MANASTEALER,attackType:ATTACK_TYPES.CASTER},
-      {face:'assets/monsters/desert_djinn.png',name:'Djinn',type:MONSTER_TYPES.MANASTEALER,attackType:ATTACK_TYPES.CASTER},
-      {face:'assets/monsters/desert_mummy.png',name:'Mumie',type:MONSTER_TYPES.POISON,attackType:ATTACK_TYPES.CASTER},
-      {face:'assets/monsters/desert_beetle.png',name:'Brouk',type:MONSTER_TYPES.CRITMASTER,attackType:ATTACK_TYPES.MELEE},
-      {face:'assets/monsters/desert_cobra.png',name:'Kobra',type:MONSTER_TYPES.POISON,attackType:ATTACK_TYPES.CASTER},
+      {face:'assets/monsters/desert_scorpion.png',name:'Štír',attackType:ATTACK_TYPES.MELEE},
+      {face:'assets/monsters/desert_worm.png',name:'Pouštní červ',attackType:ATTACK_TYPES.MELEE},
+      {face:'assets/monsters/desert_centaur.png',name:'Kentaur',attackType:ATTACK_TYPES.MELEE},
+      {face:'assets/monsters/desert_nomad.png',name:'Nomád',attackType:ATTACK_TYPES.CASTER},
+      {face:'assets/monsters/desert_djinn.png',name:'Djinn',attackType:ATTACK_TYPES.CASTER},
+      {face:'assets/monsters/desert_mummy.png',name:'Mumie',attackType:ATTACK_TYPES.CASTER},
+      {face:'assets/monsters/desert_beetle.png',name:'Brouk',attackType:ATTACK_TYPES.MELEE},
+      {face:'assets/monsters/desert_cobra.png',name:'Kobra',attackType:ATTACK_TYPES.CASTER},
     ],
     // Theme 2 — Nemrtvá země
     [
-      {face:'assets/monsters/skeleton.png',name:'Kostlivec',type:MONSTER_TYPES.CRITMASTER,attackType:ATTACK_TYPES.MELEE},
-      {face:'assets/monsters/zombie.png',name:'Zombie',type:MONSTER_TYPES.IMPROVER,attackType:ATTACK_TYPES.MELEE},
-      {face:'assets/monsters/lich.png',name:'Lich',type:MONSTER_TYPES.MANASTEALER,attackType:ATTACK_TYPES.CASTER},
-      {face:'assets/monsters/bone_dragon.png',name:'Kostěný drak',type:MONSTER_TYPES.CRITMASTER,attackType:ATTACK_TYPES.CASTER},
-      {face:'assets/monsters/death_knight.png',name:'Nemrtvý rytíř',type:MONSTER_TYPES.LIFESTEALER,attackType:ATTACK_TYPES.MELEE},
-      {face:'assets/monsters/raven.png',name:'Havran',type:MONSTER_TYPES.POISON,attackType:ATTACK_TYPES.CASTER},
-      {face:'assets/monsters/ghost.png',name:'Přízrak',type:MONSTER_TYPES.LIFESTEALER,attackType:ATTACK_TYPES.CASTER},
-      {face:'assets/monsters/lucifer.png',name:'Upír',type:MONSTER_TYPES.MANASTEALER,attackType:ATTACK_TYPES.CASTER},
+      {face:'assets/monsters/skeleton.png',name:'Kostlivec',attackType:ATTACK_TYPES.MELEE},
+      {face:'assets/monsters/zombie.png',name:'Zombie',attackType:ATTACK_TYPES.MELEE},
+      {face:'assets/monsters/lich.png',name:'Lich',attackType:ATTACK_TYPES.CASTER},
+      {face:'assets/monsters/bone_dragon.png',name:'Kostěný drak',attackType:ATTACK_TYPES.CASTER},
+      {face:'assets/monsters/death_knight.png',name:'Nemrtvý rytíř',attackType:ATTACK_TYPES.MELEE},
+      {face:'assets/monsters/raven.png',name:'Havran',attackType:ATTACK_TYPES.CASTER},
+      {face:'assets/monsters/ghost.png',name:'Přízrak',attackType:ATTACK_TYPES.CASTER},
+      {face:'assets/monsters/lucifer.png',name:'Upír',attackType:ATTACK_TYPES.CASTER},
     ],
     // Theme 3 — Výspy
     [
-      {face:'assets/monsters/kerberos.png',name:'Kerberos',type:MONSTER_TYPES.MANASTEALER,attackType:ATTACK_TYPES.MELEE},
-      {face:'assets/monsters/hellhound.png',name:'Pekelný pes',type:MONSTER_TYPES.CRITMASTER,attackType:ATTACK_TYPES.MELEE},
-      {face:'assets/monsters/imp.png',name:'Ďáblík',type:MONSTER_TYPES.IMPROVER,attackType:ATTACK_TYPES.MELEE},
-      {face:'assets/monsters/fire_ghost.png',name:'Ohnivý přízrak',type:MONSTER_TYPES.LIFESTEALER,attackType:ATTACK_TYPES.CASTER},
-      {face:'assets/monsters/succubus.png',name:'Succuba',type:MONSTER_TYPES.MANASTEALER,attackType:ATTACK_TYPES.CASTER},
-      {face:'assets/monsters/lava_dragon.png',name:'Lávový drak',type:MONSTER_TYPES.CRITMASTER,attackType:ATTACK_TYPES.CASTER},
-      {face:'assets/monsters/hell_smith.png',name:'Pekelný kovář',type:MONSTER_TYPES.IMPROVER,attackType:ATTACK_TYPES.MELEE},
-      {face:'assets/monsters/hell_knight.png',name:'Pekelný rytíř',type:MONSTER_TYPES.LIFESTEALER,attackType:ATTACK_TYPES.MELEE},
+      {face:'assets/monsters/kerberos.png',name:'Kerberos',attackType:ATTACK_TYPES.MELEE},
+      {face:'assets/monsters/hellhound.png',name:'Pekelný pes',attackType:ATTACK_TYPES.MELEE},
+      {face:'assets/monsters/imp.png',name:'Ďáblík',attackType:ATTACK_TYPES.MELEE},
+      {face:'assets/monsters/fire_ghost.png',name:'Ohnivý přízrak',attackType:ATTACK_TYPES.CASTER},
+      {face:'assets/monsters/succubus.png',name:'Succuba',attackType:ATTACK_TYPES.CASTER},
+      {face:'assets/monsters/lava_dragon.png',name:'Lávový drak',attackType:ATTACK_TYPES.CASTER},
+      {face:'assets/monsters/hell_smith.png',name:'Pekelný kovář',attackType:ATTACK_TYPES.MELEE},
+      {face:'assets/monsters/hell_knight.png',name:'Pekelný rytíř',attackType:ATTACK_TYPES.MELEE},
     ],
     // Theme 4 — Štíty
     [
-      {face:'assets/monsters/ice_troll.png',name:'Ledový troll',type:MONSTER_TYPES.MANASTEALER,attackType:ATTACK_TYPES.MELEE},
-      {face:'assets/monsters/frost_giant.png',name:'Ledový obr',type:MONSTER_TYPES.IMPROVER,attackType:ATTACK_TYPES.MELEE},
-      {face:'assets/monsters/polar_bear.png',name:'Lední medvěd',type:MONSTER_TYPES.CRITMASTER,attackType:ATTACK_TYPES.MELEE},
-      {face:'assets/monsters/snow_wolf.png',name:'Sněžný vlk',type:MONSTER_TYPES.LIFESTEALER,attackType:ATTACK_TYPES.MELEE},
-      {face:'assets/monsters/ice_dragon.png',name:'Ledový drak',type:MONSTER_TYPES.CRITMASTER,attackType:ATTACK_TYPES.CASTER},
-      {face:'assets/monsters/snow_golem.png',name:'Sněžný golem',type:MONSTER_TYPES.IMPROVER,attackType:ATTACK_TYPES.MELEE},
-      {face:'assets/monsters/frozen_knight.png',name:'Zmrzlý rytíř',type:MONSTER_TYPES.LIFESTEALER,attackType:ATTACK_TYPES.MELEE},
-      {face:'assets/monsters/ice_lizard.png',name:'Ledový ještěr',type:MONSTER_TYPES.POISON,attackType:ATTACK_TYPES.MELEE},
+      {face:'assets/monsters/ice_troll.png',name:'Ledový troll',attackType:ATTACK_TYPES.MELEE},
+      {face:'assets/monsters/frost_giant.png',name:'Ledový obr',attackType:ATTACK_TYPES.MELEE},
+      {face:'assets/monsters/polar_bear.png',name:'Lední medvěd',attackType:ATTACK_TYPES.MELEE},
+      {face:'assets/monsters/snow_wolf.png',name:'Sněžný vlk',attackType:ATTACK_TYPES.MELEE},
+      {face:'assets/monsters/ice_dragon.png',name:'Ledový drak',attackType:ATTACK_TYPES.CASTER},
+      {face:'assets/monsters/snow_golem.png',name:'Sněžný golem',attackType:ATTACK_TYPES.MELEE},
+      {face:'assets/monsters/frozen_knight.png',name:'Zmrzlý rytíř',attackType:ATTACK_TYPES.MELEE},
+      {face:'assets/monsters/ice_lizard.png',name:'Ledový ještěr',attackType:ATTACK_TYPES.MELEE},
     ],
   ];
 
@@ -736,11 +728,11 @@
     { bg:'#0d122d', border:'#a8d8ea', borderGlow:'rgba(168,216,234,0.3)' },  // 4 Štíty — ledová modrá
   ];
   const LOCATIONS = [
-    { id:0, name:'Začarovaný les', icon:'🌲', theme:0, monsters:5, floors:10, xpReward:10, bossXp:30, boss:{name:'Lesní pán',face:'assets/monsters/forest_lord.png',hp:10,types:[MONSTER_TYPES.LIFESTEALER,MONSTER_TYPES.CRITMASTER],attackType:ATTACK_TYPES.CASTER}, reward:{gold:5,weapon:'dagger'}, resists:{fire:1.0, ice:1.0, nature:1.0} },
-    { id:1, name:'Pouštní říše', icon:'🏜️', theme:1, monsters:5, floors:10, xpReward:16, bossXp:50, boss:{name:'Faraon',face:'assets/monsters/desert_pharaoh.png',hp:14,types:[MONSTER_TYPES.LIFESTEALER,MONSTER_TYPES.CRITMASTER],attackType:ATTACK_TYPES.CASTER}, reward:{gold:12}, resists:{fire:1.5, ice:0.5, nature:1.0} },
-    { id:2, name:'Nemrtvá země', icon:'🦴', theme:2, monsters:5, floors:10, xpReward:24, bossXp:70, boss:{name:'Smrtka',face:'assets/monsters/reaper.png',hp:16,types:[MONSTER_TYPES.LIFESTEALER,MONSTER_TYPES.CRITMASTER],attackType:ATTACK_TYPES.CASTER}, reward:{gold:15,weapon:'sword'}, resists:{fire:0.5, ice:1.0, nature:1.5} },
-    { id:3, name:'Pekelné výspy', icon:'🔥', theme:3, monsters:5, floors:10, xpReward:50, bossXp:180, boss:{name:'Lucifer',face:'assets/monsters/lucifer_demon.png',hp:26,types:[MONSTER_TYPES.CRITMASTER,MONSTER_TYPES.IMPROVER],attackType:ATTACK_TYPES.CASTER}, reward:{gold:30}, resists:{fire:0.5, ice:1.5, nature:0.75} },
-    { id:4, name:'Mrazivé štíty', icon:'❄️', theme:4, monsters:5, floors:10, xpReward:40, bossXp:130, boss:{name:'Ledový titán',face:'assets/monsters/frost_titan.png',hp:22,types:[MONSTER_TYPES.LIFESTEALER,MONSTER_TYPES.CRITMASTER],attackType:ATTACK_TYPES.CASTER}, reward:{gold:25,armor:'chainmail'}, resists:{fire:1.5, ice:0.5, nature:1.0} },
+    { id:0, name:'Začarovaný les', icon:'🌲', theme:0, monsters:5, floors:10, xpReward:10, bossXp:30, boss:{name:'Lesní pán',face:'assets/monsters/forest_lord.png',hp:10,attackType:ATTACK_TYPES.CASTER}, reward:{gold:5,weapon:'dagger'}, resists:{fire:1.0, ice:1.0, nature:1.0} },
+    { id:1, name:'Pouštní říše', icon:'🏜️', theme:1, monsters:5, floors:10, xpReward:16, bossXp:50, boss:{name:'Faraon',face:'assets/monsters/desert_pharaoh.png',hp:14,attackType:ATTACK_TYPES.CASTER}, reward:{gold:12}, resists:{fire:1.5, ice:0.5, nature:1.0} },
+    { id:2, name:'Nemrtvá země', icon:'🦴', theme:2, monsters:5, floors:10, xpReward:24, bossXp:70, boss:{name:'Smrtka',face:'assets/monsters/reaper.png',hp:16,attackType:ATTACK_TYPES.CASTER}, reward:{gold:15,weapon:'sword'}, resists:{fire:0.5, ice:1.0, nature:1.5} },
+    { id:3, name:'Pekelné výspy', icon:'🔥', theme:3, monsters:5, floors:10, xpReward:50, bossXp:180, boss:{name:'Lucifer',face:'assets/monsters/lucifer_demon.png',hp:26,attackType:ATTACK_TYPES.CASTER}, reward:{gold:30}, resists:{fire:0.5, ice:1.5, nature:0.75} },
+    { id:4, name:'Mrazivé štíty', icon:'❄️', theme:4, monsters:5, floors:10, xpReward:40, bossXp:130, boss:{name:'Ledový titán',face:'assets/monsters/frost_titan.png',hp:22,attackType:ATTACK_TYPES.CASTER}, reward:{gold:25,armor:'chainmail'}, resists:{fire:1.5, ice:0.5, nature:1.0} },
   ];
 
   // Skoková obtížnost — násobitel HP a damage podle dungeonu
@@ -1025,13 +1017,10 @@
       spellCooldowns: {},
       _spellCooldownTicks: 0,
       _blizzardFreeAttacks: 0,
-      _improverStacks: 0,
       floorMonsters,
       monsterFace: isBoss ? loc.boss.face : floorMonsters[progress].face,
       currentMonsterName: isBoss ? loc.boss.name : floorMonsters[progress].name,
-      monsterType: isBoss ? null : (floorMonsters[progress].type || null),
       monsterAttackType: isBoss ? (loc.boss.attackType || ATTACK_TYPES.MELEE) : (floorMonsters[progress].attackType || ATTACK_TYPES.MELEE),
-      bossTypes: isBoss ? (loc.boss.types || []) : [],
       monsterIcons: isBoss ? [] : floorMonsters.map(function(m){return m.face;}),
       monsterNames: isBoss ? [] : floorMonsters.map(function(m){return m.name;}),
       monsterTheme: isBoss ? loc.theme : (floorMonsters[progress].theme !== undefined ? floorMonsters[progress].theme : loc.theme),
@@ -1087,26 +1076,13 @@
     if (!mb.loc) return;
     if (mb.isBoss) {
       const b = mb.loc.boss;
-      const bossTypesHtml = (b.types || []).map(t => {
-        const ti = t === MONSTER_TYPES.LIFESTEALER ? '🩸' :
-          t === MONSTER_TYPES.MANASTEALER ? '💧' :
-          t === MONSTER_TYPES.IMPROVER ? '📈' :
-          t === MONSTER_TYPES.CRITMASTER ? '🎯' :
-          t === MONSTER_TYPES.POISON ? '☠️' : '🎯';
-        return ti;
-      }).join('');
       const atkIcon = (b.attackType || ATTACK_TYPES.MELEE) === ATTACK_TYPES.CASTER ? '🔮' : '⚔️';
-      $('mbEnemyName').textContent = `${b.name} ${bossTypesHtml}${atkIcon}`;
+      $('mbEnemyName').textContent = `${b.name} ${atkIcon}`;
       $('mbLocation').textContent = `👑 BOSS ${mb.loc.name} — P5`;
     } else {
       const floorStr = `P${mb.floor+1}`;
-      const typeIcon = mb.monsterType === MONSTER_TYPES.LIFESTEALER ? '🩸' :
-        mb.monsterType === MONSTER_TYPES.MANASTEALER ? '💧' :
-        mb.monsterType === MONSTER_TYPES.IMPROVER ? '📈' :
-        mb.monsterType === MONSTER_TYPES.CRITMASTER ? '🎯' :
-        mb.monsterType === MONSTER_TYPES.POISON ? '☠️' : '';
       const atkIcon = mb.monsterAttackType === ATTACK_TYPES.CASTER ? '🔮' : '⚔️';
-      $('mbEnemyName').textContent = `${mb.currentMonsterName} ${typeIcon}${atkIcon}`;
+      $('mbEnemyName').textContent = `${mb.currentMonsterName} ${atkIcon}`;
       $('mbLocation').textContent = `${mb.loc.name} — P${mb.floor+1}`;
     }
     const pHpPct = Math.round((mb.playerHp / mb.maxPlayerHp) * 100);
@@ -1171,16 +1147,6 @@
       } else {
         iconRow.classList.add('hidden');
       }
-    }
-    // XP Bar
-    const xpWrap = $('mbXpBarWrap');
-    if (xpWrap) {
-      const h = state.hero;
-      const xpNeeded = h.level * 80;
-      const xpPct = Math.min((h.xp / xpNeeded) * 100, 100);
-      $('mbLevelLabel').textContent = `Lv.${h.level}`;
-      $('mbXpBarFill').style.width = xpPct + '%';
-      xpWrap.style.display = 'flex';
     }
     // Arena HP bar na spodku
     const arenaHp = $('mbPlayerArenaHp');
@@ -3860,16 +3826,6 @@
       // Normální monstra — první
       themeMonsters.forEach(m => {
         const seen = encountered.includes(m.face);
-        const typeIcon = m.type === MONSTER_TYPES.LIFESTEALER ? '🩸' :
-          m.type === MONSTER_TYPES.MANASTEALER ? '💧' :
-          m.type === MONSTER_TYPES.IMPROVER ? '📈' :
-          m.type === MONSTER_TYPES.CRITMASTER ? '🎯' :
-          m.type === MONSTER_TYPES.POISON ? '☠️' : '🎯';
-        const typeName = m.type === MONSTER_TYPES.LIFESTEALER ? 'Lifestealer' :
-          m.type === MONSTER_TYPES.MANASTEALER ? 'Manastealer' :
-          m.type === MONSTER_TYPES.IMPROVER ? 'Improver' :
-          m.type === MONSTER_TYPES.CRITMASTER ? 'Critmaster' :
-          m.type === MONSTER_TYPES.POISON ? 'Poison' : 'Critmaster';
         const atkIcon = m.attackType === ATTACK_TYPES.CASTER ? '🔮' : '⚔️';
         const atkName = m.attackType === ATTACK_TYPES.CASTER ? 'Caster' : 'Melee';
         if (seen) {
@@ -3877,7 +3833,7 @@
           <div class="bestiary-face">${renderFace(m.face, themeIdx)}</div>
           <div class="bestiary-info">
             <div class="bestiary-name">${m.name}</div>
-            <div class="bestiary-meta"><span>${typeIcon} ${typeName}</span> <span>${atkIcon} ${atkName}</span></div>
+            <div class="bestiary-meta"><span>${atkIcon} ${atkName}</span></div>
           </div>
         </div>`;
         } else {
@@ -3885,7 +3841,7 @@
           <div class="bestiary-face"><div class="bestiary-portrait-frame" style="background:#111;border-color:#691"><span style="font-size:28px;color:#555">🔒</span></div></div>
           <div class="bestiary-info">
             <div class="bestiary-name" style="color:#555">???</div>
-            <div class="bestiary-meta" style="color:#444"><span>???</span> <span>???</span></div>
+            <div class="bestiary-meta" style="color:#444"><span>???</span></div>
           </div>
         </div>`;
         }
@@ -3894,19 +3850,6 @@
       if (loc && loc.boss) {
         const b = loc.boss;
         const seen = encountered.includes(b.face);
-        const bossTypesHtml = b.types.map(t => {
-          const ti = t === MONSTER_TYPES.LIFESTEALER ? '🩸' :
-            t === MONSTER_TYPES.MANASTEALER ? '💧' :
-            t === MONSTER_TYPES.IMPROVER ? '📈' :
-            t === MONSTER_TYPES.CRITMASTER ? '🎯' :
-            t === MONSTER_TYPES.POISON ? '☠️' : '🎯';
-          const tn = t === MONSTER_TYPES.LIFESTEALER ? 'Lifestealer' :
-            t === MONSTER_TYPES.MANASTEALER ? 'Manastealer' :
-            t === MONSTER_TYPES.IMPROVER ? 'Improver' :
-            t === MONSTER_TYPES.CRITMASTER ? 'Critmaster' :
-            t === MONSTER_TYPES.POISON ? 'Poison' : 'Critmaster';
-          return `<span>${ti} ${tn}</span>`;
-        }).join(' ');
         const atkIcon = b.attackType === ATTACK_TYPES.CASTER ? '🔮' : '⚔️';
         const atkName = b.attackType === ATTACK_TYPES.CASTER ? 'Caster' : 'Melee';
         if (seen) {
@@ -3914,7 +3857,7 @@
           <div class="bestiary-face bestiary-boss-face">${renderFace(b.face, themeIdx)}</div>
           <div class="bestiary-info">
             <div class="bestiary-name bestiary-boss-name"><span class="bestiary-boss-badge">👑 BOSS</span> ${b.name}</div>
-            <div class="bestiary-meta">${bossTypesHtml} <span>${atkIcon} ${atkName}</span></div>
+            <div class="bestiary-meta"><span>${atkIcon} ${atkName}</span></div>
           </div>
         </div>`;
         } else {
