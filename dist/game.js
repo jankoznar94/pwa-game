@@ -982,15 +982,14 @@
     const isBoss = floor >= 9; // boss v 10. patře
     // Každé nové patro resetuje HP hrdiny
     if (progress === 0) {
-      state.hero.hp = state.hero.maxHp;
+      state.hero.hp = 5;
       state._floorLootDrops = []; // reset loot pro nové patro
     }
-    const playerMaxHp = state.hero.maxHp || 100;
-    const playerHp = Math.min(state.hero.hp || playerMaxHp, playerMaxHp);
-    // HP škáluje s dungeonem a patrem — progresivně
-    const diffMult = DIFFICULTY_MULT[locId] || 1.0;
-    const monsterHp = Math.round((80 + locId * 150) * diffMult + 20 + 28 * floor + 10 * progress);
-    const bossHp = Math.round((400 + locId * 400) * diffMult + 150 + 43 * floor + 200);
+    const playerMaxHp = 5;
+    const playerHp = 5;
+    // HP podle patra — segment-based: 1P=20, 2P=25, ..., 8P=55
+    const monsterHp = 20 + floor * 5;
+    const bossHp = 20 + floor * 5;
     const bossBaseHp = isBoss ? bossHp : monsterHp;
 
     // Sada monster pro celé patro — generuje se jen jednou na začátku patra
@@ -2871,93 +2870,35 @@
     // Chill tick
     if (mb.chillTicksLeft > 0) mb.chillTicksLeft--;
 
-    const baseBossDmg = Math.max(8, 8 + mb.locId * 8 + mb.floor * 4);
-    const diffMult = DIFFICULTY_MULT[mb.locId] || 1.0;
-    let bossDmg = Math.round(baseBossDmg * diffMult * (0.8 + Math.random() * 0.4));
-    const mType = mb.monsterType;
-    const bossTypes = mb.bossTypes || [];
-    let isCrit = false;
-    let lifeStealAmt = 0;
-    let manaStealAmt = 0;
-    const typesToApply = bossTypes.length > 0 ? bossTypes : (mType ? [mType] : []);
-    typesToApply.forEach(t => {
-      if (t === MONSTER_TYPES.CRITMASTER) {
-        if (Math.random() < 0.33) {
-          bossDmg = Math.round(bossDmg * 2.0);
-          isCrit = true;
-        }
-      } else if (t === MONSTER_TYPES.IMPROVER) {
-        mb._improverStacks = (mb._improverStacks || 0) + 1;
-        bossDmg = Math.round(bossDmg * (1 + mb._improverStacks * 0.25));
-      } else if (t === MONSTER_TYPES.LIFESTEALER) {
-        lifeStealAmt += Math.round(bossDmg * 0.5);
-      } else if (t === MONSTER_TYPES.MANASTEALER) {
-        manaStealAmt += Math.round(bossDmg * 0.5);
-      } else if (t === MONSTER_TYPES.POISON) {
-        const poisonDmg = Math.max(1, Math.round(baseBossDmg * 0.2));
-        mb.playerDot = poisonDmg;
-        mb.playerDotTicksLeft = 3;
-      }
-    });
-    // 🛡️ Defense — WoW styl: damage *= 100 / (100 + totalDefense)
-    const armorDef = (ITEM_MAP[state.hero.equip.armor] || ITEM_MAP['rags']).defense || 0;
-    const helmetDef = ITEM_MAP[state.hero.equip.helmet]?.defense || 0;
-    const shieldDef = ITEM_MAP[state.hero.equip.shield]?.defense || 0;
-    const totalDefense = armorDef + helmetDef + shieldDef;
-    if (totalDefense > 0) {
-      bossDmg = Math.round(bossDmg * 100 / (100 + totalDefense));
+    // Segment-based: každý zásah = 1 bod poškození hráči
+    let amount = 1;
+    mb.playerHp -= amount;
+    
+    mb.mistakes = (mb.mistakes || 0) + 1;
+    // Zvuk — náhodný hurt zvuk
+    playSFX(getHurtSfx());
+    // Výrazný červený záblesk celé obrazovky
+    const arena = $('mbArena');
+    if (arena) {
+      arena.style.transition = 'background-color 0.1s';
+      arena.style.backgroundColor = 'rgba(233,69,96,0.45)';
+      setTimeout(() => { arena.style.backgroundColor = ''; setTimeout(() => { arena.style.transition = ''; }, 200); }, 100);
     }
-    let amount = bossDmg;
-
-    // Pasivní blok — pokud má hráč štít, šance na vyblokování damage
-    let blocked = false;
-    const shieldItem = ITEM_MAP[state.hero.equip.shield];
-    if (shieldItem && shieldItem.blockChance > 0) {
-      if (Math.random() * 100 < shieldItem.blockChance) {
-        blocked = true;
-        amount = 0;
-        playSFX(blockSfx);
-      }
+    // Záblesk overlay — tmavý overlay s červeným nádechem
+    let hitOverlay = $('mbHitOverlay');
+    if (!hitOverlay) {
+      hitOverlay = document.createElement('div');
+      hitOverlay.id = 'mbHitOverlay';
+      hitOverlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;z-index:999;pointer-events:none;transition:background-color 0.1s;background-color:transparent;';
+      document.body.appendChild(hitOverlay);
     }
-
-    if (!blocked) {
-      mb.playerHp -= amount;
-    }
-    // Life steal — jen pokud nebylo blokováno
-    if (!blocked && lifeStealAmt > 0) {
-      mb.bossHp = Math.min(mb.maxBossHp, mb.bossHp + lifeStealAmt);
-    }
-    // Mana steal — jen pokud nebylo blokováno
-    if (!blocked && manaStealAmt > 0) {
-      state.hero.mana = Math.max(0, (state.hero.mana || 0) - manaStealAmt);
-    }
-    if (!blocked) {
-      mb.mistakes = (mb.mistakes || 0) + 1;
-      // Zvuk — náhodný hurt zvuk
-      playSFX(getHurtSfx());
-      // Výrazný červený záblesk celé obrazovky
-      const arena = $('mbArena');
-      if (arena) {
-        arena.style.transition = 'background-color 0.1s';
-        arena.style.backgroundColor = 'rgba(233,69,96,0.45)';
-        setTimeout(() => { arena.style.backgroundColor = ''; setTimeout(() => { arena.style.transition = ''; }, 200); }, 100);
-      }
-      // Záblesk overlay — tmavý overlay s červeným nádechem
-      let hitOverlay = $('mbHitOverlay');
-      if (!hitOverlay) {
-        hitOverlay = document.createElement('div');
-        hitOverlay.id = 'mbHitOverlay';
-        hitOverlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;z-index:999;pointer-events:none;transition:background-color 0.1s;background-color:transparent;';
-        document.body.appendChild(hitOverlay);
-      }
-      hitOverlay.style.backgroundColor = 'rgba(200,40,40,0.2)';
-      setTimeout(() => { hitOverlay.style.backgroundColor = 'transparent'; }, 100);
-    }
+    hitOverlay.style.backgroundColor = 'rgba(200,40,40,0.2)';
+    setTimeout(() => { hitOverlay.style.backgroundColor = 'transparent'; }, 100);
 
     const playerDamageText = $('mbPlayerDamageText');
     if (playerDamageText) {
-      playerDamageText.textContent = blocked ? '🛡️ BLOCK!' : `-${amount}`;
-      playerDamageText.style.color = blocked ? '#3498db' : '';
+      playerDamageText.textContent = `-${amount}`;
+      playerDamageText.style.color = '';
       playerDamageText.classList.remove('hidden');
       setTimeout(() => playerDamageText.classList.add('hidden'), 800);
     }
@@ -3069,106 +3010,11 @@
   }
 
   function dealPlayerDamage(mb, mult) {
-    // Vypočítat damage hráče proti monstru
-    const baseDmg = mb.baseDmg || (10 + Math.floor(state.hero.level * 3) + (ITEM_MAP[state.hero.equip.weapon]||ITEM_MAP['fists']).baseDmg + ((state.hero.attrStr||0) + getEquipAttrs().str)*2);
-    let dmg = Math.round(baseDmg * mult);
-    // Rozptyl ±2 — každá rána je jiná
-    dmg += Math.floor(Math.random() * 5) - 2; // -2, -1, 0, +1, +2
-    dmg = Math.max(1, dmg);
+    // Segment-based: každý zásah = 1 bod poškození
+    let dmg = 1;
     // D4/D5 — přehřívání: každý úspěšný útok zvyšuje heat
     if (mb.locId === 3 || mb.locId === 4) {
       mb._heatLevel = Math.min((mb._heatLevel || 0) + 1, 10);
-    }
-    // Fire school passive — ignite
-    const ignitePct = getFireIgnitePct();
-    if (ignitePct > 0) { dmg = Math.round(dmg * (1 + ignitePct / 100)); }
-    
-    // 🎯 Crit chance ze zbraně — náhodná šance na 2.0× poškození
-    const weapon = ITEM_MAP[state.hero.equip.weapon] || ITEM_MAP['fists'];
-    const critChance = weapon.critChance || 0;
-    let isCrit = false;
-    if (critChance > 0 && Math.random() * 100 < critChance) {
-      dmg = Math.round(dmg * 2.0);
-      isCrit = true;
-    }
-    
-    // Zvuk — crit má vlastní zvuk, jinak normální
-    playSFX(isCrit ? getCritSfx() : getHitSfx());
-    
-    // === PASIVNÍ EFEKTY ŠKOL ===
-    let applyPassives = true;
-    if (mb._activeSpellChillActive) applyPassives = false;
-        
-    // Fire — burn (žhnutí) — jednorázový bonus dmg při útoku
-    const burnPct = getFireBurnPct();
-    if (burnPct > 0 && applyPassives && state.activeSchool === 'fire') {
-      const wasBurning = mb.dot > 0;
-      const resistMult = getSchoolResistMult('fire');
-      const burnBonus = Math.round(dmg * burnPct / 100 * resistMult);
-      dmg += burnBonus;
-      // Inferno — pokud cíl už hořel, exploze 5.0×
-      if (wasBurning && hasFireInferno()) {
-        const infernoDmg = Math.round(dmg * 5.0);
-        mb.bossHp -= infernoDmg;
-        const dmgText = $('mbDamageText');
-        if (dmgText) {
-          dmgText.textContent = `💥 Inferno! -${infernoDmg}`;
-          dmgText.classList.remove('hidden');
-          setTimeout(() => dmgText.classList.add('hidden'), 800);
-        }
-      }
-    }
-    // Ice — chill (mráz)
-    const chillTicks = getIceChillTicks();
-    if (chillTicks > 0 && applyPassives && state.activeSchool === 'ice') {
-      const wasChilled = mb.chillTicksLeft > 0;
-      const chillPct = 25 + getIceChillAddedPct();
-      mb.chillPercent = Math.max(mb.chillPercent || 0, chillPct);
-      mb.chillTicksLeft = Math.max(mb.chillTicksLeft || 0, chillTicks);
-      // Death Freeze — pokud cíl už zpomalen, krit 5.0×
-      if (wasChilled && hasIceDeathFreeze()) {
-        const deathDmg = Math.round(dmg * 5.0);
-        mb.bossHp -= deathDmg;
-        const dmgText = $('mbDamageText');
-        if (dmgText) {
-          dmgText.textContent = `💀 ${deathDmg}`;
-          dmgText.classList.remove('hidden');
-          setTimeout(() => dmgText.classList.add('hidden'), 800);
-        }
-      }
-    }
-    // Nature — poison (jed) — % z dmg/tick
-    const poisonPct = getNaturePoisonPct();
-    if (poisonPct > 0 && applyPassives && state.activeSchool === 'nature') {
-      const poisonDur = getNaturePoisonDuration();
-      const resistMult = getSchoolResistMult('nature');
-      const poisonDmg = Math.max(1, Math.round(dmg * poisonPct / 100 * resistMult));
-      mb.dot = poisonDmg;
-      mb.dotTicksLeft = poisonDur;
-      // Otrava — pokud má hráč pasivní capstone, blokuje life steal monstra
-      if (hasNatureRevitalize()) mb._poisonBlockHeal = true;
-    }
-    // Nature — heal (léčení HoT) — fixní HP/tick + % z vitality
-    const healAmt = getNatureHealPct();
-    if (healAmt > 0 && applyPassives && state.activeSchool === 'nature') {
-      const healDur = getNatureHealDuration();
-      const resistMult = getSchoolResistMult('nature');
-      const vitBonus = getNatureHealVitalityBonus();
-      mb.hot = Math.max(mb.hot || 0, Math.round(healAmt * resistMult) + vitBonus);
-      mb.hotTicksLeft = Math.max(mb.hotTicksLeft || 0, healDur);
-    }
-    // Physical — edge (ostří) — % bonus dmg
-    const edgePct = getPhysicalEdgePct();
-    if (edgePct > 0 && applyPassives && state.activeSchool === 'physical') {
-      const edgeBonus = Math.round(dmg * edgePct / 100);
-      dmg += edgeBonus;
-    }
-    // Physical — executioner (kat) — 5× dmg pod 20% HP
-    if (hasPhysicalExecutioner() && applyPassives && state.activeSchool === 'physical') {
-      const hpPct = (mb.bossHp / mb.maxBossHp) * 100;
-      if (hpPct <= 20) {
-        dmg = Math.round(dmg * 5.0);
-      }
     }
     
     mb.bossHp -= dmg;
