@@ -758,6 +758,12 @@ body.no-scroll { overflow: hidden; }
   z-index: 2;
   pointer-events: none;
 }
+.guide-timer-outer {
+  z-index: 2;
+}
+.guide-timer-outer svg {
+  display: block;
+}
 .guide-arena-row {
   display: flex;
   gap: 12px;

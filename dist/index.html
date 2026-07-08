@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
-  <title>Dungeon Recall</title>
-  <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Dungeon Recall</title>
+<link rel="stylesheet" href="style.css">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
 </head>
 <body>
 
@@ -76,27 +77,19 @@
     </div>
     <div class="mb-spells" id="mbSpells"></div>
     <div class="mb-hp-mana-bars">
-      <div class="mb-hp-bar" id="mbPlayerArenaHp">
-        <div class="mb-hp-bar-fill" id="mbPlayerArenaHpFill" style="width:100%"></div>
-        <div class="hp-segments" id="mbPlayerHpSegments"></div>
-        <span>5/5</span>
-      </div>
-      <div class="mb-stamina-bar" id="mbPlayerArenaStamina">
-        <div class="mb-stamina-bar-fill" id="mbPlayerArenaStaminaFill" style="width:100%"></div>
-        <div class="hp-segments" id="mbDodgeSegments"></div>
-        <span>3/3</span>
-      </div>
+      <div class="mb-bar-wrap"><div class="mb-bar-label">❤️</div><div class="mb-bar-outer"><div class="mb-bar-fill mb-bar-hp" id="mbPlayerHpBar" style="width:100%"></div></div><span class="mb-bar-text" id="mbPlayerHpText">5/5</span></div>
     </div>
+    <div id="mbAttackBtnWrap"></div>
+    <div id="mbSpellBtns" class="mb-spell-btns"></div>
   </div>
+  <div class="mb-battle-log" id="mbBattleLog"></div>
 </div>
 
 <!-- ===== RESULT ===== -->
-<div id="resultScreen" class="hidden">
-  <div class="result-screen container">
-    <div class="result-icon" id="resultIcon">💀</div>
-    <div class="result-title" id="resultTitle">Konec</div>
-    <div class="result-sub" id="resultMsg"></div>
-    <div class="result-loot-scroll" id="resultLootList"></div>
+<div id="resultScreen" class="container hidden">
+  <div class="card">
+    <div class="card-title" id="resultTitle"></div>
+    <div id="resultMsg"></div>
     <div id="resultBtn" class="mt-10"></div>
   </div>
 </div>
@@ -118,10 +111,10 @@
           <div class="guide-arrow-center">
             <svg viewBox="0 0 16 16" width="80" height="80"><path d="M8 1L13 8L10.5 8L10.5 15L5.5 15L5.5 8L3 8L8 1Z" fill="#bbb" stroke="#bbb" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></svg>
           </div>
-          <div class="guide-timer-ring" style="z-index:2">
-            <svg viewBox="0 0 260 260" width="220" height="220" style="transform:rotate(-90deg)">
-              <circle cx="130" cy="130" r="110" stroke="#555" stroke-width="12" fill="none" stroke-dasharray="691" stroke-dashoffset="0" opacity="0.4"/>
-              <circle cx="130" cy="130" r="110" stroke="#bbb" stroke-width="12" fill="none" stroke-dasharray="691" stroke-dashoffset="276" opacity="0.7"/>
+          <div class="guide-timer-ring guide-timer-outer">
+            <svg viewBox="0 0 260 260" width="240" height="240" style="transform:rotate(-90deg)">
+              <circle cx="130" cy="130" r="115" stroke="#555" stroke-width="10" fill="none" stroke-dasharray="723" stroke-dashoffset="0"/>
+              <circle cx="130" cy="130" r="115" stroke="#bbb" stroke-width="10" fill="none" stroke-dasharray="723" stroke-dashoffset="434"/>
             </svg>
           </div>
         </div>
@@ -139,10 +132,10 @@
               <div class="guide-arrow-center">
                 <svg viewBox="0 0 16 16" width="80" height="80"><path d="M8 1L13 8L10.5 8L10.5 15L5.5 15L5.5 8L3 8L8 1Z" fill="#bbb" stroke="#bbb" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></svg>
               </div>
-              <div class="guide-timer-ring" style="z-index:2">
-                <svg viewBox="0 0 260 260" width="220" height="220" style="transform:rotate(-90deg)">
-                  <circle cx="130" cy="130" r="110" stroke="#555" stroke-width="12" fill="none" stroke-dasharray="691" stroke-dashoffset="0" opacity="0.4"/>
-                  <circle cx="130" cy="130" r="110" stroke="#e94560" stroke-width="12" fill="none" stroke-dasharray="691" stroke-dashoffset="276" opacity="0.7"/>
+              <div class="guide-timer-ring guide-timer-outer">
+                <svg viewBox="0 0 260 260" width="240" height="240" style="transform:rotate(-90deg)">
+                  <circle cx="130" cy="130" r="115" stroke="#555" stroke-width="10" fill="none" stroke-dasharray="723" stroke-dashoffset="0"/>
+                  <circle cx="130" cy="130" r="115" stroke="#e94560" stroke-width="10" fill="none" stroke-dasharray="723" stroke-dashoffset="434"/>
                 </svg>
               </div>
             </div>
@@ -154,10 +147,10 @@
               <div class="guide-arrow-center">
                 <svg viewBox="0 0 16 16" width="80" height="80"><path d="M8 1L13 8L10.5 8L10.5 15L5.5 15L5.5 8L3 8L8 1Z" fill="#bbb" stroke="#bbb" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></svg>
               </div>
-              <div class="guide-timer-ring" style="z-index:2">
-                <svg viewBox="0 0 260 260" width="220" height="220" style="transform:rotate(-90deg)">
-                  <circle cx="130" cy="130" r="110" stroke="#555" stroke-width="12" fill="none" stroke-dasharray="691" stroke-dashoffset="0" opacity="0.4"/>
-                  <circle cx="130" cy="130" r="110" stroke="#4caf50" stroke-width="12" fill="none" stroke-dasharray="691" stroke-dashoffset="276" opacity="0.7"/>
+              <div class="guide-timer-ring guide-timer-outer">
+                <svg viewBox="0 0 260 260" width="240" height="240" style="transform:rotate(-90deg)">
+                  <circle cx="130" cy="130" r="115" stroke="#555" stroke-width="10" fill="none" stroke-dasharray="723" stroke-dashoffset="0"/>
+                  <circle cx="130" cy="130" r="115" stroke="#4caf50" stroke-width="10" fill="none" stroke-dasharray="723" stroke-dashoffset="434"/>
                 </svg>
               </div>
             </div>
@@ -169,10 +162,10 @@
               <div class="guide-arrow-center">
                 <svg viewBox="0 0 16 16" width="80" height="80"><path d="M8 1L13 8L10.5 8L10.5 15L5.5 15L5.5 8L3 8L8 1Z" fill="#bbb" stroke="#bbb" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></svg>
               </div>
-              <div class="guide-timer-ring" style="z-index:2">
-                <svg viewBox="0 0 260 260" width="220" height="220" style="transform:rotate(-90deg)">
-                  <circle cx="130" cy="130" r="110" stroke="#555" stroke-width="12" fill="none" stroke-dasharray="691" stroke-dashoffset="0" opacity="0.4"/>
-                  <circle cx="130" cy="130" r="110" stroke="#4a7dff" stroke-width="12" fill="none" stroke-dasharray="691" stroke-dashoffset="276" opacity="0.7"/>
+              <div class="guide-timer-ring guide-timer-outer">
+                <svg viewBox="0 0 260 260" width="240" height="240" style="transform:rotate(-90deg)">
+                  <circle cx="130" cy="130" r="115" stroke="#555" stroke-width="10" fill="none" stroke-dasharray="723" stroke-dashoffset="0"/>
+                  <circle cx="130" cy="130" r="115" stroke="#4a7dff" stroke-width="10" fill="none" stroke-dasharray="723" stroke-dashoffset="434"/>
                 </svg>
               </div>
             </div>
@@ -193,10 +186,10 @@
               <div class="guide-arrow-center">
                 <svg viewBox="0 0 16 16" width="80" height="80"><path d="M8 1L13 8L10.5 8L10.5 15L5.5 15L5.5 8L3 8L8 1Z" fill="#2ecc71" stroke="#2ecc71" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></svg>
               </div>
-              <div class="guide-timer-ring" style="z-index:2">
-                <svg viewBox="0 0 260 260" width="220" height="220" style="transform:rotate(-90deg)">
-                  <circle cx="130" cy="130" r="110" stroke="#555" stroke-width="12" fill="none" stroke-dasharray="691" stroke-dashoffset="0" opacity="0.4"/>
-                  <circle cx="130" cy="130" r="110" stroke="#888" stroke-width="12" fill="none" stroke-dasharray="691" stroke-dashoffset="276" opacity="0.5"/>
+              <div class="guide-timer-ring guide-timer-outer">
+                <svg viewBox="0 0 260 260" width="240" height="240" style="transform:rotate(-90deg)">
+                  <circle cx="130" cy="130" r="115" stroke="#555" stroke-width="10" fill="none" stroke-dasharray="723" stroke-dashoffset="0"/>
+                  <circle cx="130" cy="130" r="115" stroke="#888" stroke-width="10" fill="none" stroke-dasharray="723" stroke-dashoffset="434"/>
                 </svg>
               </div>
             </div>
@@ -208,10 +201,10 @@
               <div class="guide-arrow-center">
                 <svg viewBox="0 0 16 16" width="80" height="80"><path d="M8 1L13 8L10.5 8L10.5 15L5.5 15L5.5 8L3 8L8 1Z" fill="#e94560" stroke="#e94560" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></svg>
               </div>
-              <div class="guide-timer-ring" style="z-index:2">
-                <svg viewBox="0 0 260 260" width="220" height="220" style="transform:rotate(-90deg)">
-                  <circle cx="130" cy="130" r="110" stroke="#555" stroke-width="12" fill="none" stroke-dasharray="691" stroke-dashoffset="0" opacity="0.4"/>
-                  <circle cx="130" cy="130" r="110" stroke="#888" stroke-width="12" fill="none" stroke-dasharray="691" stroke-dashoffset="276" opacity="0.5"/>
+              <div class="guide-timer-ring guide-timer-outer">
+                <svg viewBox="0 0 260 260" width="240" height="240" style="transform:rotate(-90deg)">
+                  <circle cx="130" cy="130" r="115" stroke="#555" stroke-width="10" fill="none" stroke-dasharray="723" stroke-dashoffset="0"/>
+                  <circle cx="130" cy="130" r="115" stroke="#888" stroke-width="10" fill="none" stroke-dasharray="723" stroke-dashoffset="434"/>
                 </svg>
               </div>
             </div>
@@ -223,10 +216,10 @@
               <div class="guide-arrow-center">
                 <svg viewBox="0 0 16 16" width="80" height="80"><path d="M8 1L13 8L10.5 8L10.5 15L5.5 15L5.5 8L3 8L8 1Z" fill="#4a7dff" stroke="#4a7dff" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></svg>
               </div>
-              <div class="guide-timer-ring" style="z-index:2">
-                <svg viewBox="0 0 260 260" width="220" height="220" style="transform:rotate(-90deg)">
-                  <circle cx="130" cy="130" r="110" stroke="#555" stroke-width="12" fill="none" stroke-dasharray="691" stroke-dashoffset="0" opacity="0.4"/>
-                  <circle cx="130" cy="130" r="110" stroke="#888" stroke-width="12" fill="none" stroke-dasharray="691" stroke-dashoffset="276" opacity="0.5"/>
+              <div class="guide-timer-ring guide-timer-outer">
+                <svg viewBox="0 0 260 260" width="240" height="240" style="transform:rotate(-90deg)">
+                  <circle cx="130" cy="130" r="115" stroke="#555" stroke-width="10" fill="none" stroke-dasharray="723" stroke-dashoffset="0"/>
+                  <circle cx="130" cy="130" r="115" stroke="#888" stroke-width="10" fill="none" stroke-dasharray="723" stroke-dashoffset="434"/>
                 </svg>
               </div>
             </div>
@@ -245,10 +238,10 @@
           <div class="guide-arrow-center">
             <svg viewBox="0 0 16 16" width="80" height="80"><path d="M8 1L13 8L10.5 8L10.5 15L5.5 15L5.5 8L3 8L8 1Z" fill="#e94560" stroke="#e94560" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></svg>
           </div>
-          <div class="guide-timer-ring" style="z-index:2">
-            <svg viewBox="0 0 260 260" width="220" height="220" style="transform:rotate(-90deg)">
-              <circle cx="130" cy="130" r="110" stroke="#555" stroke-width="12" fill="none" stroke-dasharray="691" stroke-dashoffset="0" opacity="0.4"/>
-              <circle cx="130" cy="130" r="110" stroke="#4caf50" stroke-width="12" fill="none" stroke-dasharray="691" stroke-dashoffset="276" opacity="0.7"/>
+          <div class="guide-timer-ring guide-timer-outer">
+            <svg viewBox="0 0 260 260" width="240" height="240" style="transform:rotate(-90deg)">
+              <circle cx="130" cy="130" r="115" stroke="#555" stroke-width="10" fill="none" stroke-dasharray="723" stroke-dashoffset="0"/>
+              <circle cx="130" cy="130" r="115" stroke="#4caf50" stroke-width="10" fill="none" stroke-dasharray="723" stroke-dashoffset="434"/>
             </svg>
           </div>
           <div class="guide-heat-icon">🔥<span class="guide-heat-num">5/10</span></div>
@@ -263,37 +256,37 @@
         <div class="guide-negation-row">
           <div class="guide-negation-item">
             <div class="guide-arena guide-arena-ring">
-                          <img src="assets/monsters/ice_troll.png" class="guide-monster-lg" alt="Ledový troll">
-                          <div class="guide-arrow-center">
-                            <svg viewBox="0 0 16 16" width="80" height="80"><path d="M8 1L13 8L10.5 8L10.5 15L5.5 15L5.5 8L3 8L8 1Z" fill="#2ecc71" stroke="#2ecc71" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></svg>
-                          </div>
-                          <div class="guide-timer-ring" style="z-index:2">
-                            <svg viewBox="0 0 260 260" width="220" height="220" style="transform:rotate(-90deg)">
-                              <circle cx="130" cy="130" r="110" stroke="#555" stroke-width="12" fill="none" stroke-dasharray="691" stroke-dashoffset="0" opacity="0.4"/>
-                              <circle cx="130" cy="130" r="110" stroke="#e94560" stroke-width="12" fill="none" stroke-dasharray="691" stroke-dashoffset="276" opacity="0.7"/>
-                            </svg>
-                          </div>
-                          <div class="guide-negation-ring red" style="z-index:2">
-                            <svg viewBox="0 0 300 300" width="210" height="210"><circle cx="150" cy="150" r="140" stroke="#e94560" stroke-width="6" fill="none" style="filter:drop-shadow(0 0 12px #e94560)"/></svg>
-                          </div>
-                        </div>
-                        <span class="guide-negation-label" style="color:#e94560">🔴 Negace</span>
-                      </div>
-                      <div class="guide-negation-item">
-                        <div class="guide-arena guide-arena-ring">
-                          <img src="assets/monsters/ice_troll.png" class="guide-monster-lg" alt="Ledový troll">
-                          <div class="guide-arrow-center">
-                            <svg viewBox="0 0 16 16" width="80" height="80"><path d="M8 1L13 8L10.5 8L10.5 15L5.5 15L5.5 8L3 8L8 1Z" fill="#e94560" stroke="#e94560" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></svg>
-                          </div>
-                          <div class="guide-timer-ring" style="z-index:2">
-                            <svg viewBox="0 0 260 260" width="220" height="220" style="transform:rotate(-90deg)">
-                              <circle cx="130" cy="130" r="110" stroke="#555" stroke-width="12" fill="none" stroke-dasharray="691" stroke-dashoffset="0" opacity="0.4"/>
-                              <circle cx="130" cy="130" r="110" stroke="#4caf50" stroke-width="12" fill="none" stroke-dasharray="691" stroke-dashoffset="276" opacity="0.7"/>
-                            </svg>
-                          </div>
-                          <div class="guide-negation-ring green" style="z-index:2">
-                            <svg viewBox="0 0 300 300" width="210" height="210"><circle cx="150" cy="150" r="140" stroke="#4caf50" stroke-width="6" fill="none" style="filter:drop-shadow(0 0 12px #4caf50)"/></svg>
-                          </div>
+              <img src="assets/monsters/ice_troll.png" class="guide-monster-lg" alt="Ledový troll">
+              <div class="guide-arrow-center">
+                <svg viewBox="0 0 16 16" width="80" height="80"><path d="M8 1L13 8L10.5 8L10.5 15L5.5 15L5.5 8L3 8L8 1Z" fill="#2ecc71" stroke="#2ecc71" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></svg>
+              </div>
+              <div class="guide-timer-ring guide-timer-outer">
+                <svg viewBox="0 0 260 260" width="240" height="240" style="transform:rotate(-90deg)">
+                  <circle cx="130" cy="130" r="115" stroke="#555" stroke-width="10" fill="none" stroke-dasharray="723" stroke-dashoffset="0"/>
+                  <circle cx="130" cy="130" r="115" stroke="#e94560" stroke-width="10" fill="none" stroke-dasharray="723" stroke-dashoffset="434"/>
+                </svg>
+              </div>
+              <div class="guide-negation-ring red" style="z-index:2">
+                <svg viewBox="0 0 300 300" width="230" height="230"><circle cx="150" cy="150" r="140" stroke="#e94560" stroke-width="6" fill="none" style="filter:drop-shadow(0 0 12px #e94560)"/></svg>
+              </div>
+            </div>
+            <span class="guide-negation-label" style="color:#e94560">🔴 Negace</span>
+          </div>
+          <div class="guide-negation-item">
+            <div class="guide-arena guide-arena-ring">
+              <img src="assets/monsters/ice_troll.png" class="guide-monster-lg" alt="Ledový troll">
+              <div class="guide-arrow-center">
+                <svg viewBox="0 0 16 16" width="80" height="80"><path d="M8 1L13 8L10.5 8L10.5 15L5.5 15L5.5 8L3 8L8 1Z" fill="#e94560" stroke="#e94560" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></svg>
+              </div>
+              <div class="guide-timer-ring guide-timer-outer">
+                <svg viewBox="0 0 260 260" width="240" height="240" style="transform:rotate(-90deg)">
+                  <circle cx="130" cy="130" r="115" stroke="#555" stroke-width="10" fill="none" stroke-dasharray="723" stroke-dashoffset="0"/>
+                  <circle cx="130" cy="130" r="115" stroke="#4caf50" stroke-width="10" fill="none" stroke-dasharray="723" stroke-dashoffset="434"/>
+                </svg>
+              </div>
+              <div class="guide-negation-ring green" style="z-index:2">
+                <svg viewBox="0 0 300 300" width="230" height="230"><circle cx="150" cy="150" r="140" stroke="#4caf50" stroke-width="6" fill="none" style="filter:drop-shadow(0 0 12px #4caf50)"/></svg>
+              </div>
             </div>
             <span class="guide-negation-label" style="color:#4caf50">🟢 Normální</span>
           </div>
@@ -334,36 +327,12 @@
           <circle cx="130" cy="130" r="110" stroke="#888" stroke-width="12" fill="none" stroke-dasharray="691" stroke-dashoffset="691" class="timer-circle"/>
           <circle cx="130" cy="130" r="118" stroke="#f1c40f" stroke-width="8" fill="none" stroke-dasharray="0 741" stroke-dashoffset="741" class="bonus-zone-circle" opacity="0.85"/>
         </svg>
-        <span class="action-info-icon hidden" id="tutActionInfo"></span>
-      </div>
-      <div class="tutorial-swipe" id="tutSwipe">👆</div>
-      <div class="arena-block-btn" id="tutBlockBtn">🛡️</div>
-      <div class="arena-attack-btn" id="tutAttackBtn">⚔️</div>
-      <div class="rapid-tap-area rapid-tap-left hidden" id="tutTapLeft"><span class="rapid-tap-dot"></span></div>
-      <div class="rapid-tap-area rapid-tap-right hidden" id="tutTapRight"><span class="rapid-tap-dot"></span></div>
-      <div class="rapid-target hidden" id="tutRapidTarget">10</div>
-      <div class="tutorial-checkmark hidden" id="tutCheckmark">✅</div>
-      <div class="arena-pause-btn" id="tutPauseBtn" onclick="game.toggleTutorialPause()">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
-          <line x1="7" y1="5" x2="7" y2="19"/>
-          <line x1="17" y1="5" x2="17" y2="19"/>
-        </svg>
-      </div>
-      <div class="seq-progress" id="tutSeq">
-        <span class="tut-seq-dot"></span>
-        <span class="tut-seq-dot"></span>
-        <span class="tut-seq-dot"></span>
-        <span class="tut-seq-dot"></span>
-        <span class="tut-seq-dot"></span>
       </div>
     </div>
-    <div class="tutorial-text-box" id="tutTextBox">
-      <div class="tutorial-text" id="tutText"></div>
-    </div>
-    <div class="tutorial-nav">
-      <button class="btn btn-secondary" id="tutPrevBtn" style="width:auto;padding:8px 14px;font-size:12px" onclick="game.prevTutorialStep()">Zpět</button>
-      <button class="btn btn-secondary" id="tutStopBtn" style="width:auto;padding:8px 14px;font-size:12px" onclick="game.stopTutorial()">Ukončit návod</button>
-    <button class="btn btn-primary" id="tutNextBtn" style="width:auto;padding:8px 20px;font-size:13px" onclick="game.advanceTutorial()">Další</button>
+    <div class="tutorial-text" id="tutText"></div>
+    <div class="tutorial-btns">
+      <button class="btn btn-secondary" id="tutSkipBtn" onclick="game.stopTutorial()">Přeskočit</button>
+      <button class="btn btn-primary" id="tutNextBtn" onclick="game.advanceTutorial()">Další →</button>
     </div>
   </div>
 </div>
