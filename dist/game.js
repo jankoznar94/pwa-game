@@ -752,7 +752,6 @@
       if (mapBattleState._glowTimer) { clearTimeout(mapBattleState._glowTimer); mapBattleState._glowTimer = null; }
       if (mapBattleState._freezeTimer) { clearInterval(mapBattleState._freezeTimer); mapBattleState._freezeTimer = null; }
       if (mapBattleState._bonusRaf) { cancelAnimationFrame(mapBattleState._bonusRaf); mapBattleState._bonusRaf = null; }
-      if (mapBattleState._staminaInterval) { clearInterval(mapBattleState._staminaInterval); mapBattleState._staminaInterval = null; }
     }
   }
 
@@ -1015,7 +1014,7 @@
       isInvertedAttack: false, isTwinAttack: false, isGreenAttack: false,
       _heavySwipes: 0, _twinSwipes: [],
       isRapidAttack: false, rapidTaps: 0, rapidTarget: 0,
-      stamina: 100, maxStamina: 100, _staminaInterval: null,
+      dodgeCharges: 3, maxDodgeCharges: 3,
       _lastSwipeDir: null,
       _heatLevel: 0, // D4 přehřívání: 0 = normální, kladné = rychlejší
       _freezeUntil: null // D5 timer freeze: timestamp kdy freeze končí (null = není frozen)
@@ -1023,16 +1022,6 @@
     // Schools handled via activeSchool
 
     showScreen('mapBattle');
-    // Spustit stamina regen (3/s)
-    if (mapBattleState._staminaInterval) clearInterval(mapBattleState._staminaInterval);
-    mapBattleState._staminaInterval = setInterval(() => {
-      const mb = mapBattleState;
-      if (mb.ended) { clearInterval(mb._staminaInterval); mb._staminaInterval = null; return; }
-      if (mb.stamina < mb.maxStamina) {
-        mb.stamina = Math.min(mb.maxStamina, mb.stamina + 0.15); // 1.5/s = 0.15 per 100ms
-        updateMapBattleUI();
-      }
-    }, 100);
     // Skrýt starou šipku z předchozího boje ihned
     const arrowReset = $('mbArrow');
     if (arrowReset) arrowReset.setAttribute('class', 'boss-attack-arrow hidden');
@@ -1118,13 +1107,13 @@
       const fill = $('mbPlayerArenaHpFill');
       if (fill) fill.style.width = Math.max(0, pHpPct) + '%';
     }
-    // Stamina bar
-    const arenaStamina = $('mbPlayerArenaStamina');
-    if (arenaStamina) {
-      const span = arenaStamina.querySelector('span');
-      if (span) span.textContent = `${Math.round(mb.stamina)}/${mb.maxStamina}`;
+    // Dodge charges
+    const dodgeEl = $('mbPlayerArenaStamina');
+    if (dodgeEl) {
+      const span = dodgeEl.querySelector('span');
+      if (span) span.textContent = `${'🏃'.repeat(mb.dodgeCharges)}${'·'.repeat(mb.maxDodgeCharges - mb.dodgeCharges)}`;
       const fill = $('mbPlayerArenaStaminaFill');
-      if (fill) fill.style.width = Math.max(0, Math.round((mb.stamina / mb.maxStamina) * 100)) + '%';
+      if (fill) fill.style.width = Math.max(0, Math.round((mb.dodgeCharges / mb.maxDodgeCharges) * 100)) + '%';
     }
     const emoji = mb.isBoss ? mb.loc.boss.face : mb.monsterFace;
     const fig = $('mbFigure');
@@ -1170,9 +1159,9 @@
   function updateActionButtons() {
     const mb = mapBattleState;
     const dodge = $('mbDodgeBtn');
-    // Dodge — aktivní jen když je dost staminy a není rapid
+    // Dodge — aktivní jen když je nabití
     if (dodge) {
-      if (mb.stamina >= 30 && !mb.isRapidAttack) dodge.classList.add('active');
+      if (mb.dodgeCharges > 0 && !mb.isRapidAttack) dodge.classList.add('active');
       else dodge.classList.remove('active');
     }
   }
@@ -2777,9 +2766,9 @@
     if (mb.isRapidAttack) return;
     if (mb._sequenceTimer === null) return;
     if (mb._hitProcessed) return;
-    // Potřebuje 30 staminy
-    if (mb.stamina < 30) return;
-    mb.stamina -= 30;
+    // Potřebuje dodge charge
+    if (mb.dodgeCharges <= 0) return;
+    mb.dodgeCharges--;
     clearTimeout(mb._sequenceTimer);
     clearTimeout(mb._ringTimer);
     mb._ringTimer = null;
