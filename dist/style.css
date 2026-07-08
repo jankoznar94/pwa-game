@@ -824,7 +824,7 @@ body.no-scroll { overflow: hidden; }
 .guide-negation-row {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 28px;
   align-items: center;
   justify-content: center;
 }
@@ -832,7 +832,7 @@ body.no-scroll { overflow: hidden; }
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 10px;
 }
 .guide-negation-label {
   font-size: 15px;
