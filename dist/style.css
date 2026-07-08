@@ -194,8 +194,8 @@ body.no-scroll { overflow: hidden; }
 .boss-fight-player .hero-portrait-frame { width:70px; height:70px; border-radius:50%; border:2px solid #4a7dff; overflow:hidden; display:flex; align-items:center; justify-content:center; background:#0a0a0a; box-shadow:0 0 12px rgba(74,125,255,0.3); }
 .boss-fight-player .hero-portrait-img { width:100%; height:100%; object-fit:cover; display:block; object-position:center 30%; }
 .boss-fight-player .damage-text { position:absolute;top:-60px;left:50%;transform:translateX(-50%);color:#e74c3c;font-size:28px;font-weight:bold;animation:fadeDown 0.6s ease-out; white-space:nowrap; }
-#mbDamageText.damage-text { position:absolute;top:10px;left:50%;transform:translateX(-50%);color:#f1c40f;font-size:48px;font-weight:bold;animation:fadeInOut 0.8s ease-out forwards; white-space:nowrap; z-index:15; text-shadow:0 0 25px rgba(241,196,15,0.8), 0 0 50px rgba(241,196,15,0.4); }
-#mbPlayerDamageText.damage-text { position:absolute;bottom:10px;left:50%;transform:translateX(-50%);color:#e74c3c;font-size:48px;font-weight:bold;animation:fadeInOut 0.8s ease-out forwards; white-space:nowrap; z-index:15; text-shadow:0 0 20px rgba(200,40,40,0.6); }
+#mbDamageText.damage-text { display:none !important; }
+#mbPlayerDamageText.damage-text { display:none !important; }
 @keyframes fadeUp { 0%{opacity:0;transform:translateX(-50%) translateY(10px)}100%{opacity:1;transform:translateX(-50%) translateY(0)} }
 @keyframes fadeDown { 0%{opacity:0;transform:translateX(-50%) translateY(-10px)}100%{opacity:1;transform:translateX(-50%) translateY(0)} }
 @keyframes fadeInOut { 0%{opacity:0} 20%{opacity:1} 70%{opacity:1} 100%{opacity:0} }
@@ -260,8 +260,12 @@ body.no-scroll { overflow: hidden; }
   position:absolute;top:50%;left:50%;z-index:4;pointer-events:none;
   transform:translate(-50%,-50%) rotate(-90deg);
 }
+.hp-segments-ring circle { fill:none; stroke:rgba(0,0,0,0.3); stroke-width:6; pointer-events:none; }
+.mb-hp-bar { position:relative; }
+.mb-hp-bar .hp-segments { position:absolute; top:0; left:0; width:100%; height:100%; display:flex; pointer-events:none; }
+.mb-hp-bar .hp-segments .hp-seg { flex:1; border-right:1px solid rgba(0,0,0,0.3); }
+.mb-hp-bar .hp-segments .hp-seg:last-child { border-right:none; }
 .hp-ring-label {
-  position:absolute;top:50%;left:50%;z-index:5;
   transform:translate(-50%,-50%);
   font-size:24px;font-weight:bold;color:#e74c3c;
   text-shadow:0 0 8px rgba(0,0,0,0.9);

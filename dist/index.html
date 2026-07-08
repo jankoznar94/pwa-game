@@ -57,6 +57,7 @@
       <div class="monster-ring-overlay"></div>
       <svg class="hp-ring-svg" viewBox="0 0 180 180" width="180" height="180">
         <circle cx="90" cy="90" r="87" stroke="#e74c3c" stroke-width="6" fill="none" stroke-dasharray="547" stroke-dashoffset="547" class="hp-circle"/>
+        <g class="hp-segments-ring" id="mbEnemyHpSegments"></g>
       </svg>
       <div class="hp-ring-label" id="mbHpLabel">0/0</div>
       <div class="arena-dodge-btn" id="mbDodgeBtn">🏃</div>
@@ -80,7 +81,8 @@
     <div class="mb-hp-mana-bars">
       <div class="mb-hp-bar" id="mbPlayerArenaHp">
         <div class="mb-hp-bar-fill" id="mbPlayerArenaHpFill" style="width:100%"></div>
-        <span>100/100</span>
+        <div class="hp-segments" id="mbPlayerHpSegments"></div>
+        <span>5/5</span>
       </div>
       <div class="mb-stamina-bar" id="mbPlayerArenaStamina">
         <div class="mb-stamina-bar-fill" id="mbPlayerArenaStaminaFill" style="width:100%"></div>

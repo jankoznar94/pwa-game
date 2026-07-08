@@ -1118,6 +1118,28 @@
       const pct = Math.max(0, Math.min(100, eHpPct));
       hpCircle.setAttribute('stroke-dashoffset', Math.round(circ * (1 - pct / 100)));
     }
+    // Segmenty na kruhovém HP baru nepřítele
+    const segGroup = $('mbEnemyHpSegments');
+    if (segGroup) {
+      const maxHp = Math.round(mb.maxBossHp);
+      const circ = 547;
+      let segHtml = '';
+      for (let i = 1; i < maxHp; i++) {
+        const offset = Math.round(circ * (1 - i / maxHp) - 1);
+        segHtml += `<circle cx="90" cy="90" r="87" stroke-dasharray="2 ${circ-2}" stroke-dashoffset="${offset}"/>`;
+      }
+      segGroup.innerHTML = segHtml;
+    }
+    // Segmenty na rovné HP baru hráče
+    const playerSegs = $('mbPlayerHpSegments');
+    if (playerSegs) {
+      const maxHp = Math.round(mb.maxPlayerHp);
+      let segHtml = '';
+      for (let i = 0; i < maxHp; i++) {
+        segHtml += '<div class="hp-seg"></div>';
+      }
+      playerSegs.innerHTML = segHtml;
+    }
     const hpLabel = $('mbHpLabel');
     if (hpLabel) {
       hpLabel.textContent = `${Math.max(0, Math.round(mb.bossHp))}/${Math.round(mb.maxBossHp)}`;
