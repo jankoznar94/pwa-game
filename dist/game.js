@@ -1907,6 +1907,8 @@
     // GUARD: útok už byl vyřešen
     if (mb._sequenceTimer === null) return;
 
+    const inverseMap = { '⬆️':'⬇️', '⬇️':'⬆️', '⬅️':'➡️', '➡️':'⬅️' };
+
     doArenaGlow(dir, false);
 
     // Uložit směr swipu pro animaci
@@ -1929,7 +1931,6 @@
       clearTimeout(mb._ringTimer);
       mb._ringTimer = null;
       mb._sequenceTimer = null;
-      const inverseMap = { '⬆️':'⬇️', '⬇️':'⬆️', '⬅️':'➡️', '➡️':'⬅️' };
       if (dir === inverseMap[attack.dir]) {
         correct = true;
         doArenaGlow(dir, true);
@@ -1993,7 +1994,6 @@
       clearTimeout(mb._ringTimer);
       mb._ringTimer = null;
       mb._sequenceTimer = null;
-      const inverseMap = { '⬆️':'⬇️', '⬇️':'⬆️', '⬅️':'➡️', '➡️':'⬅️' };
       if (dir === inverseMap[attack.dir]) {
         correct = true;
         doArenaGlow(dir, true);
@@ -2016,7 +2016,6 @@
       clearTimeout(mb._ringTimer);
       mb._ringTimer = null;
       mb._sequenceTimer = null;
-      const inverseMap = { '⬆️':'⬇️', '⬇️':'⬆️', '⬅️':'➡️', '➡️':'⬅️' };
       const truthTarget = mb._negationActive ? inverseMap[attack.dir] : attack.dir;
       if (dir === truthTarget) {
         correct = true;
