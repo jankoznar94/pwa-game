@@ -924,6 +924,8 @@
   }
 
   function getFloorTimerMultiplier(floor, locId) {
+    // D5 (Mrazivé štíty) — pomalejší, kvůli negation ringu
+    if (locId === 4) return Math.pow(0.92, floor) * 1.35;
     // D1, D3: stabilní, beze změn
     return Math.pow(0.92, floor);
   }
