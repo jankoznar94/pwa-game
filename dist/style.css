@@ -733,8 +733,8 @@ body.no-scroll { overflow: hidden; }
   pointer-events: none;
 }
 .guide-arena img.guide-monster-lg {
-  width: 160px;
-  height: 160px;
+  width: 200px;
+  height: 200px;
   border-radius: 50%;
   object-fit: cover;
   position: relative;
