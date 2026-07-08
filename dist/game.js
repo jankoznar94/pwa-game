@@ -1110,13 +1110,16 @@
       $('mbLocation').textContent = `${mb.loc.name} — P${mb.floor+1}`;
     }
     const pHpPct = Math.round((mb.playerHp / mb.maxPlayerHp) * 100);
-    const eHpPct = mb.isBoss ? Math.round((mb.bossHp / mb.maxBossHp) * 100) : Math.round((mb.bossHp / mb.maxBossHp) * 100);
-    // Kruhový HP bar — okraj obrázku monstra
+    const eHpPct = mb.isBoss ? Math.floor((mb.bossHp / mb.maxBossHp) * 100) : Math.floor((mb.bossHp / mb.maxBossHp) * 100);
+    // Kruhový HP bar — okraj obrázku monstra, skáče po segmentech
     const hpCircle = document.querySelector('.hp-ring-svg .hp-circle');
     if (hpCircle) {
       const circ = 547;
-      const pct = Math.max(0, Math.min(100, eHpPct));
-      hpCircle.setAttribute('stroke-dashoffset', Math.round(circ * (1 - pct / 100)));
+      const maxHp = Math.round(mb.maxBossHp);
+      const curHp = Math.max(0, Math.round(mb.bossHp));
+      const segSize = circ / maxHp;
+      const offset = Math.round(segSize * (maxHp - curHp));
+      hpCircle.setAttribute('stroke-dashoffset', offset);
     }
     // Segmenty na kruhovém HP baru nepřítele
     const segGroup = $('mbEnemyHpSegments');
