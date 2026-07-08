@@ -105,50 +105,64 @@
 <div id="guideScreen" class="container hidden">
   <div class="card">
     <div class="card-title"><img src="assets/menu-icons/navod.png" class="page-icon" alt=""> Návod hrou</div>
-    <div class="card-subtitle">Každý útok monster se zobrazí šipkou. Podle barvy a vzhledu poznáš, jak na něj!</div>
+    <div class="card-subtitle">Každý dungeon má jiné mechanismy útoků. Čím hlouběji, tím je to těžší!</div>
   </div>
   <div class="guide-grid">
-    <div class="guide-card">
+
+    <!-- Základ: společná mechanika -->
+    <div class="guide-card guide-base">
       <div class="guide-icon"><svg viewBox="0 0 16 16" width="48" height="48"><path d="M8 1L13 8L10.5 8L10.5 15L5.5 15L5.5 8L3 8L8 1Z" fill="#bbb" stroke="#bbb" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></svg></div>
-      <div class="guide-desc">Šedá šipka — <strong>swipni stejným směrem</strong>, kterým ukazuje. Základní pohyb v aréně.</div>
+      <div class="guide-desc"><strong>Základ</strong> — Šedá šipka: <strong>swipni stejným směrem</strong>, kterým ukazuje. Po odvrácení všech útoků se otevře <strong>útočné okno</strong> se žlutou výsečí — klikni na ⚔️ v jejím průběhu pro kritický zásah.</div>
     </div>
-    <div class="guide-card guide-heavy">
-      <div class="guide-icon"><svg viewBox="0 0 16 16" width="48" height="48"><g><path d="M8 1L13 8L10.5 8L10.5 15L5.5 15L5.5 8L3 8L8 1Z" fill="#c4a84c" stroke="#c4a84c" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" transform="translate(-3,0)" opacity="0.5"/><path d="M8 1L13 8L10.5 8L10.5 15L5.5 15L5.5 8L3 8L8 1Z" fill="#c4a84c" stroke="#c4a84c" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" transform="translate(3,0)"/></g></svg></div>
-      <div class="guide-desc">Dvě žluté šipky — <strong>swipni 2× stejným směrem</strong> během delšího timeru. První swipe připraví, druhý provede.</div>
+
+    <!-- D1: Začarovaný les -->
+    <div class="guide-card guide-d1">
+      <div class="guide-icon">🌲</div>
+      <div class="guide-desc"><strong>D1 — Začarovaný les</strong><br>Čistě klasické šedé šipky. Žádné zvláštnosti — ideální na rozehřátí.</div>
     </div>
-    <div class="guide-card guide-block">
-      <div class="guide-icon guide-icon-text">🛡️</div>
-      <div class="guide-desc">Místo šipky štít — <strong>nesmíš swipnout</strong>! Místo pohybu stiskni tlačítko 🛡️ (Blok). Swipnutí = zásah.</div>
-    </div>
-    <div class="guide-card guide-inverted">
-      <div class="guide-icon"><svg viewBox="0 0 16 16" width="48" height="48"><path d="M8 1L13 8L10.5 8L10.5 15L5.5 15L5.5 8L3 8L8 1Z" fill="#5fa87a" stroke="#5fa87a" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></svg></div>
-      <div class="guide-desc">Zelená šipka — <strong>swipni opačným směrem</strong>, než šipka ukazuje. Nahoru = dolů, doleva = doprava.</div>
-    </div>
-    <div class="guide-card guide-twin">
-      <div class="guide-icon"><svg viewBox="0 -2 16 20" width="48" height="48"><g transform="translate(-2.5,0)"><path d="M8 1L13 8L10.5 8L10.5 15L5.5 15L5.5 8L3 8L8 1Z" fill="#5a8aaa" stroke="#5a8aaa" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" opacity="0.5"/></g><g transform="translate(2.5,0)"><path d="M8 15L3 8L5.5 8L5.5 1L10.5 1L10.5 8L13 8L8 15Z" fill="#5a8aaa" stroke="#5a8aaa" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></g></svg></div>
-      <div class="guide-desc">Dvě modré šipky — <strong>swipni oba směry</strong>, na pořadí nezáleží. Levo-pravá = swipe vlevo a vpravo (nebo opačně).</div>
-    </div>
-    <div class="guide-card guide-rapid">
-      <div class="guide-icon guide-icon-text">⏰</div>
-      <div class="guide-desc">Budík s číslem a puntíky po stranách — <strong>ťukej</strong> na puntíky co nejrychleji, než vyprší timer. Nestihneš číslo = zásah!</div>
-    </div>
-    <div class="guide-card guide-attack">
-      <div class="guide-icon">
-        <svg viewBox="0 0 110 110" width="55" height="55" style="transform:rotate(-90deg)">
-          <circle cx="55" cy="55" r="44" stroke="#888" stroke-width="3" fill="none" stroke-dasharray="165 276" stroke-dashoffset="0"/>
-          <circle cx="55" cy="55" r="44" stroke="#f1c40f" stroke-width="7" fill="none" stroke-dasharray="55 276" stroke-dashoffset="165" opacity="0.85"/>
-        </svg>
+
+    <!-- D2: Pouštní říše -->
+    <div class="guide-card guide-d2">
+      <div class="guide-icon" style="display:flex;gap:4px;align-items:center">
+        <svg viewBox="0 0 20 20" width="18" height="18"><circle cx="10" cy="10" r="8" fill="none" stroke="#e94560" stroke-width="2"/></svg>
+        <svg viewBox="0 0 20 20" width="18" height="18"><circle cx="10" cy="10" r="8" fill="none" stroke="#4caf50" stroke-width="2"/></svg>
+        <svg viewBox="0 0 20 20" width="18" height="18"><circle cx="10" cy="10" r="8" fill="none" stroke="#4a7dff" stroke-width="2"/></svg>
       </div>
-      <div class="guide-desc">Po odvrácení všech útoků se otevře <strong>útočné okno</strong>. Na timeru se objeví <strong>zlatá výseč</strong> — klikni na ⚔️ v jejím průběhu pro <strong>kritický zásah (×1.5 poškození)</strong>. Čím vyšší Obratnost, tím větší výseč!</div>
+      <div class="guide-desc"><strong>D2 — Pouštní říše</strong><br>Šedé šipky, ale <strong>barevné timery</strong>:<br>🔴 Červený = pomalejší, 🟢 Zelený = střední, 🔵 Modrý = rychlejší. Podle barvy kruhu poznáš, jak rychle musíš reagovat!</div>
     </div>
-    <div class="guide-card guide-monster-types">
-      <div class="guide-icon guide-icon-text"><span>🩸</span><span>💧</span><span>📈</span><span>🎯</span></div>
-      <div class="guide-desc"><strong>Typy monster</strong> — vedle jména vidíš ikonku:<br>🩸 = <strong>Lifestealer</strong> — při zásahu si léčí život<br>💧 = <strong>Manastealer</strong> — při zásahu krade manu<br>📈 = <strong>Improver</strong> — s každým zásahem sílí (+25%)<br>🎯 = <strong>Critmaster</strong> — 33% šance na 2.0× kritický zásah</div>
+
+    <!-- D3: Nemrtvá země -->
+    <div class="guide-card guide-d3">
+      <div class="guide-icon" style="display:flex;gap:4px;align-items:center">
+        <svg viewBox="0 0 16 16" width="18" height="18"><path d="M8 1L13 8L10.5 8L10.5 15L5.5 15L5.5 8L3 8L8 1Z" fill="#2ecc71" stroke="#2ecc71" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></svg>
+        <svg viewBox="0 0 16 16" width="18" height="18"><path d="M8 1L13 8L10.5 8L10.5 15L5.5 15L5.5 8L3 8L8 1Z" fill="#e94560" stroke="#e94560" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></svg>
+        <span style="font-size:16px">🔵</span>
+      </div>
+      <div class="guide-desc"><strong>D3 — Nemrtvá země</strong><br>🟢 <strong>Pravda</strong> (zelená) — swipni jak šipka ukazuje<br>🔴 <strong>Lež</strong> (červená) — swipni <strong>opačně</strong>, než šipka ukazuje<br>🔵 <strong>Zmrzni</strong> (modrá) — <strong>nesmíš swipnout</strong>, počkej až timer vyprší</div>
     </div>
-    <div class="guide-card guide-attack-type">
-      <div class="guide-icon guide-icon-text"><span>⚔️</span><span>🔮</span></div>
-      <div class="guide-desc"><strong>Způsob útoku</strong>:<br>⚔️ = <strong>Melee</strong> — fyzický útok (červený projektil)<br>🔮 = <strong>Caster</strong> — magický útok (fialový projektil)<br><br>Ovlivňuje, jaký typ resistence na něj platí.</div>
+
+    <!-- D4: Pekelné výspy -->
+    <div class="guide-card guide-d4">
+      <div class="guide-icon" style="display:flex;gap:2px;align-items:center;flex-wrap:wrap;width:60px">
+        <svg viewBox="0 0 16 16" width="16" height="16"><path d="M8 1L13 8L10.5 8L10.5 15L5.5 15L5.5 8L3 8L8 1Z" fill="#2ecc71" stroke="#2ecc71" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></svg>
+        <svg viewBox="0 0 16 16" width="16" height="16"><path d="M8 1L13 8L10.5 8L10.5 15L5.5 15L5.5 8L3 8L8 1Z" fill="#e94560" stroke="#e94560" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></svg>
+        <span style="font-size:13px">🔵</span>
+        <span style="font-size:16px;color:#ff6b35">🌡️</span>
+      </div>
+      <div class="guide-desc"><strong>D4 — Pekelné výspy</strong><br>Pravda / Lež / Zmrzni (stejně jako D3) + <strong>přehřívání</strong>. S každým úspěšným úhybem se timer zrychluje a barvy kruhu světlají. Čím víc se blížíš k přehřátí (max 10), tím rychleji musíš reagovat!</div>
     </div>
+
+    <!-- D5: Mrazivé štíty -->
+    <div class="guide-card guide-d5">
+      <div class="guide-icon" style="display:flex;gap:2px;align-items:center;flex-wrap:wrap;width:60px">
+        <svg viewBox="0 0 16 16" width="16" height="16"><path d="M8 1L13 8L10.5 8L10.5 15L5.5 15L5.5 8L3 8L8 1Z" fill="#2ecc71" stroke="#2ecc71" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></svg>
+        <svg viewBox="0 0 16 16" width="16" height="16"><path d="M8 1L13 8L10.5 8L10.5 15L5.5 15L5.5 8L3 8L8 1Z" fill="#e94560" stroke="#e94560" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></svg>
+        <span style="font-size:13px">🔵</span>
+        <svg viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="9" fill="none" stroke="#e94560" stroke-width="2.5" stroke-dasharray="4 4"/></svg>
+      </div>
+      <div class="guide-desc"><strong>D5 — Mrazivé štíty</strong><br>Pravda / Lež / Zmrzni + <strong>negation ring</strong>. Kolem šipky se objeví pulsující kruh:<br>🔴 <strong>Červený</strong> = negace aktivní — význam pravdy a lži se <strong>prohodí</strong><br>🟢 <strong>Zelený</strong> = normální — pravidla platí jako obvykle<br>Všechno je o 35 % pomalejší, abys stihl přemýšlet!</div>
+    </div>
+
   </div>
   <button class="btn btn-primary" style="margin-top:16px" onclick="game.startTutorial()">🎬 Spustit interaktivní návod</button>
 </div>

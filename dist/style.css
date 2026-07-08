@@ -697,14 +697,12 @@ body.no-scroll { overflow: hidden; }
 .guide-card:hover {
   border-color: #4a7dff;
 }
-.guide-card.guide-heavy { border-left: 3px solid #c4a84c; }
-.guide-card.guide-block { border-left: 3px solid #e74c3c; }
-.guide-card.guide-inverted { border-left: 3px solid #5fa87a; }
-.guide-card.guide-twin { border-left: 3px solid #5a8aaa; }
-.guide-card.guide-attack { border-left: 3px solid #d4a038; }
-.guide-card.guide-rapid { border-left: 3px solid #b064ff; }
-.guide-card.guide-monster-types { border-left: 3px solid #e74c3c; }
-.guide-card.guide-attack-type { border-left: 3px solid #6366f1; }
+.guide-card.guide-base { border-left: 3px solid #bbb; }
+.guide-card.guide-d1 { border-left: 3px solid #4caf50; }
+.guide-card.guide-d2 { border-left: 3px solid #e67e22; }
+.guide-card.guide-d3 { border-left: 3px solid #888; }
+.guide-card.guide-d4 { border-left: 3px solid #e74c3c; }
+.guide-card.guide-d5 { border-left: 3px solid #a8d8ea; }
 .guide-icon {
   flex-shrink: 0;
   width: 48px;
