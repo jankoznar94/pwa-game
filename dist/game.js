@@ -764,7 +764,7 @@
         });
       });
     });
-    const s = { talentLevels, activeSchool:null, talentPoints:0, hero:{name:'Dobrodruh',face:'hero',level:1,xp:0,hp:100,maxHp:100,mana:50,maxMana:50,baseDmg:12,inventory:[],attrStr:0,attrVit:0,attrDex:0,attrInt:0,attrPoints:0}, deaths:0, wins:0,
+    const s = { talentLevels, activeSchool:null, talentPoints:0, hero:{name:'Dobrodruh',face:'hero',level:1,xp:0,hp:100,maxHp:100,mana:50,maxMana:50,baseDmg:12,attrStr:0,attrVit:0,attrDex:0,attrInt:0,attrPoints:0}, deaths:0, wins:0,
       locationProgress:[0,0,0,0,0], bossesDefeated:[false,false,false,false,false], floorProgress:[0,0,0,0,0], spellUsedThisFloor:{}, lootItems:{}, encounteredMonsters:[] };
     return s;
   }
@@ -774,7 +774,7 @@
   function resetGame() { state = defaultState(); saveGame(); showScreen('map'); }
 
   // ===== SCREENS =====
-  const SCREEN_IDS = { map:'mapScreen', mapBattle:'mapBattleScreen', talents:'talentsScreen', hero:'heroScreen', result:'resultScreen', inventory:'inventoryScreen', guide:'guideScreen', bestiary:'bestiaryScreen' };
+  const SCREEN_IDS = { map:'mapScreen', mapBattle:'mapBattleScreen', talents:'talentsScreen', hero:'heroScreen', result:'resultScreen', guide:'guideScreen', bestiary:'bestiaryScreen' };
   function showScreen(name) {
     cleanupTimers();
     
@@ -806,7 +806,6 @@
     if (name === 'map') renderMap();
     else if (name === 'talents') renderTalents();
     else if (name === 'hero') renderHero();
-    else if (name === 'inventory') renderInventory();
   }
 
   function showMessage(msg) {
@@ -3368,9 +3367,6 @@
       applyLevelUp();
       // Boss loot: zaručený item s vyšším tierem
       const bossLoot = rollLoot(locId, mb.floor, true);
-      if (bossLoot.type === 'boss') {
-        state.hero.inventory.push(bossLoot.item.id);
-      }
       sfxBossDefeat();
       $('resultIcon').textContent = '🏆';
       $('resultTitle').textContent = `${mb.loc.boss.name} poražen!`;
@@ -4099,185 +4095,6 @@
     renderHero();
   }
 
-  function sellItem(itemId) {
-    const item = ITEM_MAP[itemId];
-    if (!item || item.cost === 0) return;
-    const h = state.hero;
-    const idx = h.inventory.indexOf(itemId);
-    if (idx === -1) { showMessage('❌ Tento předmět nemáš v inventáři!'); return; }
-    const sellPrice = Math.round(item.cost * 0.5);
-    h.inventory.splice(idx, 1);
-    saveGame();
-    showMessage(`💰 Prodáno ${item.icon} ${item.name} za ${sellPrice}💰`);
-    renderInventory();
-  }
-
-  function sellSlotItem(itemId, slot) {
-    const h = state.hero;
-    const defaults = { weapon:'fists', armor:'rags', helmet:null, ring1:null, amulet:null };
-    if (h.equip[slot] !== itemId) return;
-    const item = ITEM_MAP[itemId];
-    if (!item) return;
-    const sellPrice = Math.round(item.cost * 0.5);
-    h.equip[slot] = defaults[slot];
-    h.baseDmg = getHeroDmg();
-    h.maxHp = getHeroMaxHp();
-    h.hp = h.maxHp;
-    saveGame();
-    renderInventory();
-    renderHero();
-  }
-
-  function setSlotBorder(slotId, item) {
-    const el = $(slotId);
-    if (!el) return;
-    if (item && item.rarity) {
-      el.style.border = `2px solid ${RARITY[item.rarity].border}`;
-    } else {
-      el.style.border = '';
-    }
-  }
-  // ===== INVENTORY =====
-  function renderInventory() {
-    const h = state.hero;
-    // Equipment sloty — 6 slotů
-    const weapon = ITEM_MAP[h.equip.weapon] || ITEM_MAP['fists'];
-    const armor = ITEM_MAP[h.equip.armor] || ITEM_MAP['rags'];
-    const helmet = ITEM_MAP[h.equip.helmet];
-    const shield = ITEM_MAP[h.equip.shield];
-    const ring1 = ITEM_MAP[h.equip.ring1];
-    const amulet = ITEM_MAP[h.equip.amulet];
-    $('invSlotWeaponIcon').innerHTML = h.equip.weapon === 'fists' ? renderItemIcon({iconImg:'/assets/items/weapon_iron_sword.png',tier:1}, 0) : renderItemIcon(weapon, 0);
-    $('invSlotWeapon').classList.toggle('empty', h.equip.weapon === 'fists');
-    setSlotBorder('invSlotWeapon', weapon);
-    $('invSlotArmorIcon').innerHTML = h.equip.armor === 'rags' ? renderItemIcon({iconImg:'/assets/items/armor_leather.png',tier:1}, 0) : renderItemIcon(armor, 0);
-    $('invSlotArmor').classList.toggle('empty', h.equip.armor === 'rags');
-    setSlotBorder('invSlotArmor', armor);
-    const hEl = $('invSlotHelmetIcon'); if (hEl) hEl.innerHTML = helmet ? renderItemIcon(helmet, 0) : renderItemIcon({iconImg:'/assets/items/helmet_linen_hood.png',tier:1}, 0);
-    const hS = $('invSlotHelmet'); if (hS) { hS.classList.toggle('empty', !helmet); setSlotBorder('invSlotHelmet', helmet); }
-    const sEl = $('invSlotShieldIcon'); if (sEl) sEl.innerHTML = shield ? renderItemIcon(shield, 0) : renderItemIcon({iconImg:'/assets/items/shield_wooden.png',tier:1}, 0);
-    const sS = $('invSlotShield'); if (sS) { sS.classList.toggle('empty', !shield); setSlotBorder('invSlotShield', shield); }
-    const r1El = $('invSlotRing1Icon'); if (r1El) r1El.innerHTML = ring1 ? renderItemIcon(ring1, 0) : renderItemIcon({iconImg:'/assets/items/ring_copper.png',tier:1}, 0);
-    const r1S = $('invSlotRing1'); if (r1S) { r1S.classList.toggle('empty', !ring1); setSlotBorder('invSlotRing1', ring1); }
-    const amEl = $('invSlotAmuletIcon'); if (amEl) amEl.innerHTML = amulet ? renderItemIcon(amulet, 0) : renderItemIcon({iconImg:'/assets/items/amulet_bone.png',tier:1}, 0);
-    const amS = $('invSlotAmulet'); if (amS) { amS.classList.toggle('empty', !amulet); setSlotBorder('invSlotAmulet', amulet); }
-    // Grid batohu — 4 sloupce, max 20 buněk
-    const grid = $('invGrid');
-    const inv = h.inventory || [];
-    const maxCells = 20;
-    let html = '';
-    for (let i = 0; i < maxCells; i++) {
-      const itemId = inv[i];
-      if (itemId) {
-        const item = ITEM_MAP[itemId];
-        if (!item) { html += '<div class="inv-grid-cell empty"></div>'; continue; }
-        const stats = item.type === 'weapon' ? `⚔️${item.baseDmg}` : item.type === 'ring' ? `⚔️${item.baseDmg||0} ❤️${item.bonusHp||0}` : item.type === 'amulet' ? `⚔️${item.baseDmg||0} ❤️${item.bonusHp||0}` : `❤️${item.bonusHp}`;
-        const r = RARITY[item.rarity] || RARITY.common;
-        html += `<div class="inv-grid-cell" data-idx="${i}" style="border-color:${r.border}">
-          <div class="cell-icon">${renderItemIcon(item,0)}</div>
-          <div class="cell-name" style="color:${r.color}">${item.name}</div>
-          <div class="cell-actions">
-            <button class="btn-equip" onclick="event.stopPropagation();game.equipItem(${i})">🎽 Obléci</button>
-            <button class="btn-sell" onclick="event.stopPropagation();game.sellItem('${itemId}')">💰 ${Math.round(item.cost*0.5)}</button>
-          </div>
-        </div>`;
-      } else {
-        html += '<div class="inv-grid-cell empty"></div>';
-      }
-    }
-    grid.innerHTML = html;
-    // Info panel — zobrazit při kliknutí na item
-    function showItemInfo(item) {
-      const panel = $('invInfoPanel');
-      if (!panel || !item) { if (panel) panel.classList.add('hidden'); return; }
-      $('invInfoIcon').innerHTML = renderItemIcon(item, 48);
-      $('invInfoName').textContent = item.name;
-      const r = RARITY[item.rarity] || RARITY.common;
-      $('invInfoName').style.color = r.color;
-      let stats = `<span style="color:${r.color};font-size:11px">${r.name}</span><br>`;
-      if (item.type === 'weapon') {
-        stats += `⚔️ +${item.baseDmg} poškození`;
-        if (item.critChance) stats += ` · 🎯 ${item.critChance}% krit (×2.0)`;
-      }
-      else if (item.type === 'armor') stats += `❤️ +${item.bonusHp} HP · 🛡️ +${item.defense||0} Defense`;
-      else if (item.type === 'helmet') stats += `❤️ +${item.bonusHp} HP · 🛡️ +${item.defense||0} Defense`;
-      else if (item.type === 'shield') stats += `🛡️ ${item.blockChance||0}% blok · ❤️ +${item.bonusHp||0} HP · 🛡️ +${item.defense||0} Defense`;
-      else if (item.type === 'ring') stats += `⚔️ +${item.baseDmg||0} dmg · ❤️ +${item.bonusHp||0} HP`;
-      else if (item.type === 'amulet') stats += `⚔️ +${item.baseDmg||0} dmg · ❤️ +${item.bonusHp||0} HP`;
-      if (item.weaponType === 'staff') stats += ' 🪄 magická';
-      else if (item.weaponType === 'blade') stats += ' ⚔️ fyzická';
-      if (item.attrs) {
-        const attrStr = Object.keys(item.attrs).map(k => {
-          const names = { str:'💪 Síla', vit:'❤️ Vitalita', dex:'🎯 Obratnost', int:'🧠 Intelekt' };
-          return `${names[k]||k}+${item.attrs[k]}`;
-        }).join(' · ');
-        stats += '<br>' + attrStr;
-      }
-      if (item.cost) stats += ` · 💰 ${item.cost}`;
-      $('invInfoStats').innerHTML = stats;
-      panel.classList.remove('hidden');
-    }
-    // Klik na buňku = přepnutí viditelnosti akcí + info panel
-    grid.querySelectorAll('.inv-grid-cell:not(.empty)').forEach(cell => {
-      cell.addEventListener('click', function(e) {
-        if (e.target.closest('.cell-actions')) return;
-        const idx = this.dataset.idx;
-        const itemId = inv[idx];
-        const item = itemId ? ITEM_MAP[itemId] : null;
-        if (item) showItemInfo(item);
-        const actions = this.querySelector('.cell-actions');
-        if (!actions) return;
-        // Skrýt všechny ostatní (batoh + sloty)
-        grid.querySelectorAll('.cell-actions.visible').forEach(a => a.classList.remove('visible'));
-        document.querySelectorAll('.slot-actions.visible').forEach(a => a.classList.remove('visible'));
-        if (!actions.classList.contains('visible')) {
-          actions.classList.add('visible');
-        }
-      });
-    });
-    // Klik na equipment slot = akce (sundat/prodat) + info
-    const slotNames = { invSlotWeapon:'weapon', invSlotArmor:'armor', invSlotHelmet:'helmet', invSlotShield:'shield', invSlotRing1:'ring1', invSlotAmulet:'amulet' };
-    Object.keys(slotNames).forEach(slotId => {
-      const el = $(slotId);
-      if (!el) return;
-      el.addEventListener('click', function(e) {
-        if (e.target.closest('.cell-actions')) return;
-        const slot = slotNames[slotId];
-        const itemId = h.equip[slot];
-        const defaults = { weapon:'fists', armor:'rags', helmet:null, shield:null, ring1:null, amulet:null };
-        if (!itemId || itemId === defaults[slot]) return;
-        const item = ITEM_MAP[itemId];
-        if (item) showItemInfo(item);
-        // Skrýt ostatní akce (batoh + sloty)
-        grid.querySelectorAll('.cell-actions.visible').forEach(a => a.classList.remove('visible'));
-        document.querySelectorAll('.slot-actions.visible').forEach(a => a.classList.remove('visible'));
-        // Zobrazit akce pro tento slot
-        const actionsEl = $(slotId + 'Actions');
-        if (actionsEl && item) {
-          actionsEl.innerHTML = `<button class="btn-equip" onclick="event.stopPropagation();game.unequipSlot('${slot}')">📦 Sundat</button>
-            <button class="btn-sell" onclick="event.stopPropagation();game.sellSlotItem('${itemId}','${slot}')">💰 ${Math.round(item.cost*0.5)}</button>`;
-          actionsEl.classList.add('visible');
-        }
-      });
-    });
-    // Klik mimo buňky = schovat všechny akce + info panel
-    const hideActions = (e) => {
-      const cell = e.target.closest('.inv-grid-cell');
-      if (cell && !cell.classList.contains('empty')) return;
-      const slotEl = e.target.closest('.inv-equip-slot');
-      if (slotEl) return;
-      grid.querySelectorAll('.cell-actions.visible').forEach(a => a.classList.remove('visible'));
-      document.querySelectorAll('.slot-actions.visible').forEach(a => a.classList.remove('visible'));
-      const panel = $('invInfoPanel');
-      if (panel) panel.classList.add('hidden');
-    };
-    document.removeEventListener('click', grid._hideActions);
-    grid._hideActions = hideActions;
-    document.addEventListener('click', hideActions);
-  }
-
-  function sellItem(itemId) {
-
   // ===== TRAINING (minigames) =====
   function enterTraining(skillId) {
     const sk = SKILL_MAP[skillId];
@@ -4406,7 +4223,7 @@
     if (!state.bossesDefeated || state.bossesDefeated.length < LOCATIONS.length) state.bossesDefeated = Array(LOCATIONS.length).fill(false);
     if (!state.locationProgress || state.locationProgress.length < LOCATIONS.length) state.locationProgress = Array(LOCATIONS.length).fill(0);
     if (!state.floorProgress || state.floorProgress.length < LOCATIONS.length) state.floorProgress = Array(LOCATIONS.length).fill(0);
-    if (!state.hero) state.hero = { level:1, xp:0, hp:100, maxHp:100, mana:50, maxMana:50, baseDmg:12, inventory:[], attrStr:0, attrVit:0, attrPoints:0 };
+    if (!state.hero) state.hero = { level:1, xp:0, hp:100, maxHp:100, mana:50, maxMana:50, baseDmg:12, attrStr:0, attrVit:0, attrPoints:0 };
     if (state.hero.maxHp === undefined) state.hero.maxHp = getHeroMaxHp();
     if (state.hero.hp === undefined) state.hero.hp = state.hero.maxHp;
     if (state.hero.attrStr === undefined) state.hero.attrStr = 0;
@@ -4424,7 +4241,6 @@
         if (a.dataset.screen === 'map') showScreen('map');
         else if (a.dataset.screen === 'talents') showScreen('talents');
         else if (a.dataset.screen === 'hero') showScreen('hero');
-        else if (a.dataset.screen === 'inventory') showScreen('inventory');
         else if (a.dataset.screen === 'guide') showScreen('guide');
         else if (a.dataset.screen === 'bestiary') { showScreen('bestiary'); renderBestiary(); }
         // Inicializovat audio hned při prvním kliku (user gesture)
@@ -4530,7 +4346,7 @@
 
   window.game = {
     showScreen, enterLocation, toggleDungeon,
-    upgradeAttr, sellItem, sellSlotItem,
+    upgradeAttr,
     onMapRapidTap,
     investTalent, activateSchool, resetTalents,
     startTutorial, stopTutorial, advanceTutorial, prevTutorialStep,
