@@ -1111,7 +1111,7 @@
     const dodgeEl = $('mbPlayerArenaStamina');
     if (dodgeEl) {
       const span = dodgeEl.querySelector('span');
-      if (span) span.textContent = `${'🏃'.repeat(mb.dodgeCharges)}${'·'.repeat(mb.maxDodgeCharges - mb.dodgeCharges)}`;
+      if (span) span.textContent = `${mb.dodgeCharges}/${mb.maxDodgeCharges}`;
       const fill = $('mbPlayerArenaStaminaFill');
       if (fill) fill.style.width = Math.max(0, Math.round((mb.dodgeCharges / mb.maxDodgeCharges) * 100)) + '%';
     }
@@ -2778,6 +2778,7 @@
     // Potřebuje dodge charge
     if (mb.dodgeCharges <= 0) return;
     mb.dodgeCharges--;
+    updateMapBattleUI();
     clearTimeout(mb._sequenceTimer);
     clearTimeout(mb._ringTimer);
     mb._ringTimer = null;
