@@ -116,7 +116,6 @@
     testMode = !testMode;
     const btn = document.getElementById('testToggle');
     if (testMode) {
-      state.talentPoints = 50;
       state.hero.attrPoints = 150;
       state.bossesDefeated = LOCATIONS.map(() => true);
       state.floorProgress = LOCATIONS.map(() => 5);
@@ -341,198 +340,6 @@
     });
   }
 
-  // ===== SCHOOLS (Talent Tree) =====
-  const SCHOOLS = [
-    { id:'fire', name:'Ohnivá škola', icon:'🔥', desc:'Hořící DoT a ničivé výbuchy.',
-      tiers: [
-        { choices: [
-          { k:'burn', name:'Žhnutí', icon:'🔥', maxLv:5, desc:lv=>`Při zásahu: +${20+lv*10}% dmg ohněm` },
-          { k:'firebolt', name:'Firebolt', icon:'🔥', maxLv:5, desc:lv=>`${75+lv*35}% dmg ohněm` },
-        ]},
-        { choices: [
-          { k:'ignite', name:'Vznícení', icon:'💥', maxLv:5, requires:'fire_burn', requiresLv:5, desc:lv=>`+${lv*12}% poškození ohněm` },
-          { k:'fireblast', name:'Fire Blast', icon:'💥', maxLv:3, requires:'fire_firebolt', requiresLv:3, desc:lv=>`${100+lv*50}% dmg + DoT 20%/tick` }
-        ]},
-        { choices: [
-          { k:'inferno', name:'Výbuch', icon:'🌋', maxLv:1, requires:'fire_ignite', requiresLv:5, desc:_=>`Při opětovném aplikování ohně na hořící cíl: exploze za 5.0× dmg` },
-          { k:'fireball', name:'Fireball', icon:'🔥', maxLv:3, requires:'fire_fireblast', requiresLv:3, desc:lv=>`${100+lv*100}% dmg + DoT 30%/tick na ${2+lv} ticky` }
-        ]}
-      ]
-    },
-    { id:'ice', name:'Ledová škola', icon:'❄️', desc:'Zpomalování nepřítele a ovládání tempa.',
-      tiers: [
-        { choices: [
-          { k:'chill', name:'Mráz', icon:'🥶', maxLv:5, desc:lv=>`Při zásahu: zpomalí 25% na ${lv} ticků` },
-          { k:'frostbolt', name:'Frostbolt', icon:'❄️', maxLv:5, desc:lv=>`${125+lv*15}% dmg ledem, zpomalí 40% na 3 ticky` },
-        ]},
-        { choices: [
-          { k:'chill2', name:'Hluboký mráz', icon:'❄️', maxLv:5, requires:'ice_chill', requiresLv:5, desc:lv=>`+${lv*5}% zpomalení (nad rámec Mrázu)` },
-          { k:'icebolt', name:'Vylepšený frostbolt', icon:'🧊', maxLv:3, requires:'ice_frostbolt', requiresLv:5, desc:lv=>`+${lv} tick trvání zpomalení` }
-        ]},
-        { choices: [
-          { k:'deathFreeze', name:'Smrtící mráz', icon:'💀', maxLv:1, requires:'ice_chill2', requiresLv:5, desc:_=>`Při opětovném zpomalení už zpomaleného: krit 5.0× dmg` },
-          { k:'blizzard', name:'Blizard', icon:'🌨️', maxLv:1, requires:'ice_icebolt', requiresLv:3, desc:_=>`Aktivní: zmrazení, 3 útoky po sobě` }
-        ]}
-      ]
-    },
-    { id:'nature', name:'Přírodní škola', icon:'🌿', desc:'Léčení, jed a přírodní magie.',
-      tiers: [
-        { choices: [
-          { k:'poison', name:'Jed', icon:'☠️', maxLv:5, desc:lv=>`Při zásahu: jed ${10+lv*5}% z dmg/tick na 2 ticky` },
-          { k:'heal', name:'Léčení', icon:'💚', maxLv:5, desc:lv=>`Při zásahu: ${lv*3}/tick + ${5+lv*5}% z VIT na 2 ticky` }
-        ]},
-        { choices: [
-          { k:'poison2', name:'Silný jed', icon:'☠️', maxLv:3, requires:'nature_poison', requiresLv:5, desc:lv=>`+${lv} tick trvání jedu` },
-          { k:'heal2', name:'Silnější léčení', icon:'💚', maxLv:3, requires:'nature_heal', requiresLv:5, desc:lv=>`+${lv} tick trvání léčení` }
-        ]},
-        { choices: [
-          { k:'revitalize', name:'Otrava', icon:'☠️', maxLv:1, requires:'nature_poison2', requiresLv:3, desc:_=>`Otrávené monstrum se nemůže léčit (blokuje life steal)` },
-          { k:'regen', name:'Regenerace', icon:'🌱', maxLv:1, requires:'nature_heal2', requiresLv:3, desc:_=>`+2 HP každý tick (pasivní, sčítá se s Léčením)` }
-        ]}
-      ]
-    },
-    { id:'physical', name:'Bojová škola', icon:'⚔️', desc:'Fyzické útoky a brutální síla.',
-      tiers: [
-        { choices: [
-          { k:'edge', name:'Ostří', icon:'⚔️', maxLv:5, desc:lv=>`+${10+lv*6}% dmg zbraně` },
-          { k:'strongStrike', name:'Silný úder', icon:'💢', maxLv:3, desc:lv=>`${100+lv*50}% dmg zbraně` }
-        ]},
-        { choices: [
-          { k:'rend', name:'Roztržení', icon:'🩸', maxLv:5, requires:'physical_edge', requiresLv:5, desc:lv=>`+${lv*15}% crit dmg` },
-          { k:'slash', name:'Seknutí', icon:'⚡', maxLv:3, requires:'physical_strongStrike', requiresLv:3, desc:lv=>`${150+lv*50}% dmg zbraně` }
-        ]},
-        { choices: [
-          { k:'executioner', name:'Kat', icon:'💀', maxLv:1, requires:'physical_rend', requiresLv:5, desc:_=>`Při útoku na cíl pod 20% HP: 5.0× dmg` },
-          { k:'whirlwind', name:'Vichřice', icon:'🌀', maxLv:1, requires:'physical_slash', requiresLv:3, desc:_=>`Aktivní: 3 útoky po sobě` }
-        ]}
-      ]
-    }
-  ];
-  const SCHOOL_MAP = {};
-  SCHOOLS.forEach(s => SCHOOL_MAP[s.id] = s);
-  // Plochý seznam všech talentů pro rychlý lookup
-  const TALENT_MAP = {};
-  SCHOOLS.forEach(s => {
-    s.tiers.forEach(tier => {
-      tier.choices.forEach(t => {
-        const key = s.id + '_' + t.k;
-        TALENT_MAP[key] = t;
-        t._schoolId = s.id;
-        t._tierIdx = s.tiers.indexOf(tier);
-      });
-    });
-  });
-
-  // ===== SCHOOL PASSIVES =====
-  function getTalentLv(key) { return state.talentLevels[key] || 0; }
-  function getFireBurnPct() {
-    if (state.activeSchool !== 'fire') return 0;
-    const lv = getTalentLv('fire_burn');
-    return 20 + lv * 10; // 30% @ lv1, 40% @ lv2, ... 70% @ lv5
-  }
-  function getFireBurnDuration() {
-    return 0; // burn už není DoT
-  }
-  function getFireIgnitePct() {
-    if (state.activeSchool !== 'fire') return 0;
-    return getTalentLv('fire_ignite') * 12;
-  }
-  function hasFireInferno() {
-    return getTalentLv('fire_inferno') > 0;
-  }
-  function getIceChillTicks() {
-    if (state.activeSchool !== 'ice') return 0;
-    return getTalentLv('ice_chill');
-  }
-  function getIceChillAddedPct() {
-    if (state.activeSchool !== 'ice') return 0;
-    return getTalentLv('ice_chill2') * 5;
-  }
-  function hasIceDeathFreeze() {
-    return getTalentLv('ice_deathFreeze') > 0;
-  }
-  function getNaturePoisonPct() {
-    if (state.activeSchool !== 'nature') return 0;
-    const lv = getTalentLv('nature_poison');
-    return 10 + lv * 5; // 15/20/25/30/35% per tick (celkem 30-70% za 2 ticky = stejně jako burn)
-  }
-  function getNaturePoisonDuration() {
-    if (state.activeSchool !== 'nature') return 0;
-    const lv1 = getTalentLv('nature_poison');
-    const lv2 = getTalentLv('nature_poison2');
-    if (lv1 === 0) return 0;
-    return 2 + lv2;
-  }
-  function getNatureHealPct() {
-    if (state.activeSchool !== 'nature') return 0;
-    const lv = getTalentLv('nature_heal');
-    return lv * 3; // 3/6/9/12/15 fixního HP/tick
-  }
-  function getNatureHealDuration() {
-    if (state.activeSchool !== 'nature') return 0;
-    const lv1 = getTalentLv('nature_heal');
-    const lv2 = getTalentLv('nature_heal2');
-    if (lv1 === 0) return 0;
-    return 2 + lv2;
-  }
-  function getNatureRegen() {
-    if (state.activeSchool !== 'nature') return 0;
-    const lv = getTalentLv('nature_regen');
-    return lv > 0 ? 2 : 0; // 2 HP per tick
-  }
-  function hasNatureRevitalize() {
-    return getTalentLv('nature_revitalize') > 0;
-  }
-  // ===== PHYSICAL HELPERY =====
-  function getPhysicalEdgePct() {
-    if (state.activeSchool !== 'physical') return 0;
-    return 10 + getTalentLv('physical_edge') * 6;
-  }
-  function getPhysicalRendCritDmg() {
-    if (state.activeSchool !== 'physical') return 0;
-    return getTalentLv('physical_rend') * 15;
-  }
-  function hasPhysicalExecutioner() {
-    return getTalentLv('physical_executioner') > 0;
-  }
-  function getWeaponType() {
-    return 'fists';
-  }
-  // ===== RESIST MULT =====
-  function getSchoolResistMult(schoolId) {
-    const mb = mapBattleState;
-    if (!mb || !mb.loc || !mb.loc.resists) return 1.0;
-    const r = mb.loc.resists;
-    if (schoolId === 'fire') return r.fire || 1.0;
-    if (schoolId === 'ice') return r.ice || 1.0;
-    if (schoolId === 'nature') return r.nature || 1.0;
-    return 1.0;
-  }
-  function getSpellLv(spellId) {
-    if (spellId === 'fireball') return getTalentLv('fire_fireball');
-    if (spellId === 'fireblast') return getTalentLv('fire_fireblast');
-    if (spellId === 'firebolt') return getTalentLv('fire_firebolt');
-    if (spellId === 'blizzard') return getTalentLv('ice_blizzard');
-    if (spellId === 'icebolt') return getTalentLv('ice_icebolt');
-    if (spellId === 'frostbolt') return getTalentLv('ice_frostbolt');
-    if (spellId === 'strongStrike') return getTalentLv('physical_strongStrike');
-    if (spellId === 'slash') return getTalentLv('physical_slash');
-    if (spellId === 'whirlwind') return getTalentLv('physical_whirlwind');
-    return 0;
-  }
-  function getRegrowthHeal() {
-    if (state.activeSchool !== 'nature') return 0;
-    const lv = getTalentLv('nature_regrowth');
-    if (lv === 0) return 0;
-    return 10 + lv * 8;
-  }
-  function getNaturesBoonHeal() {
-    if (state.activeSchool !== 'nature') return 0;
-    const lv = getTalentLv('nature_naturesboon');
-    if (lv === 0) return 0;
-    return 15 + lv * 12;
-  }
-
   // ===== ITEMS (WEAPONS/ARMOR) =====
   const ITEMS = [
     // === ZÁKLADNÍ (bez ceny, startovní) ===
@@ -741,19 +548,11 @@
 
   const SAVE_KEY = 'dungeonRecallV7';
   function defaultState() {
-    const talentLevels = {};
-    SCHOOLS.forEach(sk => {
-      sk.tiers.forEach(tier => {
-        tier.choices.forEach(t => {
-          talentLevels[sk.id + '_' + t.k] = 0;
-        });
-      });
-    });
-    const s = { talentLevels, activeSchool:null, talentPoints:0, hero:{name:'Dobrodruh',face:'hero',level:1,xp:0,hp:10,maxHp:10,mana:50,maxMana:50,baseDmg:1}, deaths:0, wins:0,
+    const s = { hero:{name:'Dobrodruh',face:'hero',level:1,xp:0,hp:10,maxHp:10,mana:50,maxMana:50,baseDmg:1}, deaths:0, wins:0,
       locationProgress:[0,0,0,0,0], bossesDefeated:[false,false,false,false,false], floorProgress:[0,0,0,0,0], spellUsedThisFloor:{}, encounteredMonsters:[] };
     return s;
   }
-  function loadSave() { try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); if (s && s.talentLevels) { return s; } } catch {} return defaultState(); }
+  function loadSave() { try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); if (s && s.hero) { return s; } } catch {} return defaultState(); }
   function saveGame() { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); }
   function resetGame() { state = defaultState(); saveGame(); showScreen('map'); }
 
@@ -793,26 +592,6 @@
 
   function showMessage(msg) {
     // Zrušeno — modální okna jsou zbytečná
-  }
-
-  // ===== LEVEL-UP OVERLAY =====
-  function showLevelUpOverlay(prevLevel) {
-    const h = state.hero;
-    const overlay = document.createElement('div');
-    overlay.className = 'levelup-overlay';
-    overlay.innerHTML = `<div class="levelup-content">
-      <div class="levelup-sparkle">⭐</div>
-      <div class="levelup-title">LEVEL UP!</div>
-      <div class="levelup-level">Lv.${prevLevel} → Lv.${h.level}</div>
-      <div class="levelup-details"><span>💪 +5 atributových bodů</span><span>🎓 +1 talentový bod</span><span>❤️ Plné vyléčení</span></div>
-    </div>`;
-    document.body.appendChild(overlay);
-    sfxLevelUp();
-    // Po 2.5s fade-out a odstranit
-    setTimeout(() => {
-      overlay.classList.add('fade-out');
-      setTimeout(() => overlay.remove(), 500);
-    }, 2500);
   }
 
   // ===== MAP =====
@@ -966,7 +745,6 @@
     document.body.classList.add('battle-active');
     updateMapBattleUI();
     setupMapBattleInput();
-    applySchoolColors();
     // Animace příchodu
     const newFig = $('mbFigure');
     if (newFig && !mapBattleState.isBoss) {
@@ -1068,35 +846,6 @@
       else { fig.textContent = emoji; }
     }
     // (hint necháme pro bonus info — nastaví se až v onMapAttack)
-
-    // School spells — HTML tlacitka nad Utokem, vzdy na stejne pozici (84px)
-    const fireBtn = $('mbSpellFireBtn');
-    const healBtn = $('mbSpellHealBtn');
-    const freezeBtn = $('mbSpellFreezeBtn');
-    const physBtn = $('mbSpellPhysBtn');
-    // Vsechna schovat (default)
-    [fireBtn, healBtn, freezeBtn, physBtn].forEach(b => { if (b) { b.classList.add('hidden'); b.classList.remove('active', 'used'); } });
-    const activeId = state.activeSchool;
-    if (!activeId) return;
-    const school = SCHOOL_MAP[activeId];
-    if (!school) return;
-    const spellId = getBestSpellId(activeId);
-    if (!spellId) return;
-    const lv = getSpellLv(spellId);
-    // Ukazat spravne kouzlo — VZDY viditelne, aktivni jen kdyz je prilezitost
-    const btn = activeId === 'fire' ? fireBtn : activeId === 'ice' ? freezeBtn : activeId === 'physical' ? physBtn : healBtn;
-    if (!btn) return;
-    btn.classList.remove('hidden');
-    const spellIcons = { firebolt:'🔥', fireblast:'💥', fireball:'🔥', frostbolt:'❄️', blizzard:'❄️', heal:'💚', strongStrike:'💢', slash:'⚡', whirlwind:'🌀' };
-    const spellIcon = spellIcons[spellId] || '⚔️';
-    btn.innerHTML = spellIcon;
-    // Aktivni jen v attack okne (pokud je mana)
-    const manaCosts = { firebolt: 10, fireblast: 20, fireball: 35, frostbolt: 10, icebolt: 10, blizzard: 30, heal: 15, strongStrike: 8, slash: 15, whirlwind: 25 };
-    const cost = (manaCosts[spellId] || 15) + lv * 2;
-    const hasMana = (state.hero.mana || 0) >= cost;
-    if (mb.inAttackWindow && hasMana) {
-      btn.classList.add('active');
-    }
   }
 
   function updateActionButtons() {
@@ -1181,46 +930,6 @@
     };
     setupTap('mbTapLeft');
     setupTap('mbTapRight');
-    // Arena spell tlacitka (Fireball/Heal)
-    const spellFireBtn = $('mbSpellFireBtn');
-    if (spellFireBtn) {
-      const fireHandler = (e) => {
-        e.stopPropagation();
-        const best = getBestSpellId(state.activeSchool);
-        if (best) onMapAttackSpell(best);
-      };
-      spellFireBtn.addEventListener('pointerdown', fireHandler);
-      handlers.push(['pointerdown', fireHandler]);
-    }
-    const spellHealBtn = $('mbSpellHealBtn');
-    if (spellHealBtn) {
-      const healHandler = (e) => {
-        e.stopPropagation();
-        onMapAttackSpell('heal');
-      };
-      spellHealBtn.addEventListener('pointerdown', healHandler);
-      handlers.push(['pointerdown', healHandler]);
-    }
-    const spellFreezeBtn = $('mbSpellFreezeBtn');
-    if (spellFreezeBtn) {
-      const freezeHandler = (e) => {
-        e.stopPropagation();
-        const best = getBestSpellId(state.activeSchool);
-        if (best) onMapAttackSpell(best);
-      };
-      spellFreezeBtn.addEventListener('pointerdown', freezeHandler);
-      handlers.push(['pointerdown', freezeHandler]);
-    }
-    const spellPhysBtn = $('mbSpellPhysBtn');
-    if (spellPhysBtn) {
-      const physHandler = (e) => {
-        e.stopPropagation();
-        const best = getBestSpellId(state.activeSchool);
-        if (best) onMapAttackSpell(best);
-      };
-      spellPhysBtn.addEventListener('pointerdown', physHandler);
-      handlers.push(['pointerdown', physHandler]);
-    }
   }
 
   function getFloorTimerMultiplier(floor, locId) {
@@ -1507,7 +1216,6 @@
     const actionInfo = $('mbActionInfo');
     const arrow = $('mbArrow');
     if (attack.type === 'rapid') {
-      applySchoolColors();
       if (arrow) arrow.setAttribute('class', 'boss-attack-arrow hidden');
       if (actionInfo) actionInfo.classList.add('hidden');
       const target = $('mbRapidTarget');
@@ -1837,8 +1545,8 @@
       mb.playerHp = Math.min(mb.maxPlayerHp, mb.playerHp + mb.hot);
       mb.hotTicksLeft--;
     }
-    // Pasivní regenerace
-    const regen = getNatureRegen();
+    // Pasivní regenerace — vypnuto
+    const regen = 0;
     if (regen > 0) {
       mb.playerHp = Math.min(mb.maxPlayerHp, mb.playerHp + regen);
     }
@@ -1989,16 +1697,6 @@
     }
   }
 
-  function getSchoolColors(targetIsPlayer) {
-    if (targetIsPlayer) return { c1:'#e94560', c2:'#c0392b', rgb:'233,69,96' };
-    const a = state.activeSchool;
-    const hasPassive = a && getTierPoints(a, 0) > 0;
-    if (hasPassive && a === 'fire') return { c1:'#f39c12', c2:'#e67e22', rgb:'230,126,34' };
-    if (hasPassive && a === 'ice') return { c1:'#5dade2', c2:'#3498db', rgb:'52,152,219' };
-    if (hasPassive && a === 'nature') return { c1:'#58d68d', c2:'#2ecc71', rgb:'46,204,113' };
-    if (hasPassive && a === 'physical') return { c1:'#b0b0c8', c2:'#8888aa', rgb:'180,180,200' };
-    return { c1:'#bbb', c2:'#aaa', rgb:'187,187,187' };
-  }
 
   function spawnProjectileEffect(dir, targetIsPlayer, isCrit, attackType) {
     const arena = $('mbArena');
@@ -2029,7 +1727,7 @@
       endY = targetIsPlayer ? rect.height + 20 : -20;
     }
 
-    const schoolColor = getSchoolColors(targetIsPlayer);
+    const schoolColor = { c1:'#bbb', c2:'#aaa', rgb:'187,187,187' };
     const color1 = schoolColor.c1;
     const color2 = schoolColor.c2;
     const rgb = schoolColor.rgb;
@@ -2150,31 +1848,6 @@
       setTimeout(() => { if (p.parentNode) p.remove(); }, 600);
     }
   }
-  function spawnFreezeParticles() {
-    const arena = $('mbArena');
-    if (!arena) return;
-    const rect = arena.getBoundingClientRect();
-    const cx = rect.width / 2;
-    const cy = rect.height / 4;
-    for (let i = 0; i < 15; i++) {
-      const p = document.createElement('div');
-      const size = 3 + Math.random() * 6;
-      const angle = Math.random() * 2 * Math.PI;
-      const dist = 20 + Math.random() * 60;
-      p.style.cssText = `position:absolute;width:${size}px;height:${size}px;border-radius:50%;background:rgba(100,180,255,0.6);filter:blur(1px);z-index:18;pointer-events:none;opacity:0.9;`;
-      p.style.left = (cx - size/2) + 'px';
-      p.style.top = (cy - size/2) + 'px';
-      arena.appendChild(p);
-      requestAnimationFrame(() => {
-        p.style.transition = `left 0.6s ease-out, top 0.6s ease-out, opacity 0.6s ease-out`;
-        p.style.left = (cx + Math.cos(angle) * dist - size/2) + 'px';
-        p.style.top = (cy + Math.sin(angle) * dist - size/2) + 'px';
-        p.style.opacity = '0';
-      });
-      setTimeout(() => { if (p.parentNode) p.remove(); }, 700);
-    }
-  }
-
   function spawnSlashEffect(isCrit, dir) {
     const arena = $('mbArena');
     if (!arena) return;
@@ -2219,7 +1892,7 @@
       requestAnimationFrame(() => { slash.style.opacity = '1'; });
       setTimeout(() => { if (slash.parentNode) slash.remove(); }, 450);
     } else {
-      const sc = getSchoolColors(false);
+      const sc = { c1:'#bbb', c2:'#aaa', rgb:'187,187,187' };
       // Oblouček s rotací podle směru swipu — méně zahnutý, tenčí
       const size = 160;
       const slash = document.createElement('div');
@@ -2294,201 +1967,12 @@
     }
   }
 
-  function spawnCrossSlashEffect() {
-    const arena = $('mbArena');
-    if (!arena) return;
-    const aRect = arena.getBoundingClientRect();
-    const boss = $('mbFigure');
-    let cx = aRect.width / 2, cy = 30;
-    if (boss) {
-      const bRect = boss.getBoundingClientRect();
-      cx = bRect.left + bRect.width / 2 - aRect.left;
-      cy = bRect.top + bRect.height / 2 - aRect.top;
-    }
-    const sc = getSchoolColors(false);
-    const size = 80;
-    // První sek — z leva dolů doprava nahoru
-    const s1 = document.createElement('div');
-    s1.style.cssText = `position:absolute;left:${cx-size/2}px;top:${cy-size/2}px;width:${size}px;height:${size}px;z-index:20;pointer-events:none;opacity:1;`;
-    s1.innerHTML = `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" style="display:block">
-      <path d="M 10 70 Q 40 10 70 10" stroke="${sc.c1}" stroke-width="4" stroke-linecap="round" fill="none" opacity="0.9">
-        <animate attributeName="stroke-dashoffset" from="90" to="0" dur="0.12s" fill="freeze"/>
-        <animate attributeName="opacity" from="1" to="0" dur="0.3s" begin="0.12s" fill="freeze"/>
-      </path>
-      <path d="M 10 70 Q 40 10 70 10" stroke="white" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.6">
-        <animate attributeName="stroke-dashoffset" from="90" to="0" dur="0.1s" fill="freeze"/>
-        <animate attributeName="opacity" from="0.6" to="0" dur="0.25s" begin="0.1s" fill="freeze"/>
-      </path>
-    </svg>`;
-    arena.appendChild(s1);
-    requestAnimationFrame(() => { s1.style.opacity = '1'; });
-    setTimeout(() => { if (s1.parentNode) s1.remove(); }, 400);
-    // Druhý sek — z prava dolů doleva nahoru, 80ms později
-    const s2 = document.createElement('div');
-    s2.style.cssText = `position:absolute;left:${cx-size/2}px;top:${cy-size/2}px;width:${size}px;height:${size}px;z-index:21;pointer-events:none;opacity:1;`;
-    s2.innerHTML = `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" style="display:block">
-      <path d="M 70 70 Q 40 10 10 10" stroke="${sc.c1}" stroke-width="4" stroke-linecap="round" fill="none" opacity="0.9">
-        <animate attributeName="stroke-dashoffset" from="90" to="0" dur="0.12s" fill="freeze"/>
-        <animate attributeName="opacity" from="1" to="0" dur="0.3s" begin="0.12s" fill="freeze"/>
-      </path>
-      <path d="M 70 70 Q 40 10 10 10" stroke="white" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.6">
-        <animate attributeName="stroke-dashoffset" from="90" to="0" dur="0.1s" fill="freeze"/>
-        <animate attributeName="opacity" from="0.6" to="0" dur="0.25s" begin="0.1s" fill="freeze"/>
-      </path>
-    </svg>`;
-    setTimeout(() => {
-      arena.appendChild(s2);
-      requestAnimationFrame(() => { s2.style.opacity = '1'; });
-      setTimeout(() => { if (s2.parentNode) s2.remove(); }, 400);
-    }, 80);
-  }
-
   function spawnWeaponProjectile(isCrit) {
-    const wType = getWeaponType();
+    const wType = 'fists';
     if (wType === 'blade') { spawnSlashEffect(isCrit); }
     else if (wType === 'fists') { spawnFistEffect(isCrit); }
     else { spawnProjectileEffect(0, false, false); }
   }
-
-  // ===== SPELL PROJECTILES =====
-  function spawnFireballProjectile() {
-    const arena = $('mbArena');
-    if (!arena) return;
-    const rect = arena.getBoundingClientRect();
-    const aRect = arena.getBoundingClientRect();
-
-    // Start od hráče (dole)
-    const playerFig = $('mbPlayerFigure');
-    let startX = rect.width / 2, startY = rect.height - 40;
-    if (playerFig) {
-      const pRect = playerFig.getBoundingClientRect();
-      startX = pRect.left + pRect.width/2 - aRect.left;
-      startY = pRect.top + pRect.height/2 - aRect.top;
-    }
-
-    // Cíl: boss (nahoře)
-    const bossFig = $('mbFigure');
-    let targetX = rect.width / 2, targetY = 20;
-    if (bossFig) {
-      const bRect = bossFig.getBoundingClientRect();
-      targetX = bRect.left + bRect.width/2 - aRect.left;
-      targetY = bRect.top + bRect.height/2 - aRect.top;
-    }
-    // Fireball — pulzující ohnivá koule letící od hráče k bossovi
-    const ball = document.createElement('div');
-    const size = 36;
-    ball.style.cssText = `position:absolute;width:${size}px;height:${size}px;border-radius:50%;z-index:30;pointer-events:none;left:${startX - size/2}px;top:${startY - size/2}px;background:radial-gradient(circle,#fff 10%,#f39c12 40%,#e74c3c 80%);box-shadow:0 0 25px rgba(231,76,60,0.8),0 0 50px rgba(243,156,18,0.4);transition:left 0.2s ease-in,top 0.2s ease-in;`;
-    arena.appendChild(ball);
-    void ball.offsetHeight;
-    ball.style.left = (targetX - size/2) + 'px';
-    ball.style.top = (targetY - size/2) + 'px';
-    // Exploze po dopadu
-    setTimeout(() => {
-      if (ball.parentNode) ball.remove();
-      playSFX(fireSpellSfx);
-      // Ohnivá exploze
-      for (let i = 0; i < 25; i++) {
-        const p = document.createElement('div');
-        const pSize = 4 + Math.random() * 12;
-        const angle = Math.random() * 2 * Math.PI;
-        const dist = 15 + Math.random() * 55;
-        const colors = ['#e74c3c','#f39c12','#fff','#e67e22'];
-        const color = colors[i % colors.length];
-        p.style.cssText = `position:absolute;width:${pSize}px;height:${pSize}px;border-radius:50%;z-index:31;pointer-events:none;left:${targetX - pSize/2}px;top:${targetY - pSize/2}px;background:${color};box-shadow:0 0 ${6+Math.random()*10}px ${color};opacity:1;`;
-        arena.appendChild(p);
-        requestAnimationFrame(() => {
-          p.style.transition = `left 0.4s ease-out, top 0.4s ease-out, opacity 0.4s ease-out`;
-          p.style.left = (targetX + Math.cos(angle) * dist - pSize/2) + 'px';
-          p.style.top = (targetY + Math.sin(angle) * dist - pSize/2) + 'px';
-          p.style.opacity = '0';
-        });
-        setTimeout(() => { if (p.parentNode) p.remove(); }, 450);
-      }
-    }, 350);
-  }
-
-  function spawnHealProjectile() {
-    const arena = $('mbArena');
-    if (!arena) return;
-    const rect = arena.getBoundingClientRect();
-    const cx = rect.width / 2;
-    const cy = rect.height - 80;
-    // Zelená koule stoupající od hráče
-    for (let i = 0; i < 8; i++) {
-      const p = document.createElement('div');
-      const size = 4 + Math.random() * 8;
-      const angle = Math.random() * 2 * Math.PI;
-      const dist = 20 + Math.random() * 40;
-      setTimeout(() => {
-        p.style.cssText = `position:absolute;width:${size}px;height:${size}px;border-radius:50%;z-index:30;pointer-events:none;left:${cx - size/2}px;top:${cy - size/2}px;background:rgba(46,204,113,0.7);box-shadow:0 0 12px rgba(46,204,113,0.6);opacity:0.9;transition:left 0.5s ease-out,top 0.5s ease-out,opacity 0.5s ease-out;`;
-        arena.appendChild(p);
-        void p.offsetHeight;
-        p.style.left = (cx + Math.cos(angle) * dist - size/2) + 'px';
-        p.style.top = (cy + Math.sin(angle) * dist - size/2) + 'px';
-        p.style.opacity = '0';
-        setTimeout(() => { if (p.parentNode) p.remove(); }, 550);
-      }, i * 60);
-    }
-    displayHealText('💚');
-  }
-
-  function spawnIceProjectile() {
-    const arena = $('mbArena');
-    if (!arena) return;
-    const rect = arena.getBoundingClientRect();
-    const aRect = arena.getBoundingClientRect();
-
-    // Start od hráče (dole)
-    const playerFig = $('mbPlayerFigure');
-    let startX = rect.width / 2, startY = rect.height - 40;
-    if (playerFig) {
-      const pRect = playerFig.getBoundingClientRect();
-      startX = pRect.left + pRect.width/2 - aRect.left;
-      startY = pRect.top + pRect.height/2 - aRect.top;
-    }
-
-    // Cíl: boss (nahoře)
-    const bossFig = $('mbFigure');
-    let targetX = rect.width / 2, targetY = 20;
-    if (bossFig) {
-      const bRect = bossFig.getBoundingClientRect();
-      targetX = bRect.left + bRect.width/2 - aRect.left;
-      targetY = bRect.top + bRect.height/2 - aRect.top;
-    }
-
-    // Ledová koule — modrobílá, s mrazivým ocasem
-    const ball = document.createElement('div');
-    const size = 32;
-    ball.style.cssText = `position:absolute;width:${size}px;height:${size}px;border-radius:50%;z-index:30;pointer-events:none;left:${startX - size/2}px;top:${startY - size/2}px;background:radial-gradient(circle,#fff 10%,#4fc3f7 50%,#1565c0 90%);box-shadow:0 0 20px rgba(79,195,247,0.8),0 0 40px rgba(21,101,192,0.4);transition:left 0.2s ease-in,top 0.2s ease-in;`;
-    arena.appendChild(ball);
-    void ball.offsetHeight;
-    ball.style.left = (targetX - size/2) + 'px';
-    ball.style.top = (targetY - size/2) + 'px';
-
-    // Mrazivá exploze po dopadu
-    setTimeout(() => {
-      if (ball.parentNode) ball.remove();
-      playSFX(iceSpellSfx);
-      for (let i = 0; i < 20; i++) {
-        const p = document.createElement('div');
-        const pSize = 3 + Math.random() * 10;
-        const angle = Math.random() * 2 * Math.PI;
-        const dist = 10 + Math.random() * 50;
-        const colors = ['#4fc3f7','#81d4fa','#fff','#b3e5fc'];
-        const color = colors[i % colors.length];
-        p.style.cssText = `position:absolute;width:${pSize}px;height:${pSize}px;border-radius:50%;z-index:31;pointer-events:none;left:${targetX - pSize/2}px;top:${targetY - pSize/2}px;background:${color};box-shadow:0 0 ${5+Math.random()*8}px ${color};opacity:1;`;
-        arena.appendChild(p);
-        requestAnimationFrame(() => {
-          p.style.transition = `left 0.4s ease-out, top 0.4s ease-out, opacity 0.4s ease-out`;
-          p.style.left = (targetX + Math.cos(angle) * dist - pSize/2) + 'px';
-          p.style.top = (targetY + Math.sin(angle) * dist - pSize/2) + 'px';
-          p.style.opacity = '0';
-        });
-        setTimeout(() => { if (p.parentNode) p.remove(); }, 450);
-      }
-    }, 350);
-  }
-
   function spawnDodgeEffect(arena, dir) {
     // Oblak/částice fouknuté od středu arény směrem úhybu — rychlejší a dál
     const rect = arena.getBoundingClientRect();
@@ -2794,64 +2278,6 @@
     setTimeout(() => mapBattleTurn(), 300);
   }
 
-  function onMapAttackSpell(spellId) {
-    castMapSpell(spellId);
-  }
-
-  function applySchoolColors() {
-    const a = state.activeSchool;
-    const arena = $('mbArena');
-    if (!arena) return;
-    // Barvy se mění jen když má hráč pasivní bonus (Tier 1) v aktivní škole
-    const hasPassive = a && getTierPoints(a, 0) > 0;
-    let bg, border, dot, dotTapped, dotGlow, dotGlow2, pulse, target, targetGlow;
-    let seqDone, seqGlow, seqGlow2, seqGlow3;
-    let spellColor, spellBg, spellGlow;
-    if (hasPassive && a === 'fire') {
-      bg='rgba(243,156,18,0.2)'; border='rgba(243,156,18,0.8)'; dot='rgba(243,156,18,0.45)'; dotTapped='rgba(243,156,18,1)';
-      dotGlow='rgba(243,156,18,1)'; dotGlow2='rgba(243,156,18,0.6)'; pulse='rgba(243,156,18,0.6)'; target='#f39c12'; targetGlow='rgba(243,156,18,0.8)';
-      seqDone='#f39c12'; seqGlow='rgba(243,156,18,0.4)'; seqGlow2='rgba(243,156,18,0.9)'; seqGlow3='rgba(243,156,18,0.4)';
-      spellColor='#f39c12'; spellBg='#1a1a1a'; spellGlow='rgba(243,156,18,0.4)';
-    } else if (hasPassive && a === 'ice') {
-      bg='rgba(52,152,219,0.2)'; border='rgba(52,152,219,0.8)'; dot='rgba(52,152,219,0.45)'; dotTapped='rgba(52,152,219,1)';
-      dotGlow='rgba(52,152,219,1)'; dotGlow2='rgba(52,152,219,0.6)'; pulse='rgba(52,152,219,0.6)'; target='#3498db'; targetGlow='rgba(52,152,219,0.8)';
-      seqDone='#3498db'; seqGlow='rgba(52,152,219,0.4)'; seqGlow2='rgba(52,152,219,0.9)'; seqGlow3='rgba(52,152,219,0.4)';
-      spellColor='#3498db'; spellBg='#0a1a2a'; spellGlow='rgba(52,152,219,0.4)';
-    } else if (hasPassive && a === 'nature') {
-      bg='rgba(46,204,113,0.2)'; border='rgba(46,204,113,0.8)'; dot='rgba(46,204,113,0.45)'; dotTapped='rgba(46,204,113,1)';
-      dotGlow='rgba(46,204,113,1)'; dotGlow2='rgba(46,204,113,0.6)'; pulse='rgba(46,204,113,0.6)'; target='#2ecc71'; targetGlow='rgba(46,204,113,0.8)';
-      seqDone='#2ecc71'; seqGlow='rgba(46,204,113,0.4)'; seqGlow2='rgba(46,204,113,0.9)'; seqGlow3='rgba(46,204,113,0.4)';
-      spellColor='#2ecc71'; spellBg='#0a0a0a'; spellGlow='rgba(46,204,113,0.4)';
-    } else if (hasPassive && a === 'physical') {
-      bg='rgba(180,180,200,0.2)'; border='rgba(180,180,200,0.8)'; dot='rgba(180,180,200,0.45)'; dotTapped='rgba(180,180,200,1)';
-      dotGlow='rgba(180,180,200,1)'; dotGlow2='rgba(180,180,200,0.6)'; pulse='rgba(180,180,200,0.6)'; target='#b0b0c8'; targetGlow='rgba(180,180,200,0.8)';
-      seqDone='#b0b0c8'; seqGlow='rgba(180,180,200,0.4)'; seqGlow2='rgba(180,180,200,0.9)'; seqGlow3='rgba(180,180,200,0.4)';
-      spellColor='#b0b0c8'; spellBg='#1a1a20'; spellGlow='rgba(180,180,200,0.4)';
-    } else {
-      bg='rgba(180,100,255,0.2)'; border='rgba(180,100,255,0.8)'; dot='rgba(180,100,255,0.45)'; dotTapped='rgba(180,100,255,1)';
-      dotGlow='rgba(180,100,255,1)'; dotGlow2='rgba(180,100,255,0.6)'; pulse='rgba(180,100,255,0.6)'; target='#b064ff'; targetGlow='rgba(176,100,255,0.8)';
-      seqDone='#888'; seqGlow='rgba(136,136,136,0.4)'; seqGlow2='rgba(136,136,136,0.9)'; seqGlow3='rgba(136,136,136,0.4)';
-      spellColor='#e94560'; spellBg='#1a1a1a'; spellGlow='rgba(233,69,96,0.4)';
-    }
-    arena.style.setProperty('--rapid-color', border.replace('0.8','0.25'));
-    arena.style.setProperty('--rapid-tap-bg', bg);
-    arena.style.setProperty('--rapid-tap-border', border);
-    arena.style.setProperty('--rapid-dot', dot);
-    arena.style.setProperty('--rapid-dot-tapped', dotTapped);
-    arena.style.setProperty('--rapid-dot-glow', dotGlow);
-    arena.style.setProperty('--rapid-dot-glow2', dotGlow2);
-    arena.style.setProperty('--rapid-pulse', pulse);
-    arena.style.setProperty('--rapid-target', target);
-    arena.style.setProperty('--rapid-target-glow', targetGlow);
-    arena.style.setProperty('--seq-dot-done', seqDone);
-    arena.style.setProperty('--seq-dot-glow', seqGlow);
-    arena.style.setProperty('--seq-dot-glow2', seqGlow2);
-    arena.style.setProperty('--seq-dot-glow3', seqGlow3);
-    arena.style.setProperty('--spell-color', spellColor);
-    arena.style.setProperty('--spell-bg', spellBg);
-    arena.style.setProperty('--spell-glow', spellGlow);
-  }
-
   function onMapRapidTap(tapId) {
     if (mapBattleState.ended) return;
     const mb = mapBattleState;
@@ -2903,173 +2329,6 @@
     // Vždy melee animace (slash)
     spawnSlashEffect(false, mb._lastSwipeDir);
     updateMapBattleUI();
-  }
-
-  function castMapSpell(spellId) { if (!spellId) { spellId = getBestSpellId(state.activeSchool); if (!spellId) return; }
-    const mb = mapBattleState;
-    const h = state.hero;
-    if (mb.ended) return;
-    let lv = getSpellLv(spellId);
-    if (lv === 0) return;
-    // Kouzlo lze použít jen v attack window
-    if (!mb.inAttackWindow) return;
-    // Mana cost podle kouzla a levelu
-    const manaCosts = { firebolt: 10, fireblast: 20, fireball: 35, frostbolt: 10, icebolt: 10, blizzard: 30, heal: 15, strongStrike: 8, slash: 15, whirlwind: 25 };
-    const cost = (manaCosts[spellId] || 15) + lv * 2;
-    if ((h.mana || 0) < cost) { showMessage('💧 Nedostatek many!'); return; }
-    h.mana -= cost;
-    // Clean up spell buttons
-    $('mbSpells').innerHTML = '';
-    let effectMsg = '';
-    const baseDmg = mb.baseDmg || 1;
-    if (spellId === 'fireball') {
-      const pct = 100 + lv * 100; // 200% @ lv1, 300% @ lv2, 400% @ lv3
-      const resistMult = getSchoolResistMult('fire');
-      let dmg = Math.round(baseDmg * pct / 100 * resistMult);
-      const dotPct = 30; // 30% z dmg/tick
-      const dotTick = Math.max(1, Math.round(dmg * dotPct / 100));
-      let dotDur = 2 + lv;
-      mb.bossHp -= dmg;
-      if (dotTick > 0) { mb.dot = dotTick; mb.dotTicksLeft = dotDur; }
-      effectMsg = `🔥 Fireball! ${dmg} poškození!${dotTick > 0 ? ` ☠️ DoT ${dotTick}/tick` : ''}`;
-      // Ohnivá koule
-      spawnFireballProjectile();
-    } else if (spellId === 'fireblast') {
-      const pct = 100 + lv * 50; // 150% @ lv1, 200% @ lv2, 250% @ lv3
-      const resistMult = getSchoolResistMult('fire');
-      let dmg = Math.round(baseDmg * pct / 100 * resistMult);
-      const dotPct = 20; // 20% z dmg/tick
-      const dotTick = Math.max(1, Math.round(dmg * dotPct / 100));
-      mb.bossHp -= dmg;
-      if (dotTick > 0) { mb.dot = dotTick; mb.dotTicksLeft = 2; }
-      effectMsg = `💥 Fire Blast! ${dmg} poškození!${dotTick > 0 ? ` ☠️ DoT ${dotTick}/tick` : ''}`;
-      spawnFireballProjectile();
-    } else if (spellId === 'firebolt') {
-      const pct = 75 + lv * 35; // 110% @ lv1, 145% @ lv2, ... 250% @ lv5
-      const resistMult = getSchoolResistMult('fire');
-      let dmg = Math.round(baseDmg * pct / 100 * resistMult);
-      mb.bossHp -= dmg;
-      effectMsg = `🔥 Firebolt! ${dmg} poškození!`;
-      spawnFireballProjectile();
-    } else if (spellId === 'frostbolt') {
-      const dmgPct = 125 + lv * 15; // 140% @ lv1, 155% @ lv2, ... 200% @ lv5
-      const resistMult = getSchoolResistMult('ice');
-      let dmg = Math.round(baseDmg * dmgPct / 100 * resistMult);
-      let slowPct = 40;
-      let ticks = 3;
-      // Vylepšený frostbolt (icebolt) přidá ticky
-      const iceboltLv = getTalentLv('ice_icebolt');
-      if (iceboltLv > 0) ticks += iceboltLv;
-      mb.bossHp -= dmg;
-      mb._activeSpellChillActive = true;
-      mb.chillPercent = Math.max(mb.chillPercent || 0, slowPct);
-      mb.chillTicksLeft = Math.max(mb.chillTicksLeft || 0, ticks);
-      effectMsg = `❄️ Frostbolt! ${dmg} poškození, zpomalení 40% na ${ticks} ticků!`;
-      spawnIceProjectile();
-      const bossFig = $('mbFigure');
-      if (bossFig) { bossFig.style.transition = 'filter 0.3s'; bossFig.style.filter = 'brightness(1.8) hue-rotate(200deg) saturate(1.5)'; setTimeout(() => { bossFig.style.filter = 'brightness(1)'; setTimeout(() => { bossFig.style.transition = ''; }, 200); }, 800); }
-      const circle = document.querySelector('.timer-circle');
-      if (circle) circle.style.stroke = '#4fc3f7';
-      spawnFreezeParticles();
-    } else if (spellId === 'icebolt') {
-      // icebolt už není samostatné kouzlo — je to pasivní upgrade frostboltu
-      // Pokud se sem dostaneme (starý save), chová se jako frostbolt
-      const dmgPct = 125 + lv * 25;
-      let dmg = Math.round(baseDmg * dmgPct / 100);
-      let slowPct = 40;
-      let ticks = 3 + lv;
-      mb.bossHp -= dmg;
-      mb._activeSpellChillActive = true;
-      mb.chillPercent = Math.max(mb.chillPercent || 0, slowPct);
-      mb.chillTicksLeft = Math.max(mb.chillTicksLeft || 0, ticks);
-      effectMsg = `❄️ Frostbolt! ${dmg} poškození, zpomalení 40% na ${ticks} ticků!`;
-      spawnIceProjectile();
-      const bossFig = $('mbFigure');
-      if (bossFig) { bossFig.style.transition = 'filter 0.3s'; bossFig.style.filter = 'brightness(1.8) hue-rotate(200deg) saturate(1.5)'; setTimeout(() => { bossFig.style.filter = 'brightness(1)'; setTimeout(() => { bossFig.style.transition = ''; }, 200); }, 800); }
-      const circle = document.querySelector('.timer-circle');
-      if (circle) circle.style.stroke = '#4fc3f7';
-      spawnFreezeParticles();
-    } else if (spellId === 'blizzard') {
-      // Blizzard — zmrazení: 3 útoky po sobě
-      mb._blizzardFreeAttacks = 3;
-      effectMsg = `❄️ Blizard! Boss zmrazen! 3 útoky po sobě!`;
-      spawnIceProjectile();
-      // Modrý efekt na bossovi
-      const bossFig = $('mbFigure');
-      if (bossFig) {
-        bossFig.style.transition = 'filter 0.3s';
-        bossFig.style.filter = 'brightness(1.8) hue-rotate(200deg) saturate(1.5)';
-        setTimeout(() => { bossFig.style.filter = 'brightness(1)'; setTimeout(() => { bossFig.style.transition = ''; }, 200); }, 1500);
-      }
-      const circle = document.querySelector('.timer-circle');
-      if (circle) circle.style.stroke = '#4fc3f7';
-      spawnFreezeParticles();
-    } else if (spellId === 'strongStrike') {
-      const pct = 100 + lv * 50;
-      let dmg = Math.round(baseDmg * pct / 100);
-      const rendCrit = getPhysicalRendCritDmg();
-      if (rendCrit > 0) dmg = Math.round(dmg * (1 + rendCrit / 100));
-      mb.bossHp -= dmg;
-      effectMsg = `💢 Silný úder! ${dmg} poškození!`;
-      spawnCrossSlashEffect();
-      playSFX(strongStrikeSfx);
-      setTimeout(() => {
-        const bossFig = $('mbFigure');
-        if (bossFig) { bossFig.style.transition = 'filter 0.15s'; bossFig.style.filter = 'brightness(2) saturate(1.5)'; setTimeout(() => { bossFig.style.filter = 'brightness(1)'; setTimeout(() => { bossFig.style.transition = ''; }, 200); }, 100); }
-      }, 120);
-    } else if (spellId === 'slash') {
-      const pct = 150 + lv * 50;
-      let dmg = Math.round(baseDmg * pct / 100);
-      const rendCrit = getPhysicalRendCritDmg();
-      if (rendCrit > 0) dmg = Math.round(dmg * (1 + rendCrit / 100));
-      mb.bossHp -= dmg;
-      effectMsg = `⚡ Seknutí! ${dmg} poškození!`;
-      spawnSlashEffect();
-      setTimeout(() => {
-        const bossFig = $('mbFigure');
-        if (bossFig) { bossFig.style.transition = 'filter 0.15s'; bossFig.style.filter = 'brightness(2.5) saturate(1.8)'; setTimeout(() => { bossFig.style.filter = 'brightness(1)'; setTimeout(() => { bossFig.style.transition = ''; }, 200); }, 100); }
-        displayDamageText('⚡');
-      }, 120);
-    } else if (spellId === 'whirlwind') {
-      mb._blizzardFreeAttacks = 3;
-      effectMsg = `🌀 Vichřice! 3 útoky po sobě!`;
-      spawnSlashEffect();
-      setTimeout(() => {
-        const bossFig = $('mbFigure');
-        if (bossFig) { bossFig.style.transition = 'filter 0.15s'; bossFig.style.filter = 'brightness(2) saturate(1.5)'; setTimeout(() => { bossFig.style.filter = 'brightness(1)'; setTimeout(() => { bossFig.style.transition = ''; }, 200); }, 100); }
-        displayDamageText('🌀');
-      }, 120);
-    } else if (spellId === 'heal') {
-      const hotBase = lv * 3;
-      const vitPct = 5 + lv * 5;
-      const vitBonus = Math.round((state.hero.attrVit||0) * vitPct / 100);
-      mb.hot = Math.max(mb.hot || 0, hotBase + vitBonus);
-      mb.hotTicksLeft = Math.max(mb.hotTicksLeft || 0, 2);
-      effectMsg = `💚 Léčení! +${mb.hot}/tick na ${mb.hotTicksLeft} ticky!`;
-      displayDamageText('💚');
-    }
-    if (spellId === 'heal') { playSFX(healSfx); } else if (spellId === 'strongStrike') { /* strongStrikeSfx už přehrán */ } else { sfxSuccess(); }
-    // (hint: zachovat bonus info)
-    updateMapBattleUI();
-    // Odstranit spell tlačítka
-    const spellsEl = $('mbSpells');
-    if (spellsEl) spellsEl.innerHTML = '';
-    if (mb.bossHp <= 0) { endMapBattle(true); return; }
-    // === Ukončení attack window (kouzlo = místo útoku) ===
-    clearTimeout(mb._attackWindowTimer);
-    resetTimerRing();
-    const bc = document.querySelector('.bonus-zone-circle');
-    if (bc) bc.style.strokeDasharray = '0 741';
-    const actInfo = $('mbActionInfo');
-    if (actInfo) actInfo.classList.add('hidden');
-    mb.inAttackWindow = false;
-    updateActionButtons();
-    if (mb._blizzardFreeAttacks > 0) {
-      mb._blizzardFreeAttacks--;
-      setTimeout(() => openAttackWindow(), 100);
-    } else {
-      setTimeout(() => mapBattleTurn(), 300);
-    }
   }
 
   function endMapBattle(won) {
@@ -3487,133 +2746,6 @@
     });
     grid.innerHTML = html;
   }
-
-  // ===== TALENTS =====
-  function getTierPoints(schoolId, tierIdx) {
-    const s = SCHOOL_MAP[schoolId];
-    if (!s || !s.tiers[tierIdx]) return 0;
-    let total = 0;
-    s.tiers[tierIdx].choices.forEach(t => {
-      total += getTalentLv(schoolId + '_' + t.k);
-    });
-    return total;
-  }
-  function isTalentUnlocked(t) {
-    if (!t.requires) return true;
-    return getTalentLv(t.requires) >= t.requiresLv;
-  }
-  function getBestSpellId(schoolId) {
-    if (schoolId === 'fire') {
-      if (getTalentLv('fire_fireball') > 0) return 'fireball';
-      if (getTalentLv('fire_fireblast') > 0) return 'fireblast';
-      if (getTalentLv('fire_firebolt') > 0) return 'firebolt';
-      return null;
-    }
-    if (schoolId === 'ice') {
-      if (getTalentLv('ice_blizzard') > 0) return 'blizzard';
-      if (getTalentLv('ice_frostbolt') > 0) return 'frostbolt';
-      return null;
-    }
-    if (schoolId === 'physical') {
-      if (getWeaponType() !== 'blade') return null;
-      if (getTalentLv('physical_whirlwind') > 0) return 'whirlwind';
-      if (getTalentLv('physical_slash') > 0) return 'slash';
-      if (getTalentLv('physical_strongStrike') > 0) return 'strongStrike';
-      return null;
-    }
-    // Nature: pravá větev je pasivní HoT, levá jed — žádné aktivní kouzlo
-    return null;
-  }
-  function renderTalents() {
-        const pts = state.talentPoints || 0;
-        $('talentsPts').textContent = 'Body: ' + pts;
-        const resetBtn = $('resetTalentsBtn');
-        if (resetBtn) {
-          const cost = 50;
-          const hasSpent = Object.values(state.talentLevels).reduce((a,b)=>a+b, 0) > 0;
-          resetBtn.textContent = hasSpent ? '🔄 Resetovat talenty (' + cost + '💰)' : '✅ Žádné body k resetu';
-          resetBtn.disabled = !hasSpent;
-        }
-        $('talentSchools').innerHTML = SCHOOLS.map(s => {
-                  const isActive = state.activeSchool === s.id;
-                  const hasInvested = Object.values(state.talentLevels).reduce((a,b)=>a+b, 0) > 0;
-                  const isLocked = hasInvested && getTierPoints(s.id, 0) === 0;
-                  const collapsed = !isActive;
-                  return `<div class="talent-school ${isActive?'active':''} ${collapsed?'collapsed':''} ${s.id} ${isLocked?'locked':''}">
-                    ${isLocked?'<div class="talent-lock-overlay">🔒</div>':''}
-                    <div class="talent-school-header" onclick="${isLocked?'':`game.activateSchool('${s.id}')`}">
-                      <span class="talent-school-icon">${s.icon}</span>
-                      <span class="talent-school-name">${s.name}</span>
-                      <span class="talent-school-arrow">${collapsed?'▼':'▲'}</span>
-                    </div>
-                    <div class="talent-school-desc">${s.desc}</div>
-                                        <div class="talent-tree ${collapsed?'hidden':''}">
-                                          ${(function() {
-                                            // Build two columns: [passive, active] x 3 tiers
-                                            const leftTier = s.tiers.map(t => t.choices[0]); // passive
-                                            const rightTier = s.tiers.map(t => t.choices[1]); // active
-                                            function renderBranch(choices, side) {
-                                              return '<div class="talent-branch talent-branch-' + side + '">' +
-                                                choices.map((t, ti) => {
-                                                  const key = s.id + '_' + t.k;
-                                                  const lv = getTalentLv(key);
-                                                  const maxed = lv >= t.maxLv;
-                                                  const canInvest = pts > 0 && !maxed && isTalentUnlocked(t) && !isLocked;
-                                                  const unlocked = isTalentUnlocked(t);
-                                                  return (ti > 0 ? '<div class="talent-connector ' + (getTalentLv(s.id+'_'+choices[ti-1].k) >= choices[ti-1].maxLv ? 'connector-active' : '') + '"></div>' : '') +
-                                                    `<div class="talent-btn ${lv>0?'owned':''} ${canInvest?'clickable':''} ${maxed?'maxed':''} ${!unlocked?'btn-locked':''}" onclick="${canInvest?`game.investTalent('${key}')`:''}">
-                                                      <div class="talent-btn-icon">${t.icon}</div>
-                                                      <div class="talent-btn-name">${t.name}</div>
-                                                      <div class="talent-btn-lv">${lv}/${t.maxLv}</div>
-                                                      <div class="talent-btn-desc">${t.desc(Math.max(lv,1))}</div>
-                                                    </div>`;
-                                                }).join('') +
-                                                '<div class="talent-branch-label">' + (side === 'left' ? '⛰️ Pasivní' : '⚡ Aktivní') + '</div>' +
-                                                '</div>';
-                                            }
-                                            return '<div class="talent-tree-content">' +
-                                              renderBranch(leftTier, 'left') +
-                                              '<div class="talent-divider"></div>' +
-                                              renderBranch(rightTier, 'right') +
-                                              '</div>';
-                                          })()}
-                                        </div>
-                  </div>`;
-        }).join('');
-      }
-      function investTalent(key) {
-              const pts = state.talentPoints || 0;
-              if (pts <= 0) return;
-              const t = TALENT_MAP[key];
-              if (!t) return;
-              const lv = getTalentLv(key);
-              if (lv >= t.maxLv) return;
-              state.talentLevels[key] = lv + 1;
-              state.talentPoints = pts - 1;
-              if (!state.activeSchool) state.activeSchool = t._schoolId;
-              saveGame();
-              renderTalents();
-            }
-            function activateSchool(schoolId) {
-              // Kliknutí na už aktivní školu = deaktivace (zabalení)
-              if (state.activeSchool === schoolId) {
-                state.activeSchool = null;
-              } else {
-                state.activeSchool = schoolId;
-              }
-              saveGame();
-              renderTalents();
-            }
-            function resetTalents() {
-        let total = 0;
-        Object.keys(state.talentLevels).forEach(k => { total += state.talentLevels[k]; state.talentLevels[k] = 0; });
-        if (total === 0) return;
-        state.talentPoints = (state.talentPoints || 0) + total;
-        state.activeSchool = null;
-        saveGame();
-        renderTalents();
-        showMessage('🔄 Talenty resetovány! Získal jsi zpět ' + total + ' bodů.');
-      }
 
   // ===== TRAINING (minigames) =====
   function enterTraining(skillId) {
