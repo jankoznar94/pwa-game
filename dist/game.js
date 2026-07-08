@@ -1280,50 +1280,55 @@
     // 🎯 Fixní výseč — začíná v 50% timeru (6 hodin), 20% šířka
     let winTime = mb._currentWindowTime;
     
-    // D2 (Poušť) — náhodná rychlost na začátku každého útoku, jen červená/modrá
+    // D2 (Poušť) — náhodná rychlost na začátku každého útoku, červená/zelená/modrá
     if (mb.locId === 1) {
-      const isFast = Math.random() < 0.5;
-      const speed = isFast ? 1.05 : 0.55;
+      const r = Math.random();
+      const speed = r < 0.33 ? 1.05 : r < 0.66 ? 0.75 : 0.35;
       winTime = Math.round(winTime / speed);
-      circle.style.stroke = isFast ? '#e94560' : '#4a7dff';
+      circle.style.stroke = speed >= 1 ? '#e94560' : speed >= 0.5 ? '#4caf50' : '#4a7dff';
     }
     
-    // D4 (Pekelné výspy) — přehřívání + červená/modrá jako D2
+    // D4 (Pekelné výspy) — přehřívání + červená/zelená/modrá
     if (mb.locId === 3) {
-      const isFast = Math.random() < 0.5;
-      const speed = isFast ? 1.05 : 0.55;
+      const r = Math.random();
+      const speed = r < 0.33 ? 1.05 : r < 0.66 ? 0.75 : 0.35;
       let baseWinTime = Math.round(winTime / speed);
       // Heat overlay — mírný, max 5% zrychlení při heat 10
       const heatMult = 1 + mb._heatLevel * 0.005;
       winTime = Math.round(baseWinTime / heatMult);
-      // Barva: základ červená/modrá, s heatem se posouvá
+      // Barva: základ červená/zelená/modrá, s heatem se posouvá
       if (mb._heatLevel > 0) {
         const heatPct = Math.min(mb._heatLevel / 10, 1);
-        let r, g, b;
-        if (isFast) {
+        let r2, g, b;
+        if (speed >= 1) {
           // Červená → oranžová → žlutá
-          r = 233;
+          r2 = 233;
           g = Math.round(69 + heatPct * (200 - 69));
           b = Math.round(96 - heatPct * 96);
+        } else if (speed >= 0.5) {
+          // Zelená → světlejší zelená
+          r2 = Math.round(76 - heatPct * 30);
+          g = Math.round(175 + heatPct * 40);
+          b = Math.round(80 - heatPct * 20);
         } else {
           // Modrá → fialová
-          r = Math.round(74 + heatPct * (200 - 74));
+          r2 = Math.round(74 + heatPct * (200 - 74));
           g = Math.round(127 - heatPct * 60);
           b = Math.round(255 - heatPct * 60);
         }
-        circle.style.stroke = `rgb(${r},${g},${b})`;
+        circle.style.stroke = `rgb(${r2},${g},${b})`;
       } else {
-        circle.style.stroke = isFast ? '#e94560' : '#4a7dff';
+        circle.style.stroke = speed >= 1 ? '#e94560' : speed >= 0.5 ? '#4caf50' : '#4a7dff';
       }
     }
     
-    // D5 (Mrazivé štíty) — červená/modrá + timer freeze (bez přehřívání)
+    // D5 (Mrazivé štíty) — červená/zelená/modrá + timer freeze (bez přehřívání)
     if (mb.locId === 4) {
-      const isFast = Math.random() < 0.5;
-      const speed = isFast ? 1.05 : 0.55;
+      const r = Math.random();
+      const speed = r < 0.33 ? 1.05 : r < 0.66 ? 0.75 : 0.35;
       winTime = Math.round(winTime / speed);
-      // Barva: červená = rychlejší, modrá = pomalejší
-      circle.style.stroke = isFast ? '#e94560' : '#4a7dff';
+      // Barva: červená = rychlejší, zelená = střední, modrá = pomalejší
+      circle.style.stroke = speed >= 1 ? '#e94560' : speed >= 0.5 ? '#4caf50' : '#4a7dff';
       // Generovat freeze intervaly — 0-2 náhodné freeze, 500-1500ms
       const freezeCount = Math.random() < 0.5 ? 1 : (Math.random() < 0.3 ? 2 : 0);
       mb._freezeIntervals = [];
