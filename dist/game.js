@@ -933,9 +933,7 @@
   }
 
   function getFloorTimerMultiplier(floor, locId) {
-    // D2 (Poušť) — base je o něco pomalejší, ale bude kolísat v rAF
-    if (locId === 1) return Math.pow(0.92, floor) * 1.15;
-    // Ostatní dungeony: 1300ms base, každé patro -8% (P1=1300, P8=~725ms)
+    // D1, D3: stabilní, beze změn
     return Math.pow(0.92, floor);
   }
 
@@ -1284,25 +1282,19 @@
     
     // D2 (Poušť) — náhodná rychlost na začátku každého útoku, jen červená/modrá
     if (mb.locId === 1) {
-      const floor = mb.floor;
-      const minSpeed = Math.max(0.3, 0.75 - floor * 0.05);
-      const maxSpeed = Math.min(1.6, 1.35 + floor * 0.025);
       const isFast = Math.random() < 0.5;
-      const speed = isFast ? maxSpeed : minSpeed;
+      const speed = isFast ? 1.05 : 0.95;
       winTime = Math.round(winTime / speed);
       circle.style.stroke = isFast ? '#e94560' : '#4a7dff';
     }
     
     // D4 (Pekelné výspy) — přehřívání + červená/modrá jako D2
     if (mb.locId === 3) {
-      const floor = mb.floor;
-      const minSpeed = Math.max(0.3, 0.75 - floor * 0.05);
-      const maxSpeed = Math.min(1.6, 1.35 + floor * 0.025);
       const isFast = Math.random() < 0.5;
-      const speed = isFast ? maxSpeed : minSpeed;
+      const speed = isFast ? 1.05 : 0.95;
       let baseWinTime = Math.round(winTime / speed);
-      // Heat overlay
-      const heatMult = 1 + mb._heatLevel * 0.08;
+      // Heat overlay — mírný, max 5% zrychlení při heat 10
+      const heatMult = 1 + mb._heatLevel * 0.005;
       winTime = Math.round(baseWinTime / heatMult);
       // Barva: základ červená/modrá, s heatem se posouvá
       if (mb._heatLevel > 0) {
@@ -1327,11 +1319,8 @@
     
     // D5 (Mrazivé štíty) — červená/modrá + timer freeze (bez přehřívání)
     if (mb.locId === 4) {
-      const floor = mb.floor;
-      const minSpeed = Math.max(0.3, 0.75 - floor * 0.05);
-      const maxSpeed = Math.min(1.6, 1.35 + floor * 0.025);
       const isFast = Math.random() < 0.5;
-      const speed = isFast ? maxSpeed : minSpeed;
+      const speed = isFast ? 1.05 : 0.95;
       winTime = Math.round(winTime / speed);
       // Barva: červená = rychlejší, modrá = pomalejší
       circle.style.stroke = isFast ? '#e94560' : '#4a7dff';
