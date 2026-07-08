@@ -262,9 +262,10 @@ body.no-scroll { overflow: hidden; }
 }
 .hp-segments-ring circle { fill:none; stroke:rgba(0,0,0,0.3); stroke-width:6; pointer-events:none; }
 .mb-hp-bar { position:relative; }
-.mb-hp-bar .hp-segments { position:absolute; top:0; left:0; width:100%; height:100%; display:flex; pointer-events:none; }
-.mb-hp-bar .hp-segments .hp-seg { flex:1; border-right:1px solid rgba(0,0,0,0.3); }
-.mb-hp-bar .hp-segments .hp-seg:last-child { border-right:none; }
+.mb-stamina-bar { position:relative; }
+.mb-hp-bar .hp-segments, .mb-stamina-bar .hp-segments { position:absolute; top:0; left:0; width:100%; height:100%; display:flex; pointer-events:none; }
+.mb-hp-bar .hp-segments .hp-seg, .mb-stamina-bar .hp-segments .hp-seg { flex:1; border-right:1px solid rgba(0,0,0,0.3); }
+.mb-hp-bar .hp-segments .hp-seg:last-child, .mb-stamina-bar .hp-segments .hp-seg:last-child { border-right:none; }
 .hp-ring-label {
   position:absolute;top:50%;left:50%;z-index:5;
   transform:translate(-50%,-50%);
