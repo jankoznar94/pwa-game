@@ -1038,7 +1038,7 @@
     if (arrowReset) arrowReset.setAttribute('class', 'boss-attack-arrow hidden');
     const actionInfoReset = $('mbActionInfo');
     if (actionInfoReset) { actionInfoReset.classList.add('hidden'); actionInfoReset.textContent = ''; }
-    if (progress === 0 && !isBoss) _forceNewBattleBgm = true;
+    if (!isBoss) _forceNewBattleBgm = true;
     switchBGM(isBoss ? 'boss' : 'battle');
     document.body.classList.add('battle-active');
     updateMapBattleUI();
@@ -1127,28 +1127,14 @@
       if (fill) fill.style.width = Math.max(0, Math.round((mb.stamina / mb.maxStamina) * 100)) + '%';
     }
     const emoji = mb.isBoss ? mb.loc.boss.face : mb.monsterFace;
-    // D4 heat indicator
-    const heatEl = $('mbHeatIndicator');
-    if (heatEl) {
-      if ((mb.locId === 3 || mb.locId === 4) && mb._heatLevel > 0) {
-        heatEl.classList.remove('hidden');
-        const numEl = heatEl.querySelector('.heat-num');
-        if (numEl) numEl.textContent = `${mb._heatLevel}/10`;
-        const heatPct = mb._heatLevel / 10;
-        const r = 233;
-        const g = Math.round(69 - heatPct * 69);
-        const b = Math.round(96 - heatPct * 96);
-        heatEl.style.color = `rgb(${r},${g},${b})`;
-      } else {
-        heatEl.classList.add('hidden');
-      }
-    }
     const fig = $('mbFigure');
-    const themeFilter = DUNGEON_THEME_FILTERS[mb.monsterTheme] || '';
-    const theme = DUNGEON_THEMES[mb.monsterTheme] || DUNGEON_THEMES[0];
-    if (emoji.startsWith('<svg')) { fig.innerHTML = emoji; }
-    else if (emoji.startsWith('assets/')) { fig.innerHTML = '<div class=\"monster-ring-frame\"><img src=\"'+emoji+'\" alt=\"\" style=\"filter:'+themeFilter+'\"/></div>'; }
-    else { fig.textContent = emoji; }
+    if (fig && emoji) {
+      const themeFilter = DUNGEON_THEME_FILTERS[mb.monsterTheme] || '';
+      const theme = DUNGEON_THEMES[mb.monsterTheme] || DUNGEON_THEMES[0];
+      if (emoji.startsWith('<svg')) { fig.innerHTML = emoji; }
+      else if (emoji.startsWith('assets/')) { fig.innerHTML = '<div class=\"monster-ring-frame\"><img src=\"'+emoji+'\" alt=\"\" style=\"filter:'+themeFilter+'\"/></div>'; }
+      else { fig.textContent = emoji; }
+    }
     // (hint necháme pro bonus info — nastaví se až v onMapAttack)
 
     // School spells — HTML tlacitka nad Utokem, vzdy na stejne pozici (84px)
