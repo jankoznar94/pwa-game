@@ -140,7 +140,6 @@
     }
     saveGame();
     renderMap();
-    renderHero();
     renderBestiary();
   }
   let _currentBattleBgmIdx = 0;
@@ -469,12 +468,6 @@
     const lv = getTalentLv('nature_heal');
     return lv * 3; // 3/6/9/12/15 fixního HP/tick
   }
-  function getNatureHealVitalityBonus() {
-    if (state.activeSchool !== 'nature') return 0;
-    const lv = getTalentLv('nature_heal');
-    if (lv === 0) return 0;
-    return Math.round(((state.hero.attrVit || 0) + getEquipAttrs().vit) * (5 + lv * 5) / 100); // 10-30% z vitality
-  }
   function getNatureHealDuration() {
     if (state.activeSchool !== 'nature') return 0;
     const lv1 = getTalentLv('nature_heal');
@@ -756,7 +749,7 @@
         });
       });
     });
-    const s = { talentLevels, activeSchool:null, talentPoints:0, hero:{name:'Dobrodruh',face:'hero',level:1,xp:0,hp:100,maxHp:100,mana:50,maxMana:50,baseDmg:12,attrStr:0,attrVit:0,attrDex:0,attrInt:0,attrPoints:0}, deaths:0, wins:0,
+    const s = { talentLevels, activeSchool:null, talentPoints:0, hero:{name:'Dobrodruh',face:'hero',level:1,xp:0,hp:10,maxHp:10,mana:50,maxMana:50,baseDmg:1}, deaths:0, wins:0,
       locationProgress:[0,0,0,0,0], bossesDefeated:[false,false,false,false,false], floorProgress:[0,0,0,0,0], spellUsedThisFloor:{}, encounteredMonsters:[] };
     return s;
   }
@@ -765,7 +758,7 @@
   function resetGame() { state = defaultState(); saveGame(); showScreen('map'); }
 
   // ===== SCREENS =====
-  const SCREEN_IDS = { map:'mapScreen', mapBattle:'mapBattleScreen', talents:'talentsScreen', hero:'heroScreen', result:'resultScreen', guide:'guideScreen', bestiary:'bestiaryScreen' };
+  const SCREEN_IDS = { map:'mapScreen', mapBattle:'mapBattleScreen', talents:'talentsScreen', result:'resultScreen', guide:'guideScreen', bestiary:'bestiaryScreen' };
   function showScreen(name) {
     cleanupTimers();
     
@@ -796,7 +789,6 @@
     if (name !== 'mapBattle' && name !== 'battle' && name !== 'result') switchBGM('overworld');
     if (name === 'map') renderMap();
     else if (name === 'talents') renderTalents();
-    else if (name === 'hero') renderHero();
   }
 
   function showMessage(msg) {
@@ -1850,10 +1842,9 @@
     if (regen > 0) {
       mb.playerHp = Math.min(mb.maxPlayerHp, mb.playerHp + regen);
     }
-    // Mana regen
+    // Mana regen — fixed
     const h = state.hero;
-    const eqAttrs = getEquipAttrs();
-    const manaRegen = 1 + ((h.attrInt || 0) + eqAttrs.int) * 2;
+    const manaRegen = 1;
     h.mana = Math.min(h.maxMana, (h.mana || 0) + manaRegen);
     const am = $('mbPlayerArenaMana');
     if (am) {
@@ -3146,8 +3137,6 @@
       state.bossesDefeated[locId] = true;
       state.hero.xp = (state.hero.xp || 0) + mb.loc.bossXp + mb.floor * 10;
       state.floorProgress[locId] = 0;
-      state.locationProgress[locId] = 0;
-      applyLevelUp();
       sfxBossDefeat();
       $('resultIcon').textContent = '🏆';
       $('resultTitle').textContent = `${mb.loc.boss.name} poražen!`;
@@ -3614,7 +3603,6 @@
               }
               saveGame();
               renderTalents();
-              renderHero();
             }
             function resetTalents() {
         let total = 0;
@@ -3624,178 +3612,8 @@
         state.activeSchool = null;
         saveGame();
         renderTalents();
-        renderHero();
         showMessage('🔄 Talenty resetovány! Získal jsi zpět ' + total + ' bodů.');
       }
-
-  // ===== HERO =====
-  function applyLevelUp() {
-    const h = state.hero;
-    const prevLevel = h.level;
-    let leveled = false;
-    while (true) {
-      const xpNeeded = h.level * 80;
-      if (h.xp < xpNeeded) break;
-      h.xp -= xpNeeded;
-      h.level++;
-      h.maxHp = getHeroMaxHp();
-      h.baseDmg = getHeroDmg();
-      h.hp = h.maxHp; // full heal při levelu
-      h.attrPoints = (h.attrPoints || 0) + 5;
-      state.talentPoints = (state.talentPoints || 0) + 1;
-      leveled = true;
-    }
-    if (leveled) {
-      sfxLevelUp();
-      saveGame();
-      showLevelUpOverlay(prevLevel);
-    }
-    return leveled;
-  }
-  function getEquipAttrs() {
-    return { str:0, vit:0, dex:0, int:0 };
-  }
-  function getHeroDmg() {
-    return 1;
-  }
-  function getHeroMaxHp() {
-    const h = state.hero;
-    return Math.max(1, 100 + Math.floor(h.level * 10));
-  }
-  function getHeroMaxMana() {
-    return 50;
-  }
-  const ATTR_COST = [5, 10, 20, 35, 55, 80, 110, 150, 200, 260, 330, 410, 500];
-  function renderHero() {
-    const h = state.hero;
-    const active = state.activeSchool ? SCHOOL_MAP[state.activeSchool] : null;
-    const schoolLv = active ? getTierPoints(state.activeSchool, 0) : 0;
-    $('heroName').textContent = h.name || 'Dobrodruh';
-    $('heroLevel').textContent = `Lv.${h.level}`;
-    $('heroDeaths').textContent = state.deaths;
-    $('heroWins').textContent = state.wins;
-    $('heroHp').textContent = h.hp || h.maxHp;
-    $('heroMaxHp').textContent = h.maxHp;
-    $('heroDmg').textContent = getHeroDmg();
-    const faceFile = h.face || 'hero';
-    const portraitImg = $('heroPortraitImg');
-    if (portraitImg) portraitImg.src = `assets/monsters/${faceFile}.png`;
-    const mbPortraitImg = $('mbHeroPortraitImg');
-    if (mbPortraitImg) mbPortraitImg.src = `assets/monsters/${faceFile}.png`;
-    const navHeroIcon = $('navHeroIcon');
-    if (navHeroIcon) navHeroIcon.src = `assets/monsters/${faceFile}.png`;
-    // Aktivni skola
-    const schoolInfo = $('activeSchoolInfo');
-    if (schoolInfo) {
-      schoolInfo.textContent = active ? `${active.icon} ${active.name} — Lv.${schoolLv}/5` : 'Žádná — přidej talentové body v 🎓 Talent Tree';
-    }
-    // XP bar
-    const xpNeeded = h.level * 80;
-    const xpPct = Math.min((h.xp / xpNeeded) * 100, 100);
-    $('heroXpLabel').textContent = `${h.xp}/${xpNeeded}`;
-    $('heroXpBar').style.width = xpPct + '%';
-
-    // Atributy
-    const strCost = ATTR_COST[Math.min(h.attrStr||0, ATTR_COST.length-1)] || 999;
-    const vitCost = ATTR_COST[Math.min(h.attrVit||0, ATTR_COST.length-1)] || 999;
-    const dexCost = ATTR_COST[Math.min(h.attrDex||0, ATTR_COST.length-1)] || 999;
-    const intCost = ATTR_COST[Math.min(h.attrInt||0, ATTR_COST.length-1)] || 999;
-    const pts = h.attrPoints || 0;
-    $('heroAttrStr').textContent = (h.attrStr||0);
-    $('heroAttrVit').textContent = (h.attrVit||0);
-    $('heroAttrDex').textContent = (h.attrDex||0);
-    $('heroAttrInt').textContent = (h.attrInt||0);
-    $('heroAttrPts').textContent = pts;
-    const strBtn = $('heroUpStr');
-    const vitBtn = $('heroUpVit');
-    const dexBtn = $('heroUpDex');
-    const intBtn = $('heroUpInt');
-    if (strBtn) strBtn.textContent = `⬆️ Síla` + (pts > 0 ? '' : ` 🔒`);
-    if (strBtn) strBtn.style.opacity = pts > 0 ? '1' : '0.3';
-    if (vitBtn) vitBtn.textContent = `⬆️ Vitalita` + (pts > 0 ? '' : ` 🔒`);
-    if (vitBtn) vitBtn.style.opacity = pts > 0 ? '1' : '0.3';
-    if (dexBtn) dexBtn.textContent = `⬆️ Obratnost` + (pts > 0 ? '' : ` 🔒`);
-    if (dexBtn) dexBtn.style.opacity = pts > 0 ? '1' : '0.3';
-    if (intBtn) intBtn.textContent = `⬆️ Intelekt` + (pts > 0 ? '' : ` 🔒`);
-    if (intBtn) intBtn.style.opacity = pts > 0 ? '1' : '0.3';
-  }
-
-  function renameHero() {
-    const h = state.hero;
-    const currentName = h.name || 'Dobrodruh';
-    const newName = prompt('Zadej nové jméno hrdiny:', currentName);
-    if (newName && newName.trim().length > 0 && newName.trim() !== currentName) {
-      h.name = newName.trim().substring(0, 20);
-      saveGame();
-      renderHero();
-    }
-  }
-
-  const HERO_FACES = [
-    {id:'hero'},
-    {id:'hero_warrior_f'},
-    {id:'hero_mage_m'},
-    {id:'hero_mage_f'},
-    {id:'hero_barbarian_m'},
-    {id:'hero_barbarian_f'},
-    {id:'hero_rogue_m'},
-    {id:'hero_rogue_f'},
-    {id:'hero_paladin_m'},
-    {id:'hero_paladin_f'},
-  ];
-
-  function showFaceSelect() {
-    const overlay = $('faceSelectOverlay');
-    const grid = $('faceSelectGrid');
-    if (!overlay || !grid) return;
-    grid.innerHTML = HERO_FACES.map(f => {
-      const current = (state.hero.face || 'hero') === f.id;
-      return `<div onclick="game.selectFace('${f.id}')" style="display:flex;flex-direction:column;align-items:center;cursor:pointer;padding:6px;border-radius:8px;background:${current ? '#2a2a2a' : '#1a1a1a'};border:2px solid ${current ? '#4a7dff' : 'transparent'};transition:all 0.2s">
-        <div style="width:72px;height:72px;border-radius:50%;overflow:hidden;border:2px solid #4a7dff;display:flex;align-items:center;justify-content:center;background:#0a0a0a">
-          <img src="assets/monsters/${f.id}.png" alt="" style="width:100%;height:100%;object-fit:cover;display:block"/>
-        </div>
-      </div>`;
-    }).join('');
-    overlay.classList.remove('hidden');
-  }
-
-  function closeFaceSelect() {
-    const overlay = $('faceSelectOverlay');
-    if (overlay) overlay.classList.add('hidden');
-  }
-
-  function selectFace(id) {
-    state.hero.face = id;
-    saveGame();
-    renderHero();
-    closeFaceSelect();
-  }
-
-  function upgradeAttr(attr) {
-    const h = state.hero;
-    if ((h.attrPoints||0) <= 0) { showMessage('❌ Nemáš žádné atributové body!'); return; }
-    h.attrPoints--;
-    if (attr === 'str') {
-      h.attrStr = (h.attrStr||0) + 1;
-      h.baseDmg = getHeroDmg();
-      showMessage('💪 Síla +1! Poškození zvýšeno!');
-    } else if (attr === 'dex') {
-      h.attrDex = (h.attrDex||0) + 1;
-      showMessage('🎯 Obratnost +1! Crit okno zvětšeno!');
-    } else if (attr === 'int') {
-      h.attrInt = (h.attrInt||0) + 1;
-      h.maxMana = getHeroMaxMana();
-      h.mana = h.maxMana;
-      showMessage('🧠 Intelekt +1! Max many +10!');
-    } else {
-      h.attrVit = (h.attrVit||0) + 1;
-      h.maxHp = getHeroMaxHp();
-      h.hp = h.maxHp;
-      showMessage('❤️ Vitalita +1! Max HP zvýšeno!');
-    }
-    saveGame();
-    renderHero();
-  }
 
   // ===== TRAINING (minigames) =====
   function enterTraining(skillId) {
@@ -3925,16 +3743,11 @@
     if (!state.bossesDefeated || state.bossesDefeated.length < LOCATIONS.length) state.bossesDefeated = Array(LOCATIONS.length).fill(false);
     if (!state.locationProgress || state.locationProgress.length < LOCATIONS.length) state.locationProgress = Array(LOCATIONS.length).fill(0);
     if (!state.floorProgress || state.floorProgress.length < LOCATIONS.length) state.floorProgress = Array(LOCATIONS.length).fill(0);
-    if (!state.hero) state.hero = { level:1, xp:0, hp:100, maxHp:100, mana:50, maxMana:50, baseDmg:12, attrStr:0, attrVit:0, attrPoints:0 };
-    if (state.hero.maxHp === undefined) state.hero.maxHp = getHeroMaxHp();
+    if (!state.hero) state.hero = { level:1, xp:0, hp:10, maxHp:10, mana:50, maxMana:50, baseDmg:1 };
+    if (state.hero.maxHp === undefined) state.hero.maxHp = 10;
     if (state.hero.hp === undefined) state.hero.hp = state.hero.maxHp;
-    if (state.hero.attrStr === undefined) state.hero.attrStr = 0;
-    if (state.hero.attrVit === undefined) state.hero.attrVit = 0;
-    if (state.hero.attrDex === undefined) state.hero.attrDex = 0;
-    if (state.hero.attrInt === undefined) state.hero.attrInt = 0;
     if (state.hero.mana === undefined) state.hero.mana = 50;
     if (state.hero.maxMana === undefined) state.hero.maxMana = 50;
-    if (state.hero.attrPoints === undefined) state.hero.attrPoints = 0;
 
     document.querySelectorAll('.nav-bar a').forEach(a => {
       a.addEventListener('click', (e) => {
@@ -3942,7 +3755,6 @@
         e.stopPropagation(); // zabránit propagaci na document
         if (a.dataset.screen === 'map') showScreen('map');
         else if (a.dataset.screen === 'talents') showScreen('talents');
-        else if (a.dataset.screen === 'hero') showScreen('hero');
         else if (a.dataset.screen === 'guide') showScreen('guide');
         else if (a.dataset.screen === 'bestiary') { showScreen('bestiary'); renderBestiary(); }
         // Inicializovat audio hned při prvním kliku (user gesture)
@@ -4048,14 +3860,11 @@
 
   window.game = {
     showScreen, enterLocation, toggleDungeon,
-    upgradeAttr,
     onMapRapidTap,
     investTalent, activateSchool, resetTalents,
     startTutorial, stopTutorial, advanceTutorial, prevTutorialStep,
     toggleMapPause, toggleTutorialPause,
     renderBestiary,
-    renameHero,
-    showFaceSelect, closeFaceSelect, selectFace
   };
   init();
 })();

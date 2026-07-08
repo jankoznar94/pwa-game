@@ -11,7 +11,6 @@
 
 <nav class="nav-bar">
   <a href="#" data-screen="map" class="active"><img src="assets/menu-icons/mapa.png" alt="Mapa" class="nav-icon"></a>
-  <a href="#" data-screen="hero"><img src="assets/monsters/hero.png" alt="Hrdina" class="nav-icon" id="navHeroIcon"></a>
   <a href="#" data-screen="talents"><img src="assets/menu-icons/talenty.png" alt="Talenty" class="nav-icon"></a>
   <a href="#" data-screen="guide"><img src="assets/menu-icons/navod.png" alt="Návod" class="nav-icon"></a>
   <a href="#" data-screen="bestiary"><img src="assets/menu-icons/bestiar.png" alt="Bestiář" class="nav-icon"></a>
@@ -104,95 +103,6 @@
   <div class="card" style="margin-top:8px">
     <button class="btn btn-secondary" onclick="game.resetTalents()" id="resetTalentsBtn">🔄 Resetovat talenty (50💰)</button>
   </div>
-</div>
-
-<!-- ===== HERO ===== -->
-<div id="heroScreen" class="container hidden">
-  <div class="card">
-    <div class="hero-header">
-      <div class="hero-portrait-lg">
-        <div class="hero-portrait-lg-frame"><img src="assets/monsters/hero.png" alt="" class="hero-portrait-lg-img" id="heroPortraitImg"/></div>
-        <button class="btn-change-face" onclick="game.showFaceSelect()" title="Změnit vzhled">🔄</button>
-      </div>
-      <div class="hero-header-info">
-        <div class="hero-name-row">
-          <span class="hero-name" id="heroName">Dobrodruh</span>
-          <button class="btn-rename" onclick="game.renameHero()" title="Přejmenovat">✏️</button>
-          <span class="hero-level" id="heroLevel">Lv.1</span>
-        </div>
-        <div class="hero-subtitle">💀 <span id="heroDeaths">0</span> · 🏆 <span id="heroWins">0</span></div>
-        <div class="hero-stats-grid">
-          <div class="hero-stat"><span class="hero-stat-icon">❤️</span><span id="heroHp">100</span>/<span id="heroMaxHp">100</span></div>
-          <div class="hero-stat"><span class="hero-stat-icon">⚔️</span><span id="heroDmg">12</span></div>
-          <div class="hero-stat"><span class="hero-stat-icon">🗡️</span>Krit <span id="heroCrit">—</span></div>
-          <div class="hero-stat"><span class="hero-stat-icon">🛡️</span>Blok <span id="heroBlock">0%</span></div>
-          <div class="hero-stat"><span class="hero-stat-icon">🛡️</span>Def <span id="heroDefense">0</span></div>
-        </div>
-      </div>
-    </div>
-    <div class="hero-xp-wrap">
-      <div class="flex-between">
-        <span class="hero-xp-label">XP</span>
-        <span class="hero-xp-value" id="heroXpLabel">0/80</span>
-      </div>
-      <div class="mb-xp-bar-bg" style="height:6px">
-        <div class="mb-xp-bar-fill" id="heroXpBar" style="width:0%"></div>
-      </div>
-    </div>
-  </div>
-  <div class="card">
-    <div class="card-title">💪 Atributy <span class="hero-attr-pts">(body: <span id="heroAttrPts">0</span>)</span></div>
-    <div class="hero-attr-row">
-      <span>💪 Síla: <span id="heroAttrStr">0</span></span>
-      <button class="btn btn-primary hero-attr-btn" id="heroUpStr" onclick="game.upgradeAttr('str')">⬆️</button>
-    </div>
-    <div class="hero-attr-row">
-      <span>❤️ Vitalita: <span id="heroAttrVit">0</span></span>
-      <button class="btn btn-primary hero-attr-btn" id="heroUpVit" onclick="game.upgradeAttr('vit')">⬆️</button>
-    </div>
-    <div class="hero-attr-row">
-      <span>🎯 Obratnost: <span id="heroAttrDex">0</span></span>
-      <button class="btn btn-primary hero-attr-btn" id="heroUpDex" onclick="game.upgradeAttr('dex')">⬆️</button>
-    </div>
-    <div class="hero-attr-row">
-      <span>🧠 Intelekt: <span id="heroAttrInt">0</span></span>
-      <button class="btn btn-primary hero-attr-btn" id="heroUpInt" onclick="game.upgradeAttr('int')">⬆️</button>
-    </div>
-  </div>
-  <div class="card">
-    <div class="card-title">🎓 Aktivní škola</div>
-    <div id="activeSchoolInfo" class="card-subtitle">Žádná — přidej talentové body v 🎓 Talent Tree</div>
-  </div>
-  <div class="card">
-    <div class="card-title">🎒 Vybavení</div>
-    <div class="inv-equip-panel" style="margin:12px 0 0">
-      <div class="inv-equip-slot" id="heroSlotHelmet" style="width:72px;height:72px;cursor:default">
-        <div class="inv-slot-icon" id="heroSlotHelmetIcon" style="font-size:20px">⛑️</div>
-      </div>
-      <div class="inv-equip-slot" id="heroSlotArmor" style="width:72px;height:72px;cursor:default">
-        <div class="inv-slot-icon" id="heroSlotArmorIcon" style="font-size:20px">🛡️</div>
-      </div>
-      <div class="inv-equip-slot" id="heroSlotWeapon" style="width:72px;height:72px;cursor:default">
-        <div class="inv-slot-icon" id="heroSlotWeaponIcon" style="font-size:20px">⚔️</div>
-      </div>
-      <div class="inv-equip-slot" id="heroSlotShield" style="width:72px;height:72px;cursor:default">
-        <div class="inv-slot-icon" id="heroSlotShieldIcon" style="font-size:20px">🛡️</div>
-      </div>
-      <div class="inv-equip-slot inv-equip-ring" id="heroSlotRing1" style="width:72px;height:72px;cursor:default">
-        <div class="inv-slot-icon" id="heroSlotRing1Icon" style="font-size:20px">💍</div>
-      </div>
-      <div class="inv-equip-slot inv-equip-ring" id="heroSlotAmulet" style="width:72px;height:72px;cursor:default">
-        <div class="inv-slot-icon" id="heroSlotAmuletIcon" style="font-size:20px">📿</div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ===== FACE SELECT OVERLAY ===== -->
-<div id="faceSelectOverlay" class="hidden" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:1000;display:flex;align-items:center;justify-content:center;flex-direction:column;padding:20px;box-sizing:border-box">
-  <div style="color:#f1c40f;font-size:18px;font-weight:bold;margin-bottom:12px">Vyber vzhled hrdiny</div>
-  <div id="faceSelectGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;max-width:320px;width:100%"></div>
-  <button class="btn btn-secondary" style="margin-top:16px;padding:8px 24px" onclick="game.closeFaceSelect()">Zavřít</button>
 </div>
 
 <!-- ===== RESULT ===== -->

@@ -53,10 +53,6 @@ body.no-scroll { overflow: hidden; }
 .card-title { font-size: 16px; font-weight: bold; margin-bottom: 6px; }
 .card-subtitle { font-size: 12px; color: #888888; margin-bottom: 4px; }
 
-/* Hero */
-.hero-stats-row { display: flex; gap: 12px; flex-wrap: wrap; font-size: 13px; margin-top: 6px; }
-.hero-stats-row span { background: #1a1a1a; padding: 4px 10px; border-radius: 6px; }
-
 /* Skills */
 .skill-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .skill-card {
@@ -360,39 +356,6 @@ body.no-scroll { overflow: hidden; }
 .mb-stamina-bar span {
   position:relative;z-index:1;
 }
-
-/* Hero attributes */
-.hero-attr-row { display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid #1a1a1a;font-size:14px; }
-.hero-attr-row:last-child { border-bottom:none; }
-.hero-attr-btn { width:auto;padding:4px 10px;font-size:11px; }
-.hero-attr-pts { font-size:12px;color:#f1c40f; }
-.hero-xp-wrap { margin:8px 0 0;padding:6px 0;border-top:1px solid #1a1a1a; }
-.hero-xp-label { font-size:11px;color:#8888aa; }
-.hero-xp-value { font-size:11px;color:#f1c40f; }
-
-/* Hero screen — portrét */
-.hero-header { display:flex; gap:14px; align-items:center; }
-.hero-portrait-lg { flex-shrink:0; }
-.hero-portrait-lg-frame { width:100px; height:100px; border-radius:50%; border:2px solid #4a7dff; overflow:hidden; display:flex; align-items:center; justify-content:center; background:#0a0a0a; box-shadow:0 0 16px rgba(74,125,255,0.4); }
-.hero-portrait-lg-img { width:100%; height:100%; object-fit:cover; display:block; object-position:center 30%; }
-.hero-header-info { flex:1; min-width:0; }
-.hero-name-row { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
-.hero-name { font-size:17px; font-weight:bold; color:#ddd; }
-.hero-level { font-size:13px; color:#f1c40f; font-weight:bold; margin-left:auto; }
-.hero-subtitle { font-size:12px; color:#888; margin:2px 0 8px; }
-.hero-stats-grid { display:grid; grid-template-columns:1fr 1fr; gap:4px; }
-.hero-stat { background:#1a1a1a; padding:4px 8px; border-radius:6px; font-size:12px; color:#ccc; display:flex; align-items:center; gap:4px; }
-.hero-stat-icon { font-size:13px; }
-.btn-rename { background:none; border:none; cursor:pointer; font-size:16px; padding:2px 4px; opacity:0.6; transition:opacity 0.2s; line-height:1; }
-.btn-rename:hover { opacity:1; }
-.btn-change-face { position:absolute; bottom:-4px; right:-4px; background:#1a1a1a; border:2px solid #4a7dff; border-radius:50%; width:28px; height:28px; cursor:pointer; font-size:13px; display:flex; align-items:center; justify-content:center; opacity:0.8; transition:opacity 0.2s; z-index:2; }
-.btn-change-face:hover { opacity:1; }
-.hero-portrait-lg { flex-shrink:0; position:relative; }
-
-/* XP bar pro swipe fight */
-.mb-xp-bar-wrap { display:flex; align-items:center; gap:8px; }
-.mb-xp-bar-bg { flex:1; height:10px; background:#1a1a1a; border-radius:4px; overflow:hidden; }
-.mb-xp-bar-fill { height:100%; border-radius:4px; background:#f1c40f; transition:width 0.3s; }
 
 /* Map battle spells - centered row above arena */
 .mb-spells { display:flex;gap:6px;justify-content:center;padding:6px 0;flex-wrap:wrap; }
