@@ -719,6 +719,27 @@ body.no-scroll { overflow: hidden; }
   flex-shrink: 0;
   border: 2px solid #2a2a2a;
 }
+.guide-arena-sm {
+  position: relative;
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  background: #0d0d0d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 2px solid #2a2a2a;
+}
+.guide-arena-sm img.guide-monster-sm {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  object-fit: cover;
+  position: relative;
+  z-index: 1;
+  pointer-events: none;
+}
 .guide-arena img.guide-monster {
   width: 120px;
   height: 120px;
@@ -728,14 +749,14 @@ body.no-scroll { overflow: hidden; }
   z-index: 1;
   pointer-events: none;
 }
-.guide-arrow-overlay {
+.guide-arrow-center {
   position: absolute;
-  top: 8px;
+  top: 50%;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translate(-50%, -50%);
   z-index: 2;
   pointer-events: none;
-  filter: drop-shadow(0 0 6px rgba(0,0,0,0.8));
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
 }
 .guide-timer-ring {
   position: absolute;
@@ -745,36 +766,48 @@ body.no-scroll { overflow: hidden; }
   z-index: 2;
   pointer-events: none;
 }
-.guide-timer-ring svg {
-  display: block;
-}
-.guide-arrow-group {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 2;
-  pointer-events: none;
+.guide-arena-row {
   display: flex;
-  gap: 8px;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
 }
-.guide-arrow-group svg {
-  filter: drop-shadow(0 0 4px rgba(0,0,0,0.8));
+.guide-arena-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.guide-arena-label {
+  font-size: 11px;
+  color: #aaa;
+  text-align: center;
 }
 .guide-heat-icon {
   position: absolute;
-  bottom: 12px;
-  right: 12px;
+  bottom: 8px;
+  right: 8px;
   z-index: 3;
-  font-size: 24px;
+  font-size: 18px;
   pointer-events: none;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: rgba(0,0,0,0.5);
+  border-radius: 10px;
+  padding: 2px 6px;
+}
+.guide-heat-num {
+  font-size: 12px;
+  color: #ff6b35;
 }
 .guide-negation-ring {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  z-index: 2;
+  z-index: 3;
   pointer-events: none;
   animation: negation-pulse-guide 2s ease-in-out infinite;
 }
