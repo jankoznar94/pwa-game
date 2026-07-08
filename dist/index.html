@@ -109,56 +109,105 @@
   </div>
   <div class="guide-grid">
 
-    <!-- Základ: společná mechanika -->
+    <!-- Základ -->
     <div class="guide-card guide-base">
-      <div class="guide-icon"><svg viewBox="0 0 16 16" width="48" height="48"><path d="M8 1L13 8L10.5 8L10.5 15L5.5 15L5.5 8L3 8L8 1Z" fill="#bbb" stroke="#bbb" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></svg></div>
       <div class="guide-desc"><strong>Základ</strong> — Šedá šipka: <strong>swipni stejným směrem</strong>, kterým ukazuje. Každá šipka je útok — správným swipe útočíš na monstrum.</div>
+      <div class="guide-preview">
+        <div class="guide-arena">
+          <img src="assets/monsters/troll_test_small.png" class="guide-monster" alt="Troll">
+          <div class="guide-arrow-overlay">
+            <svg viewBox="0 0 16 16" width="48" height="48"><path d="M8 1L13 8L10.5 8L10.5 15L5.5 15L5.5 8L3 8L8 1Z" fill="#bbb" stroke="#bbb" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></svg>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <!-- D1: Začarovaný les -->
+    <!-- D1 -->
     <div class="guide-card guide-d1">
-      <div class="guide-icon">🌲</div>
       <div class="guide-desc"><strong>D1 — Začarovaný les</strong><br>Čistě klasické šedé šipky. Žádné zvláštnosti — ideální na rozehřátí.</div>
+      <div class="guide-preview">
+        <div class="guide-arena">
+          <img src="assets/monsters/troll_test_small.png" class="guide-monster" alt="Troll">
+          <div class="guide-arrow-overlay">
+            <svg viewBox="0 0 16 16" width="48" height="48"><path d="M8 1L13 8L10.5 8L10.5 15L5.5 15L5.5 8L3 8L8 1Z" fill="#bbb" stroke="#bbb" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></svg>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <!-- D2: Pouštní říše -->
+    <!-- D2 -->
     <div class="guide-card guide-d2">
-      <div class="guide-icon" style="display:flex;flex-direction:column;gap:6px;align-items:center">
-        <svg viewBox="0 0 20 20" width="48" height="48"><circle cx="10" cy="10" r="8" fill="none" stroke="#e94560" stroke-width="2"/></svg>
-        <svg viewBox="0 0 20 20" width="48" height="48"><circle cx="10" cy="10" r="8" fill="none" stroke="#4caf50" stroke-width="2"/></svg>
-        <svg viewBox="0 0 20 20" width="48" height="48"><circle cx="10" cy="10" r="8" fill="none" stroke="#4a7dff" stroke-width="2"/></svg>
-      </div>
       <div class="guide-desc"><strong>D2 — Pouštní říše</strong><br>Šedé šipky, ale <strong>barevné timery</strong>:<br>🔴 Červený = rychlejší, 🟢 Zelený = střední, 🔵 Modrý = pomalejší. Podle barvy kruhu poznáš, jak rychle musíš reagovat!</div>
+      <div class="guide-preview">
+        <div class="guide-arena">
+          <img src="assets/monsters/desert_scorpion.png" class="guide-monster" alt="Štír">
+          <div class="guide-timer-ring">
+            <svg viewBox="0 0 260 260" width="180" height="180">
+              <circle cx="130" cy="130" r="110" stroke="#e94560" stroke-width="12" fill="none" stroke-dasharray="691" stroke-dashoffset="0" opacity="0.5"/>
+              <circle cx="130" cy="130" r="110" stroke="#4caf50" stroke-width="12" fill="none" stroke-dasharray="691 691" stroke-dashoffset="461" opacity="0.5"/>
+              <circle cx="130" cy="130" r="110" stroke="#4a7dff" stroke-width="12" fill="none" stroke-dasharray="691 691" stroke-dashoffset="230" opacity="0.5"/>
+            </svg>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <!-- D3: Nemrtvá země -->
+    <!-- D3 -->
     <div class="guide-card guide-d3">
-      <div class="guide-icon" style="display:flex;flex-direction:column;gap:6px;align-items:center">
-        <svg viewBox="0 0 16 16" width="48" height="48"><path d="M8 1L13 8L10.5 8L10.5 15L5.5 15L5.5 8L3 8L8 1Z" fill="#2ecc71" stroke="#2ecc71" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></svg>
-        <svg viewBox="0 0 16 16" width="48" height="48"><path d="M8 1L13 8L10.5 8L10.5 15L5.5 15L5.5 8L3 8L8 1Z" fill="#e94560" stroke="#e94560" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></svg>
-        <svg viewBox="0 0 16 16" width="48" height="48"><path d="M8 1L13 8L10.5 8L10.5 15L5.5 15L5.5 8L3 8L8 1Z" fill="#4a7dff" stroke="#4a7dff" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></svg>
-      </div>
       <div class="guide-desc"><strong>D3 — Nemrtvá země</strong><br>🟢 <strong>Pravda</strong> (zelená) — swipni jak šipka ukazuje<br>🔴 <strong>Lež</strong> (červená) — swipni <strong>opačně</strong>, než šipka ukazuje<br>🔵 <strong>Zmrzni</strong> (modrá) — <strong>nesmíš swipnout</strong>, počkej až timer vyprší</div>
+      <div class="guide-preview">
+        <div class="guide-arena">
+          <img src="assets/monsters/skeleton.png" class="guide-monster" alt="Kostlivec">
+          <div class="guide-arrow-group">
+            <svg viewBox="0 0 16 16" width="40" height="40"><path d="M8 1L13 8L10.5 8L10.5 15L5.5 15L5.5 8L3 8L8 1Z" fill="#2ecc71" stroke="#2ecc71" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></svg>
+            <svg viewBox="0 0 16 16" width="40" height="40"><path d="M8 1L13 8L10.5 8L10.5 15L5.5 15L5.5 8L3 8L8 1Z" fill="#e94560" stroke="#e94560" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></svg>
+            <svg viewBox="0 0 16 16" width="40" height="40"><path d="M8 1L13 8L10.5 8L10.5 15L5.5 15L5.5 8L3 8L8 1Z" fill="#4a7dff" stroke="#4a7dff" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></svg>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <!-- D4: Pekelné výspy -->
+    <!-- D4 -->
     <div class="guide-card guide-d4">
-      <div class="guide-icon" style="display:flex;flex-direction:column;gap:6px;align-items:center">
-        <svg viewBox="0 0 16 16" width="48" height="48"><path d="M8 1L13 8L10.5 8L10.5 15L5.5 15L5.5 8L3 8L8 1Z" fill="#2ecc71" stroke="#2ecc71" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></svg>
-        <svg viewBox="0 0 16 16" width="48" height="48"><path d="M8 1L13 8L10.5 8L10.5 15L5.5 15L5.5 8L3 8L8 1Z" fill="#e94560" stroke="#e94560" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></svg>
-        <svg viewBox="0 0 16 16" width="48" height="48"><path d="M8 1L13 8L10.5 8L10.5 15L5.5 15L5.5 8L3 8L8 1Z" fill="#4a7dff" stroke="#4a7dff" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></svg>
-        <span style="font-size:20px;margin-top:4px;color:#ff6b35">🌡️</span>
-      </div>
       <div class="guide-desc"><strong>D4 — Pekelné výspy</strong><br>Pravda / Lež / Zmrzni (stejně jako D3) + <strong>přehřívání</strong>. S každým úspěšným úhybem se timer zrychluje a barvy kruhu světlají. Čím víc se blížíš k přehřátí (max 10), tím rychleji musíš reagovat!</div>
+      <div class="guide-preview">
+        <div class="guide-arena" style="border-color:#e74c3c">
+          <img src="assets/monsters/kerberos.png" class="guide-monster" alt="Kerberos">
+          <div class="guide-arrow-group">
+            <svg viewBox="0 0 16 16" width="36" height="36"><path d="M8 1L13 8L10.5 8L10.5 15L5.5 15L5.5 8L3 8L8 1Z" fill="#2ecc71" stroke="#2ecc71" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></svg>
+            <svg viewBox="0 0 16 16" width="36" height="36"><path d="M8 1L13 8L10.5 8L10.5 15L5.5 15L5.5 8L3 8L8 1Z" fill="#e94560" stroke="#e94560" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></svg>
+            <svg viewBox="0 0 16 16" width="36" height="36"><path d="M8 1L13 8L10.5 8L10.5 15L5.5 15L5.5 8L3 8L8 1Z" fill="#4a7dff" stroke="#4a7dff" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></svg>
+          </div>
+          <div class="guide-heat-icon">🌡️</div>
+        </div>
+      </div>
     </div>
 
-    <!-- D5: Mrazivé štíty -->
+    <!-- D5 -->
     <div class="guide-card guide-d5">
-      <div class="guide-icon" style="display:flex;flex-direction:column;gap:6px;align-items:center">
-        <svg viewBox="0 0 300 300" width="48" height="48" style="animation:negation-pulse 2s ease-in-out infinite"><circle cx="150" cy="150" r="140" stroke="#e94560" stroke-width="6" fill="none" style="filter:drop-shadow(0 0 12px #e94560)"/></svg>
-        <svg viewBox="0 0 300 300" width="48" height="48" style="animation:negation-pulse 2s ease-in-out infinite"><circle cx="150" cy="150" r="140" stroke="#4caf50" stroke-width="6" fill="none" style="filter:drop-shadow(0 0 12px #4caf50)"/></svg>
+      <div class="guide-desc"><strong>D5 — Mrazivé štíty</strong><br>Pravda / Lež / Zmrzni + <strong>negation ring</strong>. Kolem šipky se objeví pulsující kruh. 🔴 Červený = negace aktivní — význam pravdy a lži se <strong>prohodí</strong>. 🟢 Zelený = normální. Všechno je o 35 % pomalejší, abys stihl přemýšlet!</div>
+      <div class="guide-preview">
+        <div class="guide-negation-row">
+          <div class="guide-negation-item">
+            <div class="guide-arena" style="width:160px;height:160px;border-color:#a8d8ea">
+              <img src="assets/monsters/ice_troll.png" class="guide-monster" alt="Ledový troll" style="width:90px;height:90px">
+              <div class="guide-negation-ring red">
+                <svg viewBox="0 0 300 300" width="160" height="160"><circle cx="150" cy="150" r="140" stroke="#e94560" stroke-width="6" fill="none" style="filter:drop-shadow(0 0 12px #e94560)"/></svg>
+              </div>
+            </div>
+            <span class="guide-negation-label" style="color:#e94560">🔴 Negace</span>
+          </div>
+          <div class="guide-negation-item">
+            <div class="guide-arena" style="width:160px;height:160px;border-color:#a8d8ea">
+              <img src="assets/monsters/ice_troll.png" class="guide-monster" alt="Ledový troll" style="width:90px;height:90px">
+              <div class="guide-negation-ring green">
+                <svg viewBox="0 0 300 300" width="160" height="160"><circle cx="150" cy="150" r="140" stroke="#4caf50" stroke-width="6" fill="none" style="filter:drop-shadow(0 0 12px #4caf50)"/></svg>
+              </div>
+            </div>
+            <span class="guide-negation-label" style="color:#4caf50">🟢 Normální</span>
+          </div>
+        </div>
       </div>
-      <div class="guide-desc"><strong>D5 — Mrazivé štíty</strong><br>Kolem útočné šipky se objeví pulsující negation ring:<br>🔴 <strong>Červený</strong> = negace aktivní — význam <strong>pravdy a lži se prohodí</strong><br>🟢 <strong>Zelený</strong> = normální — pravidla platí jako obvykle<br>Všechno je o 35 % pomalejší, abys stihl přemýšlet!</div>
     </div>
 
   </div>

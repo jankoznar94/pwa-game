@@ -690,12 +690,119 @@ body.no-scroll { overflow: hidden; }
   border-radius: 10px;
   padding: 14px;
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 14px;
   transition: 0.2s;
 }
 .guide-card:hover {
   border-color: #4a7dff;
+}
+.guide-desc {
+  width: 100%;
+}
+.guide-preview {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 8px 0;
+}
+.guide-arena {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: #0d0d0d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 2px solid #2a2a2a;
+}
+.guide-arena img.guide-monster {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  position: relative;
+  z-index: 1;
+  pointer-events: none;
+}
+.guide-arrow-overlay {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  pointer-events: none;
+  filter: drop-shadow(0 0 6px rgba(0,0,0,0.8));
+}
+.guide-timer-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+  pointer-events: none;
+}
+.guide-timer-ring svg {
+  display: block;
+}
+.guide-arrow-group {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+  pointer-events: none;
+  display: flex;
+  gap: 8px;
+}
+.guide-arrow-group svg {
+  filter: drop-shadow(0 0 4px rgba(0,0,0,0.8));
+}
+.guide-heat-icon {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  z-index: 3;
+  font-size: 24px;
+  pointer-events: none;
+}
+.guide-negation-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+  pointer-events: none;
+  animation: negation-pulse-guide 2s ease-in-out infinite;
+}
+.guide-negation-ring.red {
+  animation-delay: 0s;
+}
+.guide-negation-ring.green {
+  animation-delay: 1s;
+}
+@keyframes negation-pulse-guide {
+  0%, 100% { opacity: 0.7; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 1; transform: translate(-50%, -50%) scale(1.03); }
+}
+.guide-negation-row {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  justify-content: center;
+}
+.guide-negation-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.guide-negation-label {
+  font-size: 12px;
+  color: #aaa;
 }
 .guide-card.guide-base { border-left: 3px solid #bbb; }
 .guide-card.guide-d1 { border-left: 3px solid #4caf50; }
