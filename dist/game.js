@@ -1320,8 +1320,7 @@
     }
     
     const bStartMs = Math.round(winTime * 0.65); // výseč začíná v 65% timeru
-    const bonusPct = Math.min(15, 8 + (mb.floor || 0)); // 8% v P1, +1%/patro, max 15%
-    const bMs = Math.round(winTime * bonusPct / 100);
+    const bMs = Math.round(winTime * 0.15); // 15% šířka, stabilní
     mb._bonusStartMs = bStartMs;
     mb._bonusMs = bMs;
     
