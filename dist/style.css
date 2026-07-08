@@ -246,6 +246,18 @@ body.no-scroll { overflow: hidden; }
 .arena-heat-indicator .heat-num {
   display:block; font-size:16px;
 }
+.negation-ring {
+  position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); z-index:8;
+  pointer-events:none; animation:negation-pulse 2s ease-in-out infinite;
+}
+.negation-ring .negation-circle {
+  stroke:var(--negation-color,#4caf50); opacity:0.7;
+  filter:drop-shadow(0 0 8px var(--negation-color,#4caf50));
+}
+@keyframes negation-pulse {
+  0%,100% { opacity:0.7; transform:translate(-50%,-50%) scale(1); }
+  50% { opacity:1; transform:translate(-50%,-50%) scale(1.03); }
+}
 #mbArena .monster-in-ring {
   position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:3;
   font-size:120px;line-height:1;pointer-events:none;
@@ -445,62 +457,6 @@ body.no-scroll { overflow: hidden; }
   right:20px; bottom:20px; top:auto; transform:none;
   width:64px; height:52px; border-radius:14px;
 }
-
-/* Talent Tree — WoW style */
-.talent-schools { display:flex; flex-direction:column; gap:8px; }
-.talent-school {
-  border:2px solid #2a2a2a; border-radius:10px; padding:12px; background:#1a1a1a;
-  transition:0.2s; cursor:pointer;
-}
-.talent-school:hover { border-color:#4a7dff; }
-.talent-school.active { border-color:#f1c40f; background:#1a1a1a; }
-.talent-school-header {
-  display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;
-}
-.talent-school-icon { font-size:28px; }
-.talent-school-name { font-size:18px; font-weight:bold; margin-left:8px; flex:1; }
-.talent-school-arrow { font-size:14px; color:#666; transition:transform 0.2s; }
-.talent-school-desc { font-size:13px; color:#888888; margin-bottom:6px; }
-.talent-school.collapsed .talent-school-desc { margin-bottom:0; }
-.talent-school.collapsed { padding-bottom:8px; }
-.talent-tree { display:flex; flex-direction:column; gap:0; margin-top:8px; }
-.talent-tier { padding:4px 0; background:transparent; border:none; position:relative; }
-.talent-tier.tier-locked { opacity:0.4; filter:grayscale(0.5); }
-.tier-label { font-size:11px; color:#555; margin-bottom:4px; font-weight:bold; text-transform:uppercase; letter-spacing:1px; }
-.tier-choices { display:flex; gap:10px; justify-content:center; }
-.talent-btn {
-  width:130px; height:110px;
-  border:2px solid #2a2a2a; border-radius:8px; padding:8px 6px;
-  background:#0d0d0d; text-align:center; cursor:default;
-  transition:0.15s; position:relative;
-  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
-}
-.talent-btn.owned { border-color:#f1c40f; background:#1a1a1a; }
-.talent-btn.clickable { cursor:pointer; border-color:#4a7dff; }
-.talent-btn.clickable:hover { border-color:#6a9dff; background:#1a1a1a; transform:scale(1.05); }
-.talent-btn.maxed { border-color:#2ecc71; background:#0a0a0a; }
-.talent-btn-icon { font-size:28px; line-height:1; }
-.talent-btn-name { font-size:11px; font-weight:bold; color:#ccc; line-height:1.2; }
-.talent-btn-lv { font-size:13px; font-weight:bold; color:#f1c40f; }
-.talent-btn-desc { font-size:10px; color:#666; line-height:1.15; }
-.talent-school.active.fire .talent-btn.owned { border-color:#e94560; }
-.talent-school.active.fire .talent-btn.maxed { border-color:#e94560; }
-.talent-school.active.ice .talent-btn.owned { border-color:#4a7dff; }
-.talent-school.active.ice .talent-btn.maxed { border-color:#4a7dff; }
-.talent-school.active.nature .talent-btn.owned { border-color:#2ecc71; }
-.talent-school.active.nature .talent-btn.maxed { border-color:#2ecc71; }
-.talent-school.locked { opacity:0.4; pointer-events:none; filter:grayscale(0.6); position:relative; }
-.talent-lock-overlay {
-  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-  font-size:48px;z-index:5;opacity:0.6;
-}
-.talent-tree-content { display:flex; gap:0; align-items:flex-start; justify-content:center; }
-.talent-branch { display:flex; flex-direction:column; align-items:center; gap:0; flex:1; }
-.talent-divider { width:1px; min-height:100%; background:#2a2a2a; align-self:stretch; margin:0 8px; }
-.talent-connector { width:2px; height:18px; background:#333; }
-.talent-connector.connector-active { background:#f1c40f; box-shadow:0 0 6px rgba(241,196,15,0.6); }
-.btn-locked { opacity:0.35; filter:grayscale(0.6); }
-.talent-branch-label { font-size:10px; color:#555; margin-top:6px; font-weight:bold; text-transform:uppercase; letter-spacing:1px; }
 
 /* Map */
 .map-guide-link {

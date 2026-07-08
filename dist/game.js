@@ -166,7 +166,6 @@
       if (mb._sequenceTimer) { clearTimeout(mb._sequenceTimer); mb._sequenceTimer = null; }
       if (mb._attackWindowTimer) { clearTimeout(mb._attackWindowTimer); mb._attackWindowTimer = null; }
       if (mb._ringTimer) { clearTimeout(mb._ringTimer); mb._ringTimer = null; }
-      if (mb._freezeTimer) { clearTimeout(mb._freezeTimer); mb._freezeTimer = null; }
       if (mb._bonusRaf) { cancelAnimationFrame(mb._bonusRaf); mb._bonusRaf = null; }
       // Uložit elapsed čas pro rAF loop
       const circle = document.querySelector('.timer-circle');
@@ -208,30 +207,7 @@
                 const now = performance.now();
                 const rawElapsed = now - attackStartTime;
                 
-                // D5 timer freeze
-                let isFrozen = false;
-                if (mb.locId === 4 && mb._freezeIntervals && mb._freezeIntervals.length > 0) {
-                  for (let fi = 0; fi < mb._freezeIntervals.length; fi++) {
-                    const fz = mb._freezeIntervals[fi];
-                    if (rawElapsed >= fz.startMs && rawElapsed < fz.startMs + fz.duration) {
-                      isFrozen = true;
-                      mb._freezeUntil = fz.startMs + fz.duration;
-                      break;
-                    }
-                  }
-                  if (!isFrozen) mb._freezeUntil = null;
-                }
-                
-                let totalFrozen = 0;
-                if (mb.locId === 4 && mb._freezeIntervals) {
-                  for (let fi = 0; fi < mb._freezeIntervals.length; fi++) {
-                    const fz = mb._freezeIntervals[fi];
-                    if (rawElapsed >= fz.startMs + fz.duration) totalFrozen += fz.duration;
-                    else if (rawElapsed > fz.startMs) totalFrozen += rawElapsed - fz.startMs;
-                  }
-                }
-                
-                const effectiveElapsed = rawElapsed - totalFrozen;
+                const effectiveElapsed = rawElapsed;
                 const pct = Math.min(effectiveElapsed / winTime, 1);
                 mb._bonusActive = (effectiveElapsed >= mb._bonusStartMs && effectiveElapsed < mb._bonusStartMs + mb._bonusMs);
                 if (circle) {
@@ -541,8 +517,10 @@
       if (mapBattleState._ringTimer) { clearTimeout(mapBattleState._ringTimer); mapBattleState._ringTimer = null; }
       if (mapBattleState._attackWindowTimer) { clearTimeout(mapBattleState._attackWindowTimer); mapBattleState._attackWindowTimer = null; }
       if (mapBattleState._glowTimer) { clearTimeout(mapBattleState._glowTimer); mapBattleState._glowTimer = null; }
-      if (mapBattleState._freezeTimer) { clearInterval(mapBattleState._freezeTimer); mapBattleState._freezeTimer = null; }
       if (mapBattleState._bonusRaf) { cancelAnimationFrame(mapBattleState._bonusRaf); mapBattleState._bonusRaf = null; }
+      // Skrýt negation ring
+      const negRing = document.getElementById('mbNegationRing');
+      if (negRing) negRing.classList.add('hidden');
     }
   }
 
@@ -710,7 +688,7 @@
       mistakes: 0, floorMistakes: 0, stunned: 0, frozen: 0, dot: 0, dotTicksLeft: 0, hot: 0, hotTicksLeft: 0, chillPercent: 0, chillTicksLeft: 0, _activeSpellChillActive: false, _poisonBlockHeal: false, shieldActive: null,
       playerDot: 0, playerDotTicksLeft: 0,
       _ringTimer: null, _sequenceTimer: null, _attackWindowTimer: null,
-      _freezeTimer: null, _bonusRaf: null,
+      _bonusRaf: null,
       spellCooldowns: {},
       _spellCooldownTicks: 0,
       _blizzardFreeAttacks: 0,
@@ -730,9 +708,17 @@
       dodgeCharges: 3, maxDodgeCharges: 3,
       _lastSwipeDir: null,
       _heatLevel: 0, // D4 přehřívání: 0 = normální, kladné = rychlejší
-      _freezeUntil: null // D5 timer freeze: timestamp kdy freeze končí (null = není frozen)
+      _negationActive: false // D5 negation ring: true = neguje truth/lie
     };
     // Schools handled via activeSchool
+    // D4 — zobrazit heat indicator
+    if (locId === 3) {
+      const heatEl = $('mbHeatIndicator');
+      if (heatEl) heatEl.classList.remove('hidden');
+    } else {
+      const heatEl = $('mbHeatIndicator');
+      if (heatEl) heatEl.classList.add('hidden');
+    }
 
     showScreen('mapBattle');
     // Skrýt starou šipku z předchozího boje ihned
@@ -835,6 +821,11 @@
         segHtml += '<div class="hp-seg"></div>';
       }
       dodgeSegs.innerHTML = segHtml;
+    }
+    // Heat indicator
+    if (mb.locId === 3) {
+      const heatNum = document.querySelector('.heat-num');
+      if (heatNum) heatNum.textContent = `${mb._heatLevel}/10`;
     }
     const emoji = mb.isBoss ? mb.loc.boss.face : mb.monsterFace;
     const fig = $('mbFigure');
@@ -1307,24 +1298,22 @@
       }
     }
     
-    // D5 (Mrazivé štíty) — červená/zelená/modrá + timer freeze (bez přehřívání)
+    // D5 (Mrazivé štíty) — červená/zelená/modrá + negation ring (místo timer freeze)
     if (mb.locId === 4) {
+      // Skrýt negation ring z předchozího útoku
+      const oldNeg = $('mbNegationRing');
+      if (oldNeg) oldNeg.classList.add('hidden');
       const r = Math.random();
       const speed = r < 0.33 ? 1.05 : r < 0.66 ? 0.65 : 0.35;
       winTime = Math.round(winTime / speed);
       // Barva: červená = rychlejší, zelená = střední, modrá = pomalejší
       circle.style.stroke = speed >= 1 ? '#e94560' : speed >= 0.5 ? '#4caf50' : '#4a7dff';
-      // Generovat freeze intervaly — 0-2 náhodné freeze, 500-1500ms
-      const freezeCount = Math.random() < 0.5 ? 1 : (Math.random() < 0.3 ? 2 : 0);
-      mb._freezeIntervals = [];
-      mb._totalFrozenMs = 0;
-      mb._freezeUntil = null;
-      for (let fi = 0; fi < freezeCount; fi++) {
-        const minStart = 500;
-        const maxStart = Math.max(minStart + 100, winTime - 500);
-        const startMs = minStart + Math.random() * (maxStart - minStart);
-        const duration = 500 + Math.random() * 1000; // 500-1500ms
-        mb._freezeIntervals.push({ startMs, duration });
+      // Negation ring — 50% šance na negaci
+      mb._negationActive = Math.random() < 0.5;
+      const negRing = $('mbNegationRing');
+      if (negRing) {
+        negRing.classList.remove('hidden');
+        negRing.style.setProperty('--negation-color', mb._negationActive ? '#e94560' : '#4caf50');
       }
     }
     
@@ -1349,99 +1338,42 @@
     mb._bonusCircum = 741;
     
     if (mb._bonusRaf) cancelAnimationFrame(mb._bonusRaf);
-    const attackStartTime = performance.now();
-    let _lastEffectiveElapsed = 0; // D5: poslední effectiveElapsed před freeze
-    let _savedStrokeColor = null; // D5: původní barva kruhu před freeze
-    (function frame() {
-      if (mapBattleState.ended) return;
-      const now = performance.now();
-      const rawElapsed = now - attackStartTime;
+        const attackStartTime = performance.now();
+    
+        (function frame() {
+          if (mapBattleState.ended) return;
+          const now = performance.now();
+          const rawElapsed = now - attackStartTime;
       
-      // D5 timer freeze — zkontrolovat jestli jsme v freeze intervalu
-      let isFrozen = false;
-      if (mb.locId === 4 && mb._freezeIntervals && mb._freezeIntervals.length > 0) {
-        for (let fi = 0; fi < mb._freezeIntervals.length; fi++) {
-          const fz = mb._freezeIntervals[fi];
-          if (rawElapsed >= fz.startMs && rawElapsed < fz.startMs + fz.duration) {
-            isFrozen = true;
-            mb._freezeUntil = fz.startMs + fz.duration;
-            break;
+          const effectiveElapsed = rawElapsed;
+          const pct = Math.min(effectiveElapsed / winTime, 1);
+          mb._bonusActive = (effectiveElapsed >= mb._bonusStartMs && effectiveElapsed < mb._bonusStartMs + mb._bonusMs);
+          if (circle) {
+            circle.style.opacity = '1';
+            circle.style.strokeDashoffset = Math.round(691 * (1 - pct));
           }
-        }
-        if (!isFrozen) {
-          mb._freezeUntil = null;
-        }
-      }
-      
-      // Spočítat celkový freeze čas (jen dokončené intervaly)
-      let totalFrozen = 0;
-      if (mb.locId === 4 && mb._freezeIntervals) {
-        for (let fi = 0; fi < mb._freezeIntervals.length; fi++) {
-          const fz = mb._freezeIntervals[fi];
-          if (rawElapsed >= fz.startMs + fz.duration) {
-            totalFrozen += fz.duration;
-          } else if (rawElapsed > fz.startMs) {
-            totalFrozen += rawElapsed - fz.startMs;
+          if (effectiveElapsed < winTime) {
+            mb._bonusRaf = requestAnimationFrame(frame);
+          } else {
+            mb._bonusActive = false;
+            mb._bonusRaf = null;
           }
-        }
-      }
-      
-      let effectiveElapsed;
-      if (isFrozen) {
-        // Během freeze — effectiveElapsed stojí na poslední hodnotě
-        effectiveElapsed = _lastEffectiveElapsed;
-      } else {
-        // Mimo freeze — effectiveElapsed = rawElapsed - celkový freeze čas
-        effectiveElapsed = rawElapsed - totalFrozen;
-        _lastEffectiveElapsed = effectiveElapsed;
-      }
-      
-      const pct = Math.min(effectiveElapsed / winTime, 1);
-      mb._bonusActive = (effectiveElapsed >= mb._bonusStartMs && effectiveElapsed < mb._bonusStartMs + mb._bonusMs);
-      if (circle) {
-        circle.style.opacity = '1';
-        if (isFrozen) {
-          // Během freeze — kolečko stojí, modrá barva
-          if (_savedStrokeColor === null) _savedStrokeColor = circle.style.stroke;
-          circle.style.stroke = '#4fc3f7';
-        } else {
-          // Po freeze — obnovit původní barvu
-          if (_savedStrokeColor !== null) {
-            circle.style.stroke = _savedStrokeColor;
-            _savedStrokeColor = null;
+        })();
+    
+        // Timeout = chyba (nestihl zareagovat)
+        mb._sequenceTimer = setTimeout(() => {
+          if (mapBattleState.ended) return;
+          if (attack.type === 'freeze') {
+            // Freeze: neudělat nic = správně
+            // D4 — ochlazení: úspěšná freeze snižuje heat
+            if (mb.locId === 3 && mb._heatLevel > 0) {
+              mb._heatLevel = Math.max(0, mb._heatLevel - 1);
+            }
+            advanceSequence();
+          } else {
+            onMapHit();
           }
-          circle.style.strokeDashoffset = Math.round(691 * (1 - pct));
-        }
-      }
-      if (effectiveElapsed < winTime) {
-        mb._bonusRaf = requestAnimationFrame(frame);
-      } else {
-        mb._bonusActive = false;
-        mb._bonusRaf = null;
-      }
-    })();
-
-    // Timeout = chyba (nestihl zareagovat), kromě freeze — tam je timeout = úspěch
-    // Pro D5: winTime + celkový freeze čas
-    let timeoutWinTime = winTime;
-    if (mb.locId === 4 && mb._freezeIntervals) {
-      let totalFrozen = 0;
-      mb._freezeIntervals.forEach(fz => totalFrozen += fz.duration);
-      timeoutWinTime = winTime + totalFrozen;
-    }
-    mb._sequenceTimer = setTimeout(() => {
-      if (mapBattleState.ended) return;
-      if (attack.type === 'freeze') {
-        // Freeze: neudělat nic = správně
-        // D4 — ochlazení: úspěšná freeze snižuje heat
-        if (mb.locId === 3 && mb._heatLevel > 0) {
-          mb._heatLevel = Math.max(0, mb._heatLevel - 1);
-        }
-        advanceSequence();
-      } else {
-        onMapHit();
-      }
-    }, timeoutWinTime);
+        }, winTime);
   }
 
   // DoT tick helper — volá se po každém timeru (ať už hráč uspěl, nebo dostal ránu)
@@ -2079,24 +2011,26 @@
         updateMapBattleUI();
       }
     } else if (attack.type === 'truth') {
-      // Truth — zelená šipka, swipni jak ukazuje
-      clearTimeout(mb._sequenceTimer);
-      clearTimeout(mb._ringTimer);
-      mb._ringTimer = null;
-      mb._sequenceTimer = null;
-      if (dir === attack.dir) {
-        correct = true;
-        doArenaGlow(dir, true);
-        dmgMult = 1.0;
-      }
-    } else if (attack.type === 'lie') {
-      // Lie — červená šipka, swipni opačný směr
+      // Truth — zelená šipka, swipni jak ukazuje (negation prohodí)
       clearTimeout(mb._sequenceTimer);
       clearTimeout(mb._ringTimer);
       mb._ringTimer = null;
       mb._sequenceTimer = null;
       const inverseMap = { '⬆️':'⬇️', '⬇️':'⬆️', '⬅️':'➡️', '➡️':'⬅️' };
-      if (dir === inverseMap[attack.dir]) {
+      const truthTarget = mb._negationActive ? inverseMap[attack.dir] : attack.dir;
+      if (dir === truthTarget) {
+        correct = true;
+        doArenaGlow(dir, true);
+        dmgMult = 1.0;
+      }
+    } else if (attack.type === 'lie') {
+      // Lie — červená šipka, swipni opačný směr (negation prohodí)
+      clearTimeout(mb._sequenceTimer);
+      clearTimeout(mb._ringTimer);
+      mb._ringTimer = null;
+      mb._sequenceTimer = null;
+      const lieTarget = mb._negationActive ? attack.dir : inverseMap[attack.dir];
+      if (dir === lieTarget) {
         correct = true;
         doArenaGlow(dir, true);
         dmgMult = 1.0;

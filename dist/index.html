@@ -11,7 +11,6 @@
 
 <nav class="nav-bar">
   <a href="#" data-screen="map" class="active"><img src="assets/menu-icons/mapa.png" alt="Mapa" class="nav-icon"></a>
-  <a href="#" data-screen="talents"><img src="assets/menu-icons/talenty.png" alt="Talenty" class="nav-icon"></a>
   <a href="#" data-screen="guide"><img src="assets/menu-icons/navod.png" alt="Návod" class="nav-icon"></a>
   <a href="#" data-screen="bestiary"><img src="assets/menu-icons/bestiar.png" alt="Bestiář" class="nav-icon"></a>
   <a href="#" id="musicToggle"><img src="assets/menu-icons/music.png" alt="Hudba" class="nav-icon"></a>
@@ -52,6 +51,7 @@
       </div>
       <div class="monster-in-ring" id="mbFigure">👹</div>
       <div class="monster-ring-overlay"></div>
+      <div class="negation-ring hidden" id="mbNegationRing"><svg viewBox="0 0 300 300" width="300" height="300"><circle cx="150" cy="150" r="140" stroke-width="6" fill="none" class="negation-circle"/></svg></div>
       <svg class="hp-ring-svg" viewBox="0 0 180 180" width="180" height="180">
         <circle cx="90" cy="90" r="87" stroke="#e74c3c" stroke-width="10" fill="none" stroke-dasharray="547" stroke-dashoffset="547" class="hp-circle"/>
         <g class="hp-segments-ring" id="mbEnemyHpSegments"></g>
@@ -87,21 +87,6 @@
         <span>3/3</span>
       </div>
     </div>
-  </div>
-</div>
-
-<!-- ===== TALENTS ===== -->
-<div id="talentsScreen" class="container hidden">
-  <div class="card">
-    <div class="flex-between">
-      <span class="card-title"><img src="assets/menu-icons/talenty.png" class="page-icon" alt=""> Talent Tree</span>
-      <span id="talentsPts" style="color:#f1c40f;font-weight:bold">Body: 0</span>
-    </div>
-    <div class="card-subtitle">Za každý level získáš 1 talent bod. <strong>Jedna škola</strong> může být aktivní najednou.</div>
-  </div>
-  <div class="talent-schools" id="talentSchools"></div>
-  <div class="card" style="margin-top:8px">
-    <button class="btn btn-secondary" onclick="game.resetTalents()" id="resetTalentsBtn">🔄 Resetovat talenty (50💰)</button>
   </div>
 </div>
 
