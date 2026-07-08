@@ -942,27 +942,15 @@
     if (locId === 0 || locId === 1) return { grey: 85, yellow: 0, blue: 0, green: 0, inverted: 0, rapid: 0, truth: 0, lie: 0, freeze: 0 };
     // D3 (Nemrtvá země): truth (zelená=normální), lie (červená=opačný), freeze (modrá=nic)
     if (locId === 2) {
-      const f = floor || 0;
-      const truth = Math.max(30, 70 - f * 4);
-      const lie = Math.min(35, 15 + f * 2);
-      const freeze = Math.min(35, 15 + f * 2);
-      return { grey: 0, yellow: 0, blue: 0, green: 0, inverted: 0, rapid: 0, truth, lie, freeze };
+      return { grey: 0, yellow: 0, blue: 0, green: 0, inverted: 0, rapid: 0, truth: 40, lie: 40, freeze: 20 };
     }
     // D4 (Pekelné výspy): truth/lie/freeze + přehřívání
     if (locId === 3) {
-      const f = floor || 0;
-      const truth = Math.max(20, 60 - f * 4);
-      const lie = Math.min(40, 20 + f * 2);
-      const freeze = Math.min(40, 20 + f * 2);
-      return { grey: 0, yellow: 0, blue: 0, green: 0, inverted: 0, rapid: 0, truth, lie, freeze };
+      return { grey: 0, yellow: 0, blue: 0, green: 0, inverted: 0, rapid: 0, truth: 40, lie: 40, freeze: 20 };
     }
-    // D5 (Mrazivé štíty): truth/lie/freeze + přehřívání + timer freeze
+    // D5 (Mrazivé štíty): truth/lie/freeze + timer freeze
     if (locId === 4) {
-      const f = floor || 0;
-      const truth = Math.max(20, 60 - f * 4);
-      const lie = Math.min(40, 20 + f * 2);
-      const freeze = Math.min(40, 20 + f * 2);
-      return { grey: 0, yellow: 0, blue: 0, green: 0, inverted: 0, rapid: 0, truth, lie, freeze };
+      return { grey: 0, yellow: 0, blue: 0, green: 0, inverted: 0, rapid: 0, truth: 40, lie: 40, freeze: 20 };
     }
     return { grey: 85, yellow: 0, blue: 0, green: 0, inverted: 0, rapid: 0, truth: 0, lie: 0, freeze: 0 };
   }
@@ -1283,7 +1271,7 @@
     // D2 (Poušť) — náhodná rychlost na začátku každého útoku, červená/zelená/modrá
     if (mb.locId === 1) {
       const r = Math.random();
-      const speed = r < 0.4 ? 1.05 : r < 0.8 ? 0.75 : 0.35;
+      const speed = r < 0.33 ? 1.05 : r < 0.66 ? 0.75 : 0.35;
       winTime = Math.round(winTime / speed);
       circle.style.stroke = speed >= 1 ? '#e94560' : speed >= 0.5 ? '#4caf50' : '#4a7dff';
     }
@@ -1291,7 +1279,7 @@
     // D4 (Pekelné výspy) — přehřívání + červená/zelená/modrá
     if (mb.locId === 3) {
       const r = Math.random();
-      const speed = r < 0.4 ? 1.05 : r < 0.8 ? 0.75 : 0.35;
+      const speed = r < 0.33 ? 1.05 : r < 0.66 ? 0.75 : 0.35;
       let baseWinTime = Math.round(winTime / speed);
       // Heat overlay — mírný, max 5% zrychlení při heat 10
       const heatMult = 1 + mb._heatLevel * 0.005;
@@ -1322,7 +1310,7 @@
     // D5 (Mrazivé štíty) — červená/zelená/modrá + timer freeze (bez přehřívání)
     if (mb.locId === 4) {
       const r = Math.random();
-      const speed = r < 0.4 ? 1.05 : r < 0.8 ? 0.75 : 0.35;
+      const speed = r < 0.33 ? 1.05 : r < 0.66 ? 0.75 : 0.35;
       winTime = Math.round(winTime / speed);
       // Barva: červená = rychlejší, zelená = střední, modrá = pomalejší
       circle.style.stroke = speed >= 1 ? '#e94560' : speed >= 0.5 ? '#4caf50' : '#4a7dff';
