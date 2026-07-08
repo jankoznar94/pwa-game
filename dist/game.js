@@ -58,14 +58,10 @@
   ];
   function getHurtSfx() { return hurtSfx[Math.floor(Math.random() * hurtSfx.length)]; }
   function getHitSfx() {
-    const wt = getWeaponType();
-    if (wt === 'fists') return fistHitSfx;
-    return wt === 'staff' ? hitSfx : meleeHitSfx;
+    return meleeHitSfx;
   }
   function getCritSfx() {
-    const wt = getWeaponType();
-    if (wt === 'fists') return fistCritSfx;
-    return wt === 'staff' ? critSfx : meleeCritSfx;
+    return meleeCritSfx;
   }
   function playSFX(audio) { audio.currentTime = 0; audio.play().catch(() => {}); }
   const healSfx = (() => { const a = new Audio('heal.mp3'); a.volume = 1.0; return a; })();
@@ -3021,15 +3017,8 @@
       bossFig.style.filter = 'brightness(2) saturate(1.5)';
       setTimeout(() => { bossFig.style.filter = 'brightness(1)'; setTimeout(() => { bossFig.style.transition = ''; }, 200); }, 100);
     }
-    // Projektil podle zbraně — vždy normální vizuál (žádný crit efekt)
-    const wType = getWeaponType();
-    if (wType === 'blade') {
-      spawnSlashEffect(false, mb._lastSwipeDir);
-    } else if (wType === 'fists') {
-      spawnFistEffect(false);
-    } else {
-      spawnProjectileEffect(null, false, false);
-    }
+    // Vždy melee animace (slash)
+    spawnSlashEffect(false, mb._lastSwipeDir);
     updateMapBattleUI();
   }
 
