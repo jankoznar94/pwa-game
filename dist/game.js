@@ -503,8 +503,7 @@
     return getTalentLv('physical_executioner') > 0;
   }
   function getWeaponType() {
-    const w = ITEM_MAP[state.hero.equip.weapon] || ITEM_MAP['fists'];
-    return w.weaponType || 'fists';
+    return 'fists';
   }
   // ===== RESIST MULT =====
   function getSchoolResistMult(schoolId) {
@@ -1419,9 +1418,7 @@
     updateMapBattleUI();
 
     // RPG baseDmg
-    const weapon = ITEM_MAP[state.hero.equip.weapon] || ITEM_MAP['fists'];
-    const eqAttrs = getEquipAttrs();
-    mb.baseDmg = 10 + Math.floor(state.hero.level * 3) + weapon.baseDmg + ((state.hero.attrStr||0) + eqAttrs.str) * 2;
+    mb.baseDmg = 1;
 
     // Generovat sekvenci
     const chances = getDungeonAttackChances(mb.locId, mb.floor);
@@ -2933,7 +2930,7 @@
     // Clean up spell buttons
     $('mbSpells').innerHTML = '';
     let effectMsg = '';
-    const baseDmg = mb.baseDmg || (10 + Math.floor(state.hero.level * 3) + (ITEM_MAP[state.hero.equip.weapon]||ITEM_MAP['fists']).baseDmg + (state.hero.attrStr||0)*2);
+    const baseDmg = mb.baseDmg || 1;
     if (spellId === 'fireball') {
       const pct = 100 + lv * 100; // 200% @ lv1, 300% @ lv2, 400% @ lv3
       const resistMult = getSchoolResistMult('fire');
@@ -3656,52 +3653,17 @@
     return leveled;
   }
   function getEquipAttrs() {
-    const h = state.hero;
-    const slots = ['weapon','armor','helmet','shield','ring1','amulet'];
-    const defaults = { weapon:'fists', armor:'rags', helmet:null, shield:null, ring1:null, amulet:null };
-    const total = { str:0, vit:0, dex:0, int:0 };
-    slots.forEach(slot => {
-      const itemId = h.equip[slot];
-      if (!itemId || itemId === defaults[slot]) return;
-      const item = ITEM_MAP[itemId];
-      if (item && item.attrs) {
-        Object.keys(item.attrs).forEach(k => {
-          total[k] = (total[k] || 0) + item.attrs[k];
-        });
-      }
-    });
-    return total;
+    return { str:0, vit:0, dex:0, int:0 };
   }
   function getHeroDmg() {
-    const h = state.hero;
-    const weapon = ITEM_MAP[h.equip.weapon] || ITEM_MAP['fists'];
-    const ring1 = ITEM_MAP[h.equip.ring1];
-    const amulet = ITEM_MAP[h.equip.amulet];
-    const ringDmg = (ring1 && ring1.type === 'ring' ? (ring1.baseDmg||0) : 0) + (amulet && amulet.type === 'amulet' ? (amulet.baseDmg||0) : 0);
-    const eqAttrs = getEquipAttrs();
-    return Math.max(1, 5 + Math.floor(h.level * 2) + weapon.baseDmg + ringDmg + ((h.attrStr||0) + eqAttrs.str) * 1);
+    return 1;
   }
   function getHeroMaxHp() {
     const h = state.hero;
-    const armor = ITEM_MAP[h.equip.armor] || ITEM_MAP['rags'];
-    const helmet = ITEM_MAP[h.equip.helmet];
-    const shield = ITEM_MAP[h.equip.shield];
-    const ring1 = ITEM_MAP[h.equip.ring1];
-    const amulet = ITEM_MAP[h.equip.amulet];
-    const bonus = armor.bonusHp + (helmet ? helmet.bonusHp||0 : 0) + (shield ? shield.bonusHp||0 : 0) + (ring1 ? ring1.bonusHp||0 : 0) + (amulet ? amulet.bonusHp||0 : 0);
-    const eqAttrs = getEquipAttrs();
-    return Math.max(1, 100 + Math.floor(h.level * 10) + bonus + ((h.attrVit||0) + eqAttrs.vit) * 10);
+    return Math.max(1, 100 + Math.floor(h.level * 10));
   }
   function getHeroMaxMana() {
-    const h = state.hero;
-    const weapon = ITEM_MAP[h.equip.weapon] || ITEM_MAP['fists'];
-    const armor = ITEM_MAP[h.equip.armor] || ITEM_MAP['rags'];
-    const helmet = ITEM_MAP[h.equip.helmet];
-    const shield = ITEM_MAP[h.equip.shield];
-    const ring1 = ITEM_MAP[h.equip.ring1];
-    const amulet = ITEM_MAP[h.equip.amulet];
-    const bonus = (weapon.bonusMana||0) + (armor.bonusMana||0) + (helmet ? helmet.bonusMana||0 : 0) + (shield ? shield.bonusMana||0 : 0) + (ring1 ? ring1.bonusMana||0 : 0) + (amulet ? amulet.bonusMana||0 : 0);
-    return Math.max(10, 50 + ((h.attrInt||0) + getEquipAttrs().int) * 10 + bonus);
+    return 50;
   }
   const ATTR_COST = [5, 10, 20, 35, 55, 80, 110, 150, 200, 260, 330, 410, 500];
   function renderHero() {
@@ -3715,20 +3677,6 @@
     $('heroHp').textContent = h.hp || h.maxHp;
     $('heroMaxHp').textContent = h.maxHp;
     $('heroDmg').textContent = getHeroDmg();
-    const weapon = ITEM_MAP[h.equip.weapon] || ITEM_MAP['fists'];
-    const critChance = weapon.critChance || 0;
-    $('heroCrit').textContent = critChance > 0 ? `${critChance}% (×2.0)` : `0%`;
-    // Block chance ze štítu
-    const shieldItem = ITEM_MAP[h.equip.shield];
-    const blockChance = shieldItem ? (shieldItem.blockChance || 0) : 0;
-    $('heroBlock').textContent = `${blockChance}%`;
-    // Celková Defense
-    const armorDef = (ITEM_MAP[h.equip.armor] || ITEM_MAP['rags']).defense || 0;
-    const helmetDef = ITEM_MAP[h.equip.helmet]?.defense || 0;
-    const shieldDef = ITEM_MAP[h.equip.shield]?.defense || 0;
-    const totalDef = armorDef + helmetDef + shieldDef;
-    const defPct = Math.round(100 - 10000 / (100 + totalDef));
-    $('heroDefense').textContent = `${totalDef} (${defPct}%)`;
     const faceFile = h.face || 'hero';
     const portraitImg = $('heroPortraitImg');
     if (portraitImg) portraitImg.src = `assets/monsters/${faceFile}.png`;
@@ -3753,10 +3701,10 @@
     const dexCost = ATTR_COST[Math.min(h.attrDex||0, ATTR_COST.length-1)] || 999;
     const intCost = ATTR_COST[Math.min(h.attrInt||0, ATTR_COST.length-1)] || 999;
     const pts = h.attrPoints || 0;
-    $('heroAttrStr').textContent = (h.attrStr||0) + (getEquipAttrs().str > 0 ? ` (+${getEquipAttrs().str} z itemů)` : '');
-    $('heroAttrVit').textContent = (h.attrVit||0) + (getEquipAttrs().vit > 0 ? ` (+${getEquipAttrs().vit} z itemů)` : '');
-    $('heroAttrDex').textContent = (h.attrDex||0) + (getEquipAttrs().dex > 0 ? ` (+${getEquipAttrs().dex} z itemů)` : '');
-    $('heroAttrInt').textContent = (h.attrInt||0) + (getEquipAttrs().int > 0 ? ` (+${getEquipAttrs().int} z itemů)` : '');
+    $('heroAttrStr').textContent = (h.attrStr||0);
+    $('heroAttrVit').textContent = (h.attrVit||0);
+    $('heroAttrDex').textContent = (h.attrDex||0);
+    $('heroAttrInt').textContent = (h.attrInt||0);
     $('heroAttrPts').textContent = pts;
     const strBtn = $('heroUpStr');
     const vitBtn = $('heroUpVit');
@@ -3770,28 +3718,6 @@
     if (dexBtn) dexBtn.style.opacity = pts > 0 ? '1' : '0.3';
     if (intBtn) intBtn.textContent = `⬆️ Intelekt` + (pts > 0 ? '' : ` 🔒`);
     if (intBtn) intBtn.style.opacity = pts > 0 ? '1' : '0.3';
-
-    const weaponNames = { fists:'✊ Pěsti', dagger:'🪄 Dřevěná hůlka', shortsword:'🪄 Ohnivá hůlka', sword:'🪄 Ledová hůl', battleAxe:'🪄 Blesková hůl', spear:'🪄 Hvězdná hůl', flameSword:'🪄 Plamená hůl', longsword:'🪄 Měsíční hůl', warHammer:'⚔️ Temný meč', greatAxe:'🪓 Dračí sekera', excalibur:'⚔️ Arcimágův meč' };
-    const armorNames = { rags:'👘 Hadry', leather:'👘 Lněný hábit', chainmail:'👘 Kožený hábit', scale:'👘 Šupinový hábit', plate:'👘 Vyšívaný hábit', fullPlate:'👘 Kroužkový hábit', dragonScale:'👘 Dračí hábit', adamantPlate:'👘 Arcimágův hábit' };
-    // Hero screen equipment sloty
-    const w = ITEM_MAP[h.equip.weapon] || ITEM_MAP['fists'];
-    const a = ITEM_MAP[h.equip.armor] || ITEM_MAP['rags'];
-    const helm = ITEM_MAP[h.equip.helmet];
-    const shield = ITEM_MAP[h.equip.shield];
-    const r1 = ITEM_MAP[h.equip.ring1];
-    const amulet = ITEM_MAP[h.equip.amulet];
-    const hw = $('heroSlotWeaponIcon'); if (hw) hw.innerHTML = h.equip.weapon === 'fists' ? renderItemIcon({iconImg:'/assets/items/weapon_iron_sword.png',tier:1}, 0) : renderItemIcon(w, 0);
-    const hws = $('heroSlotWeapon'); if (hws) { hws.classList.toggle('empty', h.equip.weapon === 'fists'); setSlotBorder('heroSlotWeapon', w); }
-    const ha = $('heroSlotArmorIcon'); if (ha) ha.innerHTML = h.equip.armor === 'rags' ? renderItemIcon({iconImg:'/assets/items/armor_leather.png',tier:1}, 0) : renderItemIcon(a, 0);
-    const has = $('heroSlotArmor'); if (has) { has.classList.toggle('empty', h.equip.armor === 'rags'); setSlotBorder('heroSlotArmor', a); }
-    const hh = $('heroSlotHelmetIcon'); if (hh) hh.innerHTML = helm ? renderItemIcon(helm, 0) : renderItemIcon({iconImg:'/assets/items/helmet_linen_hood.png',tier:1}, 0);
-    const hhs = $('heroSlotHelmet'); if (hhs) { hhs.classList.toggle('empty', !helm); setSlotBorder('heroSlotHelmet', helm); }
-    const hs = $('heroSlotShieldIcon'); if (hs) hs.innerHTML = shield ? renderItemIcon(shield, 0) : renderItemIcon({iconImg:'/assets/items/shield_wooden.png',tier:1}, 0);
-    const hss = $('heroSlotShield'); if (hss) { hss.classList.toggle('empty', !shield); setSlotBorder('heroSlotShield', shield); }
-    const hr1 = $('heroSlotRing1Icon'); if (hr1) hr1.innerHTML = r1 ? renderItemIcon(r1, 0) : renderItemIcon({iconImg:'/assets/items/ring_copper.png',tier:1}, 0);
-    const hr1s = $('heroSlotRing1'); if (hr1s) { hr1s.classList.toggle('empty', !r1); setSlotBorder('heroSlotRing1', r1); }
-    const ham = $('heroSlotAmuletIcon'); if (ham) ham.innerHTML = amulet ? renderItemIcon(amulet, 0) : renderItemIcon({iconImg:'/assets/items/amulet_bone.png',tier:1}, 0);
-    const hams = $('heroSlotAmulet'); if (hams) { hams.classList.toggle('empty', !amulet); setSlotBorder('heroSlotAmulet', amulet); }
   }
 
   function renameHero() {
