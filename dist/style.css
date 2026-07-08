@@ -344,24 +344,6 @@ body.no-scroll { overflow: hidden; }
 .mb-hp-mana-bars {
   display:flex;flex-direction:column;gap:3px;margin:6px 8px;
 }
-.mb-bar-wrap {
-  display:flex;align-items:center;gap:6px;
-}
-.mb-bar-label {
-  font-size:16px;width:24px;text-align:center;flex-shrink:0;
-}
-.mb-bar-outer {
-  flex:1;height:20px;background:#1a1a1a;border:1px solid #333;border-radius:8px;overflow:hidden;position:relative;
-}
-.mb-bar-fill {
-  height:100%;border-radius:6px;transition:width 0.2s ease-out;
-}
-.mb-bar-fill.mb-bar-hp {
-  background:linear-gradient(90deg,#e74c3c,#c0392b);
-}
-.mb-bar-text {
-  font-size:13px;color:#ccc;width:50px;text-align:right;flex-shrink:0;font-weight:bold;
-}
 .mb-hp-bar {
   position:relative;background:#2a0a0a;border:1px solid #e74c3c;border-radius:6px;
   height:22px;display:flex;align-items:center;justify-content:center;

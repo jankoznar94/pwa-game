@@ -798,13 +798,12 @@
       else hpLabel.style.fontSize = '24px';
     }
     // Arena HP bar na spodku
-    const arenaHpText = $('mbPlayerHpText');
-    if (arenaHpText) {
-      arenaHpText.textContent = `${mb.playerHp}/${mb.maxPlayerHp}`;
-    }
-    const arenaHpFill = $('mbPlayerHpBar');
-    if (arenaHpFill) {
-      arenaHpFill.style.width = Math.max(0, pHpPct) + '%';
+    const arenaHp = $('mbPlayerArenaHp');
+    if (arenaHp) {
+      const span = arenaHp.querySelector('span');
+      if (span) span.textContent = `${mb.playerHp}/${mb.maxPlayerHp}`;
+      const fill = $('mbPlayerArenaHpFill');
+      if (fill) fill.style.width = Math.max(0, pHpPct) + '%';
     }
     // Dodge charges
     const dodgeEl = $('mbPlayerArenaStamina');
