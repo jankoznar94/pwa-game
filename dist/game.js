@@ -1325,34 +1325,16 @@
       }
     }
     
-    // D5 (Mrazivé štíty) — přehřívání + červená/modrá + timer freeze
+    // D5 (Mrazivé štíty) — červená/modrá + timer freeze (bez přehřívání)
     if (mb.locId === 4) {
       const floor = mb.floor;
       const minSpeed = Math.max(0.3, 0.75 - floor * 0.05);
       const maxSpeed = Math.min(1.6, 1.35 + floor * 0.025);
       const isFast = Math.random() < 0.5;
       const speed = isFast ? maxSpeed : minSpeed;
-      let baseWinTime = Math.round(winTime / speed);
-      // Heat overlay
-      const heatMult = 1 + mb._heatLevel * 0.08;
-      winTime = Math.round(baseWinTime / heatMult);
-      // Barva: základ červená/modrá, s heatem se posouvá
-      if (mb._heatLevel > 0) {
-        const heatPct = Math.min(mb._heatLevel / 10, 1);
-        let r, g, b;
-        if (isFast) {
-          r = 233;
-          g = Math.round(69 + heatPct * (200 - 69));
-          b = Math.round(96 - heatPct * 96);
-        } else {
-          r = Math.round(74 + heatPct * (200 - 74));
-          g = Math.round(127 - heatPct * 60);
-          b = Math.round(255 - heatPct * 60);
-        }
-        circle.style.stroke = `rgb(${r},${g},${b})`;
-      } else {
-        circle.style.stroke = isFast ? '#e94560' : '#4a7dff';
-      }
+      winTime = Math.round(winTime / speed);
+      // Barva: červená = rychlejší, modrá = pomalejší
+      circle.style.stroke = isFast ? '#e94560' : '#4a7dff';
       // Generovat freeze intervaly — 0-2 náhodné freeze, 500-1500ms
       const freezeCount = Math.random() < 0.5 ? 1 : (Math.random() < 0.3 ? 2 : 0);
       mb._freezeIntervals = [];
@@ -1473,10 +1455,6 @@
         // Freeze: neudělat nic = správně
         // D4 — ochlazení: úspěšná freeze snižuje heat
         if (mb.locId === 3 && mb._heatLevel > 0) {
-          mb._heatLevel = Math.max(0, mb._heatLevel - 1);
-        }
-        // D5 — ochlazení: úspěšná freeze snižuje heat
-        if (mb.locId === 4 && mb._heatLevel > 0) {
           mb._heatLevel = Math.max(0, mb._heatLevel - 1);
         }
         advanceSequence();
@@ -2209,8 +2187,8 @@
     if (mb._hitProcessed) return;
     mb._hitProcessed = true;
     
-    // D4/D5 — přehřívání: reset na 0 při chybě (zásahu)
-    if (mb.locId === 3 || mb.locId === 4) {
+    // D4 — přehřívání: reset na 0 při chybě (zásahu)
+    if (mb.locId === 3) {
       mb._heatLevel = 0;
     }
     clearTimeout(mb._sequenceTimer);
@@ -2307,8 +2285,8 @@
   function dealPlayerDamage(mb, mult) {
     // Segment-based: každý zásah = 1 bod poškození
     let dmg = 1;
-    // D4/D5 — přehřívání: každý úspěšný útok zvyšuje heat
-    if (mb.locId === 3 || mb.locId === 4) {
+    // D4 — přehřívání: každý úspěšný útok zvyšuje heat
+    if (mb.locId === 3) {
       mb._heatLevel = Math.min((mb._heatLevel || 0) + 1, 10);
     }
     
