@@ -117,7 +117,6 @@
     testMode = !testMode;
     const btn = document.getElementById('testToggle');
     if (testMode) {
-      state.hero.gold = 5000;
       state.talentPoints = 50;
       state.hero.attrPoints = 150;
       state.bossesDefeated = LOCATIONS.map(() => true);
@@ -765,7 +764,7 @@
         });
       });
     });
-    const s = { talentLevels, activeSchool:null, talentPoints:0, hero:{name:'Dobrodruh',face:'hero',level:1,xp:0,gold:0,hp:100,maxHp:100,mana:50,maxMana:50,baseDmg:12,inventory:[],equip:{weapon:'fists',armor:'rags',helmet:null,shield:null,ring1:null,amulet:null},attrStr:0,attrVit:0,attrDex:0,attrInt:0,attrPoints:0}, deaths:0, wins:0,
+    const s = { talentLevels, activeSchool:null, talentPoints:0, hero:{name:'Dobrodruh',face:'hero',level:1,xp:0,hp:100,maxHp:100,mana:50,maxMana:50,baseDmg:12,inventory:[],equip:{weapon:'fists',armor:'rags',helmet:null,shield:null,ring1:null,amulet:null},attrStr:0,attrVit:0,attrDex:0,attrInt:0,attrPoints:0}, deaths:0, wins:0,
       locationProgress:[0,0,0,0,0], bossesDefeated:[false,false,false,false,false], floorProgress:[0,0,0,0,0], spellUsedThisFloor:{}, lootItems:{}, encounteredMonsters:[] };
     return s;
   }
@@ -843,23 +842,12 @@
 
     // Sestavit loot čtverečky
     let lootSquares = '';
-    if (loot.type === 'gold') {
-      lootSquares = `<div class="treasure-slot" style="border-color:#f1c40f">
-        <div class="treasure-slot-icon">💰</div>
-        <div class="treasure-slot-label">+${loot.gold}</div>
-      </div>`;
-    } else if (loot.type === 'item' || loot.type === 'boss') {
+    if (loot.type === 'item' || loot.type === 'boss') {
       const r = RARITY[loot.item.rarity] || RARITY.common;
       lootSquares = `<div class="treasure-slot" style="border-color:${r.border}">
         <div class="treasure-slot-icon">❓</div>
         <div class="treasure-slot-label" style="color:${r.color}">${r.name}</div>
       </div>`;
-      if (loot.type === 'boss' && loot.gold) {
-        lootSquares += `<div class="treasure-slot" style="border-color:#f1c40f">
-          <div class="treasure-slot-icon">💰</div>
-          <div class="treasure-slot-label">+${loot.gold}</div>
-        </div>`;
-      }
     }
 
     const el = document.createElement('div');
@@ -3302,21 +3290,13 @@
   function rollLoot(locId, floor, bossDrop) {
     const h = state.hero;
     if (bossDrop) {
-      // Boss: zaručený item s vyšším tierem + goldy
+      // Boss: zaručený item s vyšším tierem
       const item = generateLootItem(floor, true);
-      const gold = 5 + floor * 3 + rand(0, 5);
-      return { type:'boss', item, gold };
+      return { type:'boss', item };
     }
-    // 70% gold, 30% item
-    if (Math.random() < 0.7) {
-      // Gold reward
-      const gold = 2 + floor * 2 + rand(0, 3);
-      return { type:'gold', gold };
-    } else {
-      // Item reward
-      const item = generateLootItem(floor);
-      return { type:'item', item };
-    }
+    // Item reward
+    const item = generateLootItem(floor);
+    return { type:'item', item };
   }
 
   function endMapBattle(won) {
@@ -3387,21 +3367,17 @@
       state.locationProgress[locId] = 0;
       applyLevelUp();
       const r = mb.loc.reward;
-      if (r.gold) state.hero.gold = (state.hero.gold || 0) + r.gold;
       if (r.weapon && state.hero.equip.weapon === 'fists') state.hero.equip.weapon = r.weapon;
       if (r.armor && state.hero.equip.armor === 'rags') state.hero.equip.armor = r.armor;
-      // Boss loot: zaručený item s vyšším tierem + goldy
+      // Boss loot: zaručený item s vyšším tierem
       const bossLoot = rollLoot(locId, mb.floor, true);
       if (bossLoot.type === 'boss') {
         state.hero.inventory.push(bossLoot.item.id);
-        state.hero.gold = (state.hero.gold || 0) + bossLoot.gold;
       }
       sfxBossDefeat();
       $('resultIcon').textContent = '🏆';
       $('resultTitle').textContent = `${mb.loc.boss.name} poražen!`;
-      const bossGoldTotal = (r.gold || 0) + bossLoot.gold;
       $('resultMsg').innerHTML = '<div class="result-stats">'
-                + '<div class="result-stat"><span class="result-stat-icon">💰</span><span class="result-stat-val">+'+bossGoldTotal+'</span></div>'
                 + '<div class="result-stat"><span class="result-stat-icon">❌</span><span class="result-stat-val">'+((mb.floorMistakes||0)+(mb.mistakes||0))+'</span><span class="result-stat-sub">chyb</span></div>'
                 + '</div>';
       // Loot list — scroll okno s itemem
@@ -3875,12 +3851,9 @@
               renderHero();
             }
             function resetTalents() {
-        const cost = 50;
-        if ((state.hero.gold || 0) < cost) { showMessage('💰 Nedostatek zlatých!'); return; }
         let total = 0;
         Object.keys(state.talentLevels).forEach(k => { total += state.talentLevels[k]; state.talentLevels[k] = 0; });
         if (total === 0) return;
-        state.hero.gold -= cost;
         state.talentPoints = (state.talentPoints || 0) + total;
         state.activeSchool = null;
         saveGame();
@@ -3973,7 +3946,6 @@
     $('heroHp').textContent = h.hp || h.maxHp;
     $('heroMaxHp').textContent = h.maxHp;
     $('heroDmg').textContent = getHeroDmg();
-    $('heroGold').textContent = h.gold;
     const weapon = ITEM_MAP[h.equip.weapon] || ITEM_MAP['fists'];
     const critChance = weapon.critChance || 0;
     $('heroCrit').textContent = critChance > 0 ? `${critChance}% (×2.0)` : `0%`;
@@ -4138,7 +4110,6 @@
     if (idx === -1) { showMessage('❌ Tento předmět nemáš v inventáři!'); return; }
     const sellPrice = Math.round(item.cost * 0.5);
     h.inventory.splice(idx, 1);
-    h.gold += sellPrice;
     saveGame();
     showMessage(`💰 Prodáno ${item.icon} ${item.name} za ${sellPrice}💰`);
     renderInventory();
@@ -4152,7 +4123,6 @@
     if (!item) return;
     const sellPrice = Math.round(item.cost * 0.5);
     h.equip[slot] = defaults[slot];
-    h.gold += sellPrice;
     h.baseDmg = getHeroDmg();
     h.maxHp = getHeroMaxHp();
     h.hp = h.maxHp;
@@ -4545,7 +4515,7 @@
     if (!state.bossesDefeated || state.bossesDefeated.length < LOCATIONS.length) state.bossesDefeated = Array(LOCATIONS.length).fill(false);
     if (!state.locationProgress || state.locationProgress.length < LOCATIONS.length) state.locationProgress = Array(LOCATIONS.length).fill(0);
     if (!state.floorProgress || state.floorProgress.length < LOCATIONS.length) state.floorProgress = Array(LOCATIONS.length).fill(0);
-    if (!state.hero) state.hero = { level:1, xp:0, gold:0, hp:100, maxHp:100, mana:50, maxMana:50, baseDmg:12, inventory:[], equip:{weapon:'fists',armor:'rags'}, attrStr:0, attrVit:0, attrPoints:0 };
+    if (!state.hero) state.hero = { level:1, xp:0, hp:100, maxHp:100, mana:50, maxMana:50, baseDmg:12, inventory:[], equip:{weapon:'fists',armor:'rags'}, attrStr:0, attrVit:0, attrPoints:0 };
     if (state.hero.maxHp === undefined) state.hero.maxHp = getHeroMaxHp();
     if (state.hero.hp === undefined) state.hero.hp = state.hero.maxHp;
     if (state.hero.attrStr === undefined) state.hero.attrStr = 0;
