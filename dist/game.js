@@ -65,7 +65,6 @@
   }
   function playSFX(audio) { audio.currentTime = 0; audio.play().catch(() => {}); }
   const healSfx = (() => { const a = new Audio('heal.mp3'); a.volume = 1.0; return a; })();
-  const treasureSfx = (() => { const a = new Audio('treasure.mp3'); a.volume = 1.0; return a; })();
   const strongStrikeSfx = (() => { const a = new Audio('strong_strike.mp3'); a.volume = 1.0; return a; })();
 
   // ===== BACKGROUND MUSIC (MP3) =====
@@ -601,12 +600,6 @@
     { id:'arcaneAmulet', name:'Arcánní amulet', type:'amulet', baseDmg:11, bonusHp:45, cost:250, icon:'📿', iconImg:'/assets/items/amulet_arcane.png', tier:6 },
   ];
   const ITEM_MAP = {}; ITEMS.forEach(i => ITEM_MAP[i.id] = i);
-  // Mapa pro generované loot itemy (doplňuje ITEM_MAP)
-  let _lootItemMap = {};
-
-  function getItemInfo(id) {
-    return ITEM_MAP[id] || _lootItemMap[id] || null;
-  }
 
   function renderItemIcon(item, size) {
     if (!item) return '';
@@ -765,11 +758,10 @@
       });
     });
     const s = { talentLevels, activeSchool:null, talentPoints:0, hero:{name:'Dobrodruh',face:'hero',level:1,xp:0,hp:100,maxHp:100,mana:50,maxMana:50,baseDmg:12,attrStr:0,attrVit:0,attrDex:0,attrInt:0,attrPoints:0}, deaths:0, wins:0,
-      locationProgress:[0,0,0,0,0], bossesDefeated:[false,false,false,false,false], floorProgress:[0,0,0,0,0], spellUsedThisFloor:{}, lootItems:{}, encounteredMonsters:[] };
+      locationProgress:[0,0,0,0,0], bossesDefeated:[false,false,false,false,false], floorProgress:[0,0,0,0,0], spellUsedThisFloor:{}, encounteredMonsters:[] };
     return s;
   }
-  function loadSave() { try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); if (s && s.talentLevels) { // Obnovit loot itemy do ITEM_MAP
-    if (s.lootItems) Object.keys(s.lootItems).forEach(k => { ITEM_MAP[k] = s.lootItems[k]; }); return s; } } catch {} return defaultState(); }
+  function loadSave() { try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); if (s && s.talentLevels) { return s; } } catch {} return defaultState(); }
   function saveGame() { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); }
   function resetGame() { state = defaultState(); saveGame(); showScreen('map'); }
 
@@ -830,39 +822,6 @@
       overlay.classList.add('fade-out');
       setTimeout(() => overlay.remove(), 500);
     }, 2500);
-  }
-
-  // ===== TREASURE POPUP =====
-  let _treasurePopupOpen = false;
-  function showTreasurePopup(loot, xpGain, onContinue) {
-    if (_treasurePopupOpen) return;
-    _treasurePopupOpen = true;
-    playSFX(treasureSfx);
-
-    // Sestavit loot čtverečky
-    let lootSquares = '';
-    if (loot.type === 'item' || loot.type === 'boss') {
-      const r = RARITY[loot.item.rarity] || RARITY.common;
-      lootSquares = `<div class="treasure-slot" style="border-color:${r.border}">
-        <div class="treasure-slot-icon">❓</div>
-        <div class="treasure-slot-label" style="color:${r.color}">${r.name}</div>
-      </div>`;
-    }
-
-    const el = document.createElement('div');
-    el.className = 'treasure-overlay-open';
-    el.innerHTML = `<div class="treasure-loot-row">${lootSquares}</div>
-      <div class="treasure-tap-close">👆 Pokračovat</div>`;
-    document.body.appendChild(el);
-    document.body.classList.add('no-scroll');
-
-    el.addEventListener('click', function closeHandler() {
-      el.removeEventListener('click', closeHandler);
-      _treasurePopupOpen = false;
-      el.classList.add('fade-out');
-      document.body.classList.remove('no-scroll');
-      setTimeout(() => { el.remove(); if (onContinue) onContinue(); }, 350);
-    });
   }
 
   // ===== MAP =====
@@ -992,8 +951,6 @@
       monsterIcons: isBoss ? [] : floorMonsters.map(function(m){return m.face;}),
       monsterNames: isBoss ? [] : floorMonsters.map(function(m){return m.name;}),
       monsterTheme: isBoss ? loc.theme : (floorMonsters[0].theme !== undefined ? floorMonsters[0].theme : loc.theme),
-      // Loot drops per monster (pro vizuální indikaci)
-      _lootDrops: state._floorLootDrops || [],
       // Sekvence: hráč musí přežít várku útoků, pak může udeřit
       sequence: [], sequenceIndex: 0, inAttackWindow: false,
       currentAttack: null, isHeavyAttack: false,
@@ -3127,177 +3084,6 @@
     }
   }
 
-  // ===== LOOT SYSTEM =====
-  // Šablony pro názvy itemů podle typu a tieru
-  const LOOT_NAMES = {
-    weapon: {
-      staff: ['Dřevěná hůlka','Ohnivá hůlka','Ledová hůl','Blesková hůl','Hvězdná hůl','Plamená hůl','Měsíční hůl','Arcimágova hůl'],
-      blade: ['Železný meč','Široký meč','Bojová sekera','Obouruční meč','Temný meč','Dračí sekera','Arcimágův meč']
-    },
-    armor: ['Lněný hábit','Kožený hábit','Šupinový hábit','Vyšívaný hábit','Kroužkový hábit','Dračí hábit','Arcimágův hábit'],
-    helmet: ['Lněná kápě','Kožená čapka','Železná helma','Ocelová helma','Stříbrná přilba','Arcimágova koruna'],
-    shield: ['Dřevěný štít','Kožený štít','Železný štít','Ocelový štít','Stříbrný štít','Paladinův štít'],
-    ring: ['Měděný prsten','Cínový prsten','Stříbrný prsten','Zlatý prsten','Platinový prsten','Drahokamový prsten'],
-    amulet: ['Kostěný amulet','Měděný amulet','Stříbrný amulet','Zlatý amulet','Rubínový amulet','Arcánní amulet']
-  };
-  const LOOT_ICONS = { weapon_staff:'🪄', weapon_blade:'⚔️', armor:'👘', helmet:'⛑️', shield:'🛡️', ring:'💍', amulet:'📿' };
-  const ATTR_KEYS = ['str','vit','dex','int'];
-  const ATTR_NAMES = { str:'💪 Síla', vit:'❤️ Vitalita', dex:'🎯 Obratnost', int:'🧠 Intelekt' };
-  const RARITY = {
-    common: { name:'Common', color:'#e8e0e8', border:'#888' },
-    uncommon: { name:'Uncommon', color:'#c8f7c8', border:'#4caf50' },
-    rare: { name:'Rare', color:'#c8d8ff', border:'#4a8af4' },
-    epic: { name:'Epic', color:'#e8c8ff', border:'#9c27b0' }
-  };
-
-  function getRarity(bossDrop) {
-    const r = Math.random();
-    if (bossDrop) {
-      if (r < 0.10) return 'epic';
-      if (r < 0.25) return 'rare';
-      if (r < 0.55) return 'uncommon';
-      return 'common';
-    } else {
-      if (r < 0.01) return 'epic';
-      if (r < 0.06) return 'rare';
-      if (r < 0.35) return 'uncommon';
-      return 'common';
-    }
-  }
-
-  function generateLootItem(floor, bossDrop) {
-    const baseTier = Math.min(6, Math.ceil(floor / 2));
-    const tier = bossDrop ? Math.min(7, baseTier + rand(1, 2)) : baseTier;
-    // 0. Rarita se určuje první — ovlivňuje všechny staty
-    const rarity = getRarity(bossDrop);
-    const rarityMult = rarity === 'epic' ? 2.5 : rarity === 'rare' ? 1.8 : rarity === 'uncommon' ? 1.4 : 1.0;
-    // Nárůst s obtížností dungeonu: +8 % za patro
-    const floorMult = 1 + (floor - 1) * 0.08;
-    // 1. RNG: typ předmětu
-    const typeRoll = Math.random();
-    let type, subtype;
-    if (typeRoll < 0.25) { type = 'weapon'; subtype = Math.random() < 0.5 ? 'staff' : 'blade'; }
-    else if (typeRoll < 0.45) { type = 'armor'; subtype = null; }
-    else if (typeRoll < 0.65) { type = 'helmet'; subtype = null; }
-    else if (typeRoll < 0.75) { type = 'shield'; subtype = null; }
-    else if (typeRoll < 0.85) { type = 'ring'; subtype = null; }
-    else { type = 'amulet'; subtype = null; }
-
-    // 2. RNG: konkrétní jméno podle typu a tieru
-    const namePool = type === 'weapon' ? LOOT_NAMES.weapon[subtype] : LOOT_NAMES[type];
-    const maxIdx = Math.min(namePool.length - 1, tier);
-    const nameIdx = rand(0, maxIdx);
-    const baseName = namePool[nameIdx];
-
-    // 3. Atributy — počet podle rarity, hodnoty se překrývají
-    let attrCount;
-    if (rarity === 'common') attrCount = 1;
-    else if (rarity === 'uncommon') attrCount = 2;
-    else if (rarity === 'rare') attrCount = 3;
-    else attrCount = 4; // epic
-    const attrs = {};
-    const usedKeys = [];
-    for (let a = 0; a < attrCount; a++) {
-      let k;
-      do { k = ATTR_KEYS[rand(0, 3)]; } while (usedKeys.includes(k));
-      usedKeys.push(k);
-      // Hodnota atributu — podobné rozsahy, vyšší rarity mají víc atributů
-      let minVal, maxVal;
-      if (rarity === 'common') { minVal = 1; maxVal = 3; }
-      else if (rarity === 'uncommon') { minVal = 2; maxVal = 4; }
-      else if (rarity === 'rare') { minVal = 2; maxVal = 5; }
-      else { minVal = 3; maxVal = 6; }
-      minVal = Math.round(minVal * floorMult);
-      maxVal = Math.round(maxVal * floorMult);
-      attrs[k] = rand(minVal, maxVal);
-    }
-
-    // 4. Název — jen baseName bez statů v názvu
-    const name = baseName;
-
-    // 5. Základní staty podle typu, tieru, rarity a floor
-    let baseDmg = 0, bonusHp = 0, defense = 0;
-    if (type === 'weapon') {
-      baseDmg = Math.round((5 + tier * 7 + rand(0, 3)) * rarityMult * floorMult);
-    } else if (type === 'armor') {
-      bonusHp = Math.round((10 + tier * 25 + rand(0, 10)) * rarityMult * floorMult);
-      defense = Math.round(10 + floor * 5 + rand(0, 5));
-    } else if (type === 'helmet') {
-      bonusHp = Math.round((5 + tier * 15 + rand(0, 5)) * rarityMult * floorMult);
-      defense = Math.round(5 + floor * 3 + rand(0, 3));
-    } else if (type === 'ring') {
-      baseDmg = Math.round((1 + tier * 2 + rand(0, 2)) * rarityMult * floorMult);
-      bonusHp = Math.round((2 + tier * 5 + rand(0, 3)) * rarityMult * floorMult);
-    } else if (type === 'amulet') {
-      baseDmg = Math.round((2 + tier * 3 + rand(0, 2)) * rarityMult * floorMult);
-      bonusHp = Math.round((3 + tier * 6 + rand(0, 4)) * rarityMult * floorMult);
-    } else if (type === 'shield') {
-      defense = Math.round((8 + floor * 4 + rand(0, 4)) * rarityMult);
-      bonusHp = Math.round((3 + tier * 4 + rand(0, 3)) * rarityMult * floorMult);
-    }
-
-    const id = 'loot_' + Date.now() + '_' + rand(1000, 9999);
-    const icon = type === 'weapon' ? LOOT_ICONS['weapon_' + subtype] : LOOT_ICONS[type];
-    // Mapovat na PNG podle typu a tieru
-    const iconImg = (function() {
-      if (type === 'weapon') {
-        const tierMap = {1:'staff_wooden',2:'staff_fire',3:'staff_lightning',4:'staff_archmage',5:'staff_archmage',6:'staff_archmage',7:'staff_archmage'};
-        if (subtype === 'blade') {
-          const bMap = {1:'weapon_iron_sword',2:'weapon_broad_sword',3:'weapon_battle_axe',4:'weapon_claymore',5:'weapon_war_hammer',6:'weapon_war_hammer',7:'weapon_claymore'};
-          return '/assets/items/' + (bMap[tier] || 'weapon_iron_sword') + '.png';
-        }
-        return '/assets/items/' + (tierMap[tier] || 'staff_wooden') + '.png';
-      }
-      if (type === 'armor') {
-        const aMap = {1:'armor_leather',2:'armor_chainmail',3:'armor_scale',4:'armor_plate',5:'armor_dragon_scale',6:'armor_dragon_scale',7:'armor_dragon_scale'};
-        return '/assets/items/' + (aMap[tier] || 'armor_leather') + '.png';
-      }
-      if (type === 'helmet') {
-        const hMap = {1:'helmet_linen_hood',2:'helmet_iron_helm',3:'helmet_steel_helm',4:'helmet_steel_helm',5:'helmet_crown',6:'helmet_crown',7:'helmet_crown'};
-        return '/assets/items/' + (hMap[tier] || 'helmet_linen_hood') + '.png';
-      }
-      if (type === 'shield') {
-        const sMap = {1:'shield_wooden',2:'shield_leather',3:'shield_iron',4:'shield_steel',5:'shield_paladin',6:'shield_paladin',7:'shield_paladin'};
-        return '/assets/items/' + (sMap[tier] || 'shield_wooden') + '.png';
-      }
-      if (type === 'ring') {
-        const rMap = {1:'ring_copper',2:'ring_copper',3:'ring_silver',4:'ring_gold',5:'ring_gem',6:'ring_gem',7:'ring_platinum'};
-        return '/assets/items/' + (rMap[tier] || 'ring_copper') + '.png';
-      }
-      if (type === 'amulet') {
-        const aMap = {1:'amulet_bone',2:'amulet_bone',3:'amulet_silver',4:'amulet_gold',5:'amulet_ruby',6:'amulet_arcane',7:'amulet_arcane'};
-        return '/assets/items/' + (aMap[tier] || 'amulet_bone') + '.png';
-      }
-      return '';
-    })();
-    const cost = 10 + tier * 20 + usedKeys.reduce((s, k) => s + attrs[k] * 5, 0);
-    const item = { id, name, type, subtype, baseDmg, bonusHp, defense, icon, iconImg, attrs, tier, cost, rarity, weaponType: type === 'weapon' ? subtype : null };
-    // Crit chance pro blade zbraně (5-25% podle tieru)
-    if (type === 'weapon' && subtype === 'blade') {
-      item.critChance = Math.min(25, 5 + tier * 3 + rand(0, 5));
-    }
-    // Block chance pro štíty (15-45% podle tieru)
-    if (type === 'shield') {
-      item.blockChance = Math.min(45, 15 + tier * 4 + rand(0, 5));
-    }
-    ITEM_MAP[id] = item;
-    state.lootItems = state.lootItems || {};
-    state.lootItems[id] = item;
-    return item;
-  }
-
-  function rollLoot(locId, floor, bossDrop) {
-    const h = state.hero;
-    if (bossDrop) {
-      // Boss: zaručený item s vyšším tierem
-      const item = generateLootItem(floor, true);
-      return { type:'boss', item };
-    }
-    // Item reward
-    const item = generateLootItem(floor);
-    return { type:'item', item };
-  }
-
   function endMapBattle(won) {
     if (mapBattleState.ended) return;
     const mb = mapBattleState;
@@ -3365,23 +3151,13 @@
       state.floorProgress[locId] = 0;
       state.locationProgress[locId] = 0;
       applyLevelUp();
-      // Boss loot: zaručený item s vyšším tierem
-      const bossLoot = rollLoot(locId, mb.floor, true);
       sfxBossDefeat();
       $('resultIcon').textContent = '🏆';
       $('resultTitle').textContent = `${mb.loc.boss.name} poražen!`;
       $('resultMsg').innerHTML = '<div class="result-stats">'
                 + '<div class="result-stat"><span class="result-stat-icon">❌</span><span class="result-stat-val">'+((mb.floorMistakes||0)+(mb.mistakes||0))+'</span><span class="result-stat-sub">chyb</span></div>'
                 + '</div>';
-      // Loot list — scroll okno s itemem
-      let lootListHtml = '';
-      if (bossLoot.type === 'boss') {
-        const rr = RARITY[bossLoot.item.rarity] || RARITY.common;
-        lootListHtml = `<div class="loot-scroll-item"><span class="loot-scroll-icon">${renderItemIcon(bossLoot.item,24)}</span><span class="loot-scroll-name" style="color:${rr.color}">${bossLoot.item.name}</span></div>`;
-      } else {
-        lootListHtml = '<div style="text-align:center;color:#555;font-size:12px;padding:8px">Žádné předměty</div>';
-      }
-      $('resultLootList').innerHTML = lootListHtml;
+      $('resultLootList').innerHTML = '';
       $('resultBtn').innerHTML = '';
       $('resultMsg').innerHTML += '<div class="result-tap">👆 klepni pro návrat</div>';
       $('resultScreen').onclick = function() { $('resultScreen').onclick = null; showMapWithUnlock(locId); };
@@ -3402,7 +3178,7 @@
         if (locEl && locEl.classList.contains('locked')) {
           locEl.classList.remove('locked');
           locEl.classList.add('unlocking');
-          playSFX(treasureSfx);
+          sfxSuccess();
           setTimeout(() => {
             locEl.classList.remove('unlocking');
             renderMap(); // překreslit v odemčeném stavu
