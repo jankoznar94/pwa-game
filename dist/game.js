@@ -934,9 +934,9 @@
 
   function getFloorTimerMultiplier(floor, locId) {
     // D2 (Poušť) — base je o něco pomalejší, ale bude kolísat v rAF
-    if (locId === 1) return Math.pow(0.98, floor) * 1.15;
-    // Ostatní dungeony: 1200ms base, každé patro -2%
-    return Math.pow(0.98, floor);
+    if (locId === 1) return Math.pow(0.92, floor) * 1.15;
+    // Ostatní dungeony: 1300ms base, každé patro -8% (P1=1300, P8=~725ms)
+    return Math.pow(0.92, floor);
   }
 
   function getDungeonAttackChances(locId, floor) {
@@ -1040,9 +1040,9 @@
     else if (randNum < chances.inverted + chances.green + chances.yellow + chances.blue + (chances.rapid||0) + (chances.truth||0)) { type = 'truth'; }
     else if (randNum < chances.inverted + chances.green + chances.yellow + chances.blue + (chances.rapid||0) + (chances.truth||0) + (chances.lie||0)) { type = 'lie'; }
     else if (randNum < chances.inverted + chances.green + chances.yellow + chances.blue + (chances.rapid||0) + (chances.truth||0) + (chances.lie||0) + (chances.freeze||0)) { type = 'freeze'; }
-    // Timer: base 1200ms, floor multiplikátor (P1=1200, P8=~1041ms)
+    // Timer: base 1300ms, floor multiplikátor (P1=1300, P8=~725ms)
     const mult = getFloorTimerMultiplier(floor || 0, locId);
-    const baseTime = Math.round(1200 * mult);
+    const baseTime = Math.round(1300 * mult);
     // Malá náhoda ±10% pro pestrost
     const jitter = Math.round(baseTime * (0.9 + Math.random() * 0.2));
     const windowTime = (type === 'yellow' || type === 'blue') ? Math.round(jitter * 1.5) : (type === 'rapid' ? Math.round(jitter * 3.0) : jitter);
@@ -1350,7 +1350,8 @@
     }
     
     const bStartMs = Math.round(winTime * 0.65); // výseč začíná v 65% timeru
-    const bMs = Math.round(winTime * 0.15); // 15% šířka
+    const bonusPct = Math.max(8, 15 - (mb.floor || 0)); // 15% v P1, -1%/patro, min 8%
+    const bMs = Math.round(winTime * bonusPct / 100);
     mb._bonusStartMs = bStartMs;
     mb._bonusMs = bMs;
     
