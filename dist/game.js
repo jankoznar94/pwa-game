@@ -1283,7 +1283,7 @@
     // D2 (Poušť) — náhodná rychlost na začátku každého útoku, jen červená/modrá
     if (mb.locId === 1) {
       const isFast = Math.random() < 0.5;
-      const speed = isFast ? 1.05 : 0.95;
+      const speed = isFast ? 1.05 : 0.7;
       winTime = Math.round(winTime / speed);
       circle.style.stroke = isFast ? '#e94560' : '#4a7dff';
     }
@@ -1291,7 +1291,7 @@
     // D4 (Pekelné výspy) — přehřívání + červená/modrá jako D2
     if (mb.locId === 3) {
       const isFast = Math.random() < 0.5;
-      const speed = isFast ? 1.05 : 0.95;
+      const speed = isFast ? 1.05 : 0.7;
       let baseWinTime = Math.round(winTime / speed);
       // Heat overlay — mírný, max 5% zrychlení při heat 10
       const heatMult = 1 + mb._heatLevel * 0.005;
@@ -1320,7 +1320,7 @@
     // D5 (Mrazivé štíty) — červená/modrá + timer freeze (bez přehřívání)
     if (mb.locId === 4) {
       const isFast = Math.random() < 0.5;
-      const speed = isFast ? 1.05 : 0.95;
+      const speed = isFast ? 1.05 : 0.7;
       winTime = Math.round(winTime / speed);
       // Barva: červená = rychlejší, modrá = pomalejší
       circle.style.stroke = isFast ? '#e94560' : '#4a7dff';
