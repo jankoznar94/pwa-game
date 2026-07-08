@@ -815,6 +815,7 @@ body.no-scroll { overflow: hidden; }
 }
 .guide-negation-row {
   display: flex;
+  flex-direction: column;
   gap: 16px;
   align-items: center;
   justify-content: center;
