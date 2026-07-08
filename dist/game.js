@@ -1349,7 +1349,7 @@
       }
     }
     
-    const bStartMs = Math.round(winTime * 0.5); // výseč začíná v 50% timeru (6 hodin)
+    const bStartMs = Math.round(winTime * 0.65); // výseč začíná v 65% timeru
     const bMs = Math.round(winTime * 0.15); // 15% šířka
     mb._bonusStartMs = bStartMs;
     mb._bonusMs = bMs;
