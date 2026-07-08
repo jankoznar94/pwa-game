@@ -837,7 +837,6 @@ body.no-scroll { overflow: hidden; }
   font-size: 12px;
   color: #aaa;
 }
-.guide-card.guide-base { border-left: 3px solid #bbb; }
 .guide-card.guide-d1 { border-left: 3px solid #4caf50; }
 .guide-card.guide-d2 { border-left: 3px solid #e67e22; }
 .guide-card.guide-d3 { border-left: 3px solid #888; }
