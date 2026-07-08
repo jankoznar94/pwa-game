@@ -1129,7 +1129,7 @@
       let segHtml = '';
       for (let i = 1; i < maxHp; i++) {
         const offset = Math.round(circ * (1 - i / maxHp) - 1);
-        segHtml += `<circle cx="90" cy="90" r="87" stroke-dasharray="2 ${circ-2}" stroke-dashoffset="${offset}"/>`;
+        segHtml += `<circle cx="90" cy="90" r="87" stroke-dasharray="2 ${circ-2}" stroke-dashoffset="${offset}" stroke-width="10"/>`;
       }
       segGroup.innerHTML = segHtml;
     }
