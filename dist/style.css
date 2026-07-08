@@ -719,30 +719,22 @@ body.no-scroll { overflow: hidden; }
   flex-shrink: 0;
   border: 2px solid #2a2a2a;
 }
-.guide-arena-sm {
-  position: relative;
-  width: 130px;
-  height: 130px;
-  border-radius: 50%;
-  background: #0d0d0d;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  border: 2px solid #2a2a2a;
+.guide-arena.guide-arena-ring {
+  width: 220px;
+  height: 220px;
 }
-.guide-arena-sm img.guide-monster-sm {
-  width: 70px;
-  height: 70px;
+.guide-arena img.guide-monster {
+  width: 120px;
+  height: 120px;
   border-radius: 50%;
   object-fit: cover;
   position: relative;
   z-index: 1;
   pointer-events: none;
 }
-.guide-arena img.guide-monster {
-  width: 120px;
-  height: 120px;
+.guide-arena img.guide-monster-lg {
+  width: 160px;
+  height: 160px;
   border-radius: 50%;
   object-fit: cover;
   position: relative;
