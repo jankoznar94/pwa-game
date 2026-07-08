@@ -266,6 +266,7 @@ body.no-scroll { overflow: hidden; }
 .mb-hp-bar .hp-segments .hp-seg { flex:1; border-right:1px solid rgba(0,0,0,0.3); }
 .mb-hp-bar .hp-segments .hp-seg:last-child { border-right:none; }
 .hp-ring-label {
+  position:absolute;top:50%;left:50%;z-index:5;
   transform:translate(-50%,-50%);
   font-size:24px;font-weight:bold;color:#e74c3c;
   text-shadow:0 0 8px rgba(0,0,0,0.9);
