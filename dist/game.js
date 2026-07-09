@@ -237,6 +237,50 @@
       }, 1000);
     }
   }
+  function repeatRound() {
+    const mb = mapBattleState;
+    if (!mb || !mb.loc || mb.ended) return;
+    // Zastavit všechny timery
+    if (mb._sequenceTimer) { clearTimeout(mb._sequenceTimer); mb._sequenceTimer = null; }
+    if (mb._attackWindowTimer) { clearTimeout(mb._attackWindowTimer); mb._attackWindowTimer = null; }
+    if (mb._ringTimer) { clearTimeout(mb._ringTimer); mb._ringTimer = null; }
+    if (mb._bonusRaf) { cancelAnimationFrame(mb._bonusRaf); mb._bonusRaf = null; }
+    if (mb._bonusStartTimer) { clearTimeout(mb._bonusStartTimer); mb._bonusStartTimer = null; }
+    if (mb._bonusEndTimer) { clearTimeout(mb._bonusEndTimer); mb._bonusEndTimer = null; }
+    // Resetovat stav útoku
+    mb.sequenceIndex = 0;
+    mb.inAttackWindow = false;
+    mb.isAttacking = true;
+    mb._hitProcessed = false;
+    mb._heavySwipes = 0;
+    mb._twinSwipes = [];
+    mb.rapidTaps = 0;
+    mb.currentAttack = null;
+    mb.isHeavyAttack = false;
+    mb.isInvertedAttack = false;
+    mb.isTwinAttack = false;
+    mb.isRapidAttack = false;
+    mb.isGreenAttack = false;
+    // Skrýt UI
+    const arrow = $('mbArrow');
+    if (arrow) arrow.setAttribute('class', 'boss-attack-arrow hidden');
+    const actionInfo = $('mbActionInfo');
+    if (actionInfo) { actionInfo.classList.add('hidden'); actionInfo.textContent = ''; }
+    const rTarget = $('mbRapidTarget');
+    if (rTarget) rTarget.classList.add('hidden');
+    const lTap = $('mbTapLeft');
+    const rTap = $('mbTapRight');
+    if (lTap) lTap.classList.add('hidden');
+    if (rTap) rTap.classList.add('hidden');
+    const arena = $('mbArena');
+    if (arena) arena.classList.remove('rapid-active');
+    const playerEl = $('mbPlayerFigure');
+    if (playerEl) playerEl.className = 'boss-fight-player';
+    // Reset timer ring
+    resetTimerRing();
+    // Začít znovu od prvního útoku
+    setTimeout(() => playSequenceAttack(), 100);
+  }
   function toggleTutorialPause() {
     const btn = document.getElementById('tutPauseBtn');
     const overlay = document.getElementById('pauseOverlay');
@@ -2797,6 +2841,10 @@
     document.getElementById('mbPauseBtn').addEventListener('click', (e) => {
       e.stopPropagation();
       toggleMapPause();
+    });
+    document.getElementById('mbRepeatBtn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      repeatRound();
     });
     // Spustit BGM při první user interakci
     let _firstInteraction = true;
