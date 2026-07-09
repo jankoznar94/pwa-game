@@ -4,9 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Dungeon Recall</title>
-<link rel="stylesheet" href="style.css?v=4">
+<link rel="stylesheet" href="style.css?v=5">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
 <body>
 
@@ -97,8 +100,10 @@
 <!-- ===== RESULT ===== -->
 <div id="resultScreen" class="container hidden">
   <div class="card">
+    <div id="resultIcon" class="result-icon"></div>
     <div class="card-title" id="resultTitle"></div>
     <div id="resultMsg"></div>
+    <div id="resultLootList"></div>
     <div id="resultBtn" class="mt-10"></div>
   </div>
 </div>
@@ -383,6 +388,13 @@
   </div>
 </div>
 
-<script src="game.js?v=4"></script>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(function(err) {
+    console.error('SW registration failed:', err);
+  });
+}
+</script>
+<script src="game.js?v=5"></script>
 </body>
 </html>

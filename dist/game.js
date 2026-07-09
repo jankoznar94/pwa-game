@@ -518,6 +518,8 @@
       if (mapBattleState._attackWindowTimer) { clearTimeout(mapBattleState._attackWindowTimer); mapBattleState._attackWindowTimer = null; }
       if (mapBattleState._glowTimer) { clearTimeout(mapBattleState._glowTimer); mapBattleState._glowTimer = null; }
       if (mapBattleState._bonusRaf) { cancelAnimationFrame(mapBattleState._bonusRaf); mapBattleState._bonusRaf = null; }
+      if (mapBattleState._bonusStartTimer) { clearTimeout(mapBattleState._bonusStartTimer); mapBattleState._bonusStartTimer = null; }
+      if (mapBattleState._bonusEndTimer) { clearTimeout(mapBattleState._bonusEndTimer); mapBattleState._bonusEndTimer = null; }
       // Skrýt negation ring
       const negRing = document.getElementById('mbNegationRing');
       if (negRing) negRing.classList.add('hidden');
@@ -639,8 +641,12 @@
     if (locId > 1 && !state.bossesDefeated[locId-1]) { showMessage('🔒 Nejdřív poraz předchozí lokaci!'); return; }
 
     if (optFloor !== undefined) {
-      state.floorProgress[locId] = optFloor;
-      state.locationProgress[locId] = 0;
+      // GUARD: nikdy nesnižovat floorProgress
+      const currentFloor = state.floorProgress[locId] || 0;
+      if (optFloor >= currentFloor || state.bossesDefeated[locId]) {
+        state.floorProgress[locId] = optFloor;
+        state.locationProgress[locId] = 0;
+      }
     }
 
     cleanupTimers();
@@ -1339,29 +1345,24 @@
     mb._bonusCircum = 741;
     
     if (mb._bonusRaf) cancelAnimationFrame(mb._bonusRaf);
-        const attackStartTime = performance.now();
+    mb._bonusActive = false;
     
-        (function frame() {
-          if (mapBattleState.ended) return;
-          const now = performance.now();
-          const rawElapsed = now - attackStartTime;
-      
-          const effectiveElapsed = rawElapsed;
-          const pct = Math.min(effectiveElapsed / winTime, 1);
-          mb._bonusActive = (effectiveElapsed >= mb._bonusStartMs && effectiveElapsed < mb._bonusStartMs + mb._bonusMs);
-          if (circle) {
-            circle.style.opacity = '1';
-            circle.style.strokeDashoffset = Math.round(691 * (1 - pct));
-          }
-          if (effectiveElapsed < winTime) {
-            mb._bonusRaf = requestAnimationFrame(frame);
-          } else {
-            mb._bonusActive = false;
-            mb._bonusRaf = null;
-          }
-        })();
+    // CSS animace timeru — stabilní, bez rAF trhání
+    startTimerRing(circle, winTime);
     
-        // Timeout = chyba (nestihl zareagovat)
+    // Timeout pro aktivaci bonus zóny
+    if (mb._bonusStartMs != null) {
+      mb._bonusStartTimer = setTimeout(() => {
+        if (mapBattleState.ended) return;
+        mb._bonusActive = true;
+      }, mb._bonusStartMs);
+      mb._bonusEndTimer = setTimeout(() => {
+        if (mapBattleState.ended) return;
+        mb._bonusActive = false;
+      }, mb._bonusStartMs + mb._bonusMs);
+    }
+    
+    // Timeout = chyba (nestihl zareagovat)
         mb._sequenceTimer = setTimeout(() => {
           if (mapBattleState.ended) return;
           if (attack.type === 'freeze') {
