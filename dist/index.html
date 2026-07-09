@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Dungeon Recall</title>
-<link rel="stylesheet" href="style.css?v=13">
+<link rel="stylesheet" href="style.css?v=14">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -17,6 +17,7 @@
   <a href="#" data-screen="map" class="active"><img src="assets/menu-icons/mapa.png" alt="Mapa" class="nav-icon"></a>
   <a href="#" data-screen="guide"><img src="assets/menu-icons/navod.png" alt="Návod" class="nav-icon"></a>
   <a href="#" data-screen="bestiary"><img src="assets/menu-icons/bestiar.png" alt="Bestiář" class="nav-icon"></a>
+  <a href="#" data-screen="achievements"><img src="assets/menu-icons/preview.png" alt="Achievementy" class="nav-icon"></a>
   <a href="#" id="musicToggle"><img src="assets/menu-icons/music.png" alt="Hudba" class="nav-icon"></a>
   <a href="#" id="testToggle"><img src="assets/menu-icons/testmode.png" alt="Test" class="nav-icon"></a>
 </nav>
@@ -359,6 +360,15 @@
   <div class="bestiary-grid" id="bestiaryGrid"></div>
 </div>
 
+<!-- ===== ACHIEVEMENTS ===== -->
+<div id="achievementsScreen" class="container hidden">
+  <div class="card">
+    <div class="card-title"><img src="assets/menu-icons/preview.png" class="page-icon" alt=""> Achievementy</div>
+    <div class="card-subtitle">Odměny za dobytí dungeonů a mistrovství bez chyby.</div>
+  </div>
+  <div class="achievements-grid" id="achievementsGrid"></div>
+</div>
+
 <!-- ===== PAUSE COUNTDOWN OVERLAY ===== -->
 <div id="pauseOverlay" class="pause-overlay hidden">
   <div class="countdown-number" id="pauseCountdownNumber">3</div>
@@ -396,6 +406,6 @@ if ('serviceWorker' in navigator) {
   });
 }
 </script>
-<script src="game.js?v=13"></script>
+<script src="game.js?v=14"></script>
 </body>
 </html>

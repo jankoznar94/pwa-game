@@ -1092,3 +1092,29 @@ body.no-scroll { overflow: hidden; }
 #tutSeq .tut-seq-dot.done { background:#888; }
 #tutSeq .tut-seq-dot.error { background:#e74c3c; }
 @keyframes tutSeqPulse { 0%,100%{transform:scale(1);box-shadow:0 0 10px #f1c40f} 50%{transform:scale(1.25);box-shadow:0 0 18px #f1c40f} }
+
+/* ===== ACHIEVEMENTS ===== */
+.achievements-grid {
+  display: flex; flex-direction: column; gap: 8px;
+}
+.ach-card {
+  display: flex; align-items: center; gap: 10px;
+  background: #1a1a1a; border-radius: 10px; padding: 10px;
+  border: 2px solid #2a2a2a; transition: 0.2s;
+}
+.ach-card.ach-locked { opacity: 0.6; }
+.ach-card.ach-frame-green { border-color: #2ecc71; }
+.ach-card.ach-frame-gold { border-color: #f1c40f; }
+.ach-card.ach-locked.ach-frame-green { border-color: #1a4a2a; }
+.ach-card.ach-locked.ach-frame-gold { border-color: #4a3a10; }
+.ach-icon-wrap {
+  width: 48px; height: 48px; flex-shrink: 0;
+  border-radius: 8px; overflow: hidden;
+  background: #111; display: flex; align-items: center; justify-content: center;
+}
+.ach-icon-img { width: 100%; height: 100%; object-fit: contain; }
+.ach-info { flex: 1; min-width: 0; }
+.ach-name { font-size: 14px; font-weight: bold; color: #e8e0e8; }
+.ach-desc { font-size: 12px; color: #888; margin-top: 2px; }
+.ach-status { font-size: 18px; flex-shrink: 0; }
+.ach-locked .ach-name { color: #666; }

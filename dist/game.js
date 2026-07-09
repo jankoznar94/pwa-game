@@ -505,6 +505,22 @@
   // Skoková obtížnost — násobitel HP a damage podle dungeonu
   const DIFFICULTY_MULT = [1.0, 1.5, 2.5, 4.0, 6.0];
 
+  // ===== ACHIEVEMENTS =====
+  const ACHIEVEMENTS = [
+    // Dungeon achievements (zelený rámeček)
+    { id:'d1', name:'Dobyvatel lesa', desc:'Poraž Lesního pána', icon:'assets/monsters/forest_lord.png', type:'dungeon', locId:0 },
+    { id:'d2', name:'Dobyvatel pouště', desc:'Poraž Faraona', icon:'assets/monsters/desert_pharaoh.png', type:'dungeon', locId:1 },
+    { id:'d3', name:'Dobyvatel nemrtvých', desc:'Poraž Smrtku', icon:'assets/monsters/reaper.png', type:'dungeon', locId:2 },
+    { id:'d4', name:'Dobyvatel pekla', desc:'Poraž Lucifera', icon:'assets/monsters/lucifer_demon.png', type:'dungeon', locId:3 },
+    { id:'d5', name:'Dobyvatel ledu', desc:'Poraž Ledového titána', icon:'assets/monsters/frost_titan.png', type:'dungeon', locId:4 },
+    // Perfect achievements (zlatý rámeček)
+    { id:'p1', name:'Lesní mistr', desc:'Poraž Lesního pána bez jediné chyby', icon:'assets/monsters/forest_lord.png', type:'perfect', locId:0 },
+    { id:'p2', name:'Pouštní mistr', desc:'Poraž Faraona bez jediné chyby', icon:'assets/monsters/desert_pharaoh.png', type:'perfect', locId:1 },
+    { id:'p3', name:'Mistr nemrtvých', desc:'Poraž Smrtku bez jediné chyby', icon:'assets/monsters/reaper.png', type:'perfect', locId:2 },
+    { id:'p4', name:'Pekelný mistr', desc:'Poraž Lucifera bez jediné chyby', icon:'assets/monsters/lucifer_demon.png', type:'perfect', locId:3 },
+    { id:'p5', name:'Ledový mistr', desc:'Poraž Ledového titána bez jediné chyby', icon:'assets/monsters/frost_titan.png', type:'perfect', locId:4 },
+  ];
+
   // ===== STATE =====
   let state = {};
   let mapBattleState = {};
@@ -539,7 +555,7 @@
   const SAVE_KEY = 'dungeonRecallV7';
   function defaultState() {
     const s = { hero:{name:'Dobrodruh',face:'hero',level:1,xp:0,hp:10,maxHp:10,mana:50,maxMana:50,baseDmg:1}, deaths:0, wins:0,
-      locationProgress:[0,0,0,0,0], bossesDefeated:[false,false,false,false,false], floorProgress:[0,0,0,0,0], spellUsedThisFloor:{}, encounteredMonsters:[] };
+      locationProgress:[0,0,0,0,0], bossesDefeated:[false,false,false,false,false], floorProgress:[0,0,0,0,0], spellUsedThisFloor:{}, encounteredMonsters:[], achievements:[] };
     return s;
   }
   function loadSave() { try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); if (s && s.hero) { return s; } } catch {} return defaultState(); }
@@ -547,7 +563,7 @@
   function resetGame() { state = defaultState(); saveGame(); showScreen('map'); }
 
   // ===== SCREENS =====
-  const SCREEN_IDS = { map:'mapScreen', mapBattle:'mapBattleScreen', talents:'talentsScreen', result:'resultScreen', guide:'guideScreen', bestiary:'bestiaryScreen' };
+  const SCREEN_IDS = { map:'mapScreen', mapBattle:'mapBattleScreen', talents:'talentsScreen', result:'resultScreen', guide:'guideScreen', bestiary:'bestiaryScreen', achievements:'achievementsScreen' };
   function showScreen(name) {
     cleanupTimers();
     
@@ -578,6 +594,7 @@
     if (name !== 'mapBattle' && name !== 'battle' && name !== 'result') switchBGM('overworld');
     if (name === 'map') renderMap();
     else if (name === 'talents') renderTalents();
+    else if (name === 'achievements') renderAchievements();
   }
 
   function showMessage(msg) {
@@ -2306,6 +2323,19 @@
       state.bossesDefeated[locId] = true;
       state.hero.xp = (state.hero.xp || 0) + mb.loc.bossXp + mb.floor * 10;
       state.floorProgress[locId] = 0;
+      // Achievementy
+      const totalMistakes = (mb.floorMistakes||0) + (mb.mistakes||0);
+      if (!state.achievements) state.achievements = [];
+      ACHIEVEMENTS.forEach(a => {
+        if (a.locId === locId) {
+          if (a.type === 'dungeon' && !state.achievements.includes(a.id)) {
+            state.achievements.push(a.id);
+          }
+          if (a.type === 'perfect' && totalMistakes === 0 && !state.achievements.includes(a.id)) {
+            state.achievements.push(a.id);
+          }
+        }
+      });
       sfxBossDefeat();
       $('resultIcon').textContent = '🏆';
       $('resultTitle').textContent = `${mb.loc.boss.name} poražen!`;
@@ -2657,6 +2687,31 @@
     grid.innerHTML = html;
   }
 
+  // ===== ACHIEVEMENTS =====
+  function renderAchievements() {
+    const grid = document.getElementById('achievementsGrid');
+    if (!grid) return;
+    const unlocked = state.achievements || [];
+    let html = '';
+    // Dungeon achievements first, then perfect
+    ACHIEVEMENTS.forEach(a => {
+      const isUnlocked = unlocked.includes(a.id);
+      const frameClass = a.type === 'perfect' ? 'ach-frame-gold' : 'ach-frame-green';
+      const cardClass = isUnlocked ? 'ach-card' : 'ach-card ach-locked';
+      html += `<div class="${cardClass} ${frameClass}">
+        <div class="ach-icon-wrap">
+          <img src="${a.icon}" alt="" class="ach-icon-img"${!isUnlocked?' style="filter:grayscale(1);opacity:0.4"':''}>
+        </div>
+        <div class="ach-info">
+          <div class="ach-name">${isUnlocked ? a.name : '???'}</div>
+          <div class="ach-desc">${isUnlocked ? a.desc : 'Ještě neodhaleno'}</div>
+        </div>
+        <div class="ach-status">${isUnlocked ? '✅' : '🔒'}</div>
+      </div>`;
+    });
+    grid.innerHTML = html;
+  }
+
   // ===== TRAINING (minigames) =====
   function enterTraining(skillId) {
     const sk = SKILL_MAP[skillId];
@@ -2799,6 +2854,7 @@
         else if (a.dataset.screen === 'talents') showScreen('talents');
         else if (a.dataset.screen === 'guide') showScreen('guide');
         else if (a.dataset.screen === 'bestiary') { showScreen('bestiary'); renderBestiary(); }
+        else if (a.dataset.screen === 'achievements') { showScreen('achievements'); renderAchievements(); }
         // Inicializovat audio hned při prvním kliku (user gesture)
         firstUserInteraction();
       });
@@ -2909,7 +2965,7 @@
     onMapRapidTap,
     startTutorial, stopTutorial, advanceTutorial, prevTutorialStep,
     toggleMapPause, toggleTutorialPause,
-    renderBestiary,
+    renderBestiary, renderAchievements,
   };
   init();
 })();
