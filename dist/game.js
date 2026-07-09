@@ -201,12 +201,13 @@
           overlay.classList.add('hidden');
           _mapPaused = false;
           setPauseIcon(btn, false);
-          // Obnovit timer — CSS animace se zbytkem času
+          // Obnovit timer — transition z aktuální pozice
           const remainingMs = mb._pausedRemainingTime || mb._currentWindowTime || 0;
           if (mb._currentWindowTime && remainingMs > 0) {
             const circle = document.querySelector('.timer-circle');
             if (circle) {
-              restartTimerRing(circle, remainingMs);
+              circle.style.transition = `stroke-dashoffset ${remainingMs}ms linear`;
+              circle.style.strokeDashoffset = '0';
             }
             // Obnovit bonus zónu
             if (mb._bonusStartMs != null) {
@@ -944,8 +945,8 @@
     if (locId === 0) return base * (1 + floor * 0.05 / 7);
     // D3: poslední patro o 10% pomalejší, lineární schod
     if (locId === 2) return base * (1 + floor * 0.10 / 7);
-    // D4: stejný base jako D1 (poměrově k novým rychlostem D1)
-    if (locId === 3) return base * (1 + floor * 0.05 / 7);
+    // D4: stejný base jako D1 + dalších 10 % (boss zpomalení)
+    if (locId === 3) return base * (1 + floor * 0.15 / 7);
     // D5 (Mrazivé štíty) — pomalejší, kvůli negation ringu
     if (locId === 4) return base * 1.35;
     // D2: beze změn
