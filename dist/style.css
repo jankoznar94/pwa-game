@@ -317,7 +317,7 @@ body.no-scroll { overflow: hidden; }
   background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.2);
   display:flex;align-items:center;justify-content:center;
   cursor:pointer; touch-action:manipulation;
-  transition:0.2s; color:#ccc; font-size:20px; line-height:1;
+  transition:0.2s; color:#ccc; font-size:26px; line-height:1;
 }
 .arena-repeat-btn:active { background:rgba(255,255,255,0.15); transform:scale(1.1); }
 /* Seq progress — svisle vlevo */
