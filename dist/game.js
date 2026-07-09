@@ -177,6 +177,9 @@
         const pct = 1 - dashoffset / 691;
         mb._pausedRemainingTime = Math.max(0, mb._currentWindowTime * (1 - pct));
         mb._pausedElapsedTime = mb._currentWindowTime - mb._pausedRemainingTime;
+        // Zastavit CSS animaci a zmrazit vizuální stav
+        circle.style.animation = 'none';
+        circle.style.strokeDashoffset = String(dashoffset);
       } else {
         mb._pausedRemainingTime = mb._currentWindowTime || 0;
         mb._pausedElapsedTime = 0;
