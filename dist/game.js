@@ -121,16 +121,22 @@
       state.floorProgress = LOCATIONS.map(() => 5);
       state.locationProgress = LOCATIONS.map(() => 5);
       // Odemknout celý bestiář
-      state.encounteredMonsters = [];
+      const allMonsterFaces = [];
       MONSTER_DB.forEach(themeMonsters => {
         themeMonsters.forEach(m => {
-          if (!state.encounteredMonsters.includes(m.face)) state.encounteredMonsters.push(m.face);
+          if (m.face && !allMonsterFaces.includes(m.face)) allMonsterFaces.push(m.face);
         });
       });
       LOCATIONS.forEach(loc => {
-        if (loc && loc.boss && loc.boss.face && !state.encounteredMonsters.includes(loc.boss.face)) {
-          state.encounteredMonsters.push(loc.boss.face);
+        if (loc && loc.boss && loc.boss.face && !allMonsterFaces.includes(loc.boss.face)) {
+          allMonsterFaces.push(loc.boss.face);
         }
+      });
+      state.encounteredMonsters = allMonsterFaces;
+      // Odemknout všechny achievementy
+      if (!state.achievements) state.achievements = [];
+      ACHIEVEMENTS.forEach(a => {
+        if (!state.achievements.includes(a.id)) state.achievements.push(a.id);
       });
       btn.classList.add('test-active');
     } else {
@@ -508,17 +514,17 @@
   // ===== ACHIEVEMENTS =====
   const ACHIEVEMENTS = [
     // Dungeon achievements (zelený rámeček)
-    { id:'d1', name:'Dobyvatel lesa', desc:'Poraž Lesního pána', icon:'assets/monsters/forest_lord.png', type:'dungeon', locId:0 },
-    { id:'d2', name:'Dobyvatel pouště', desc:'Poraž Faraona', icon:'assets/monsters/desert_pharaoh.png', type:'dungeon', locId:1 },
-    { id:'d3', name:'Dobyvatel nemrtvých', desc:'Poraž Smrtku', icon:'assets/monsters/reaper.png', type:'dungeon', locId:2 },
-    { id:'d4', name:'Dobyvatel pekla', desc:'Poraž Lucifera', icon:'assets/monsters/lucifer_demon.png', type:'dungeon', locId:3 },
-    { id:'d5', name:'Dobyvatel ledu', desc:'Poraž Ledového titána', icon:'assets/monsters/frost_titan.png', type:'dungeon', locId:4 },
+    { id:'d1', name:'Dobyvatel lesa', desc:'Poraž Lesního pána', icon:'assets/menu-icons/achievement_trophy.png', type:'dungeon', locId:0 },
+    { id:'d2', name:'Dobyvatel pouště', desc:'Poraž Faraona', icon:'assets/menu-icons/achievement_trophy.png', type:'dungeon', locId:1 },
+    { id:'d3', name:'Dobyvatel nemrtvých', desc:'Poraž Smrtku', icon:'assets/menu-icons/achievement_trophy.png', type:'dungeon', locId:2 },
+    { id:'d4', name:'Dobyvatel pekla', desc:'Poraž Lucifera', icon:'assets/menu-icons/achievement_trophy.png', type:'dungeon', locId:3 },
+    { id:'d5', name:'Dobyvatel ledu', desc:'Poraž Ledového titána', icon:'assets/menu-icons/achievement_trophy.png', type:'dungeon', locId:4 },
     // Perfect achievements (zlatý rámeček)
-    { id:'p1', name:'Lesní mistr', desc:'Poraž Lesního pána bez jediné chyby', icon:'assets/monsters/forest_lord.png', type:'perfect', locId:0 },
-    { id:'p2', name:'Pouštní mistr', desc:'Poraž Faraona bez jediné chyby', icon:'assets/monsters/desert_pharaoh.png', type:'perfect', locId:1 },
-    { id:'p3', name:'Mistr nemrtvých', desc:'Poraž Smrtku bez jediné chyby', icon:'assets/monsters/reaper.png', type:'perfect', locId:2 },
-    { id:'p4', name:'Pekelný mistr', desc:'Poraž Lucifera bez jediné chyby', icon:'assets/monsters/lucifer_demon.png', type:'perfect', locId:3 },
-    { id:'p5', name:'Ledový mistr', desc:'Poraž Ledového titána bez jediné chyby', icon:'assets/monsters/frost_titan.png', type:'perfect', locId:4 },
+    { id:'p1', name:'Lesní mistr', desc:'Poraž Lesního pána bez jediné chyby', icon:'assets/menu-icons/achievement_trophy.png', type:'perfect', locId:0 },
+    { id:'p2', name:'Pouštní mistr', desc:'Poraž Faraona bez jediné chyby', icon:'assets/menu-icons/achievement_trophy.png', type:'perfect', locId:1 },
+    { id:'p3', name:'Mistr nemrtvých', desc:'Poraž Smrtku bez jediné chyby', icon:'assets/menu-icons/achievement_trophy.png', type:'perfect', locId:2 },
+    { id:'p4', name:'Pekelný mistr', desc:'Poraž Lucifera bez jediné chyby', icon:'assets/menu-icons/achievement_trophy.png', type:'perfect', locId:3 },
+    { id:'p5', name:'Ledový mistr', desc:'Poraž Ledového titána bez jediné chyby', icon:'assets/menu-icons/achievement_trophy.png', type:'perfect', locId:4 },
   ];
 
   // ===== STATE =====
