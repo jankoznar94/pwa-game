@@ -943,10 +943,17 @@
   }
 
   function getFloorTimerMultiplier(floor, locId) {
+    const base = Math.pow(0.92, floor);
+    // D1: poslední patro o 5% pomalejší, lineární schod
+    if (locId === 0) return base * (1 + floor * 0.05 / 7);
+    // D3: poslední patro o 10% pomalejší, lineární schod
+    if (locId === 2) return base * (1 + floor * 0.10 / 7);
+    // D4: stejný base jako D1 (poměrově k novým rychlostem D1)
+    if (locId === 3) return base * (1 + floor * 0.05 / 7);
     // D5 (Mrazivé štíty) — pomalejší, kvůli negation ringu
-    if (locId === 4) return Math.pow(0.92, floor) * 1.35;
-    // D1, D3: stabilní, beze změn
-    return Math.pow(0.92, floor);
+    if (locId === 4) return base * 1.35;
+    // D2: beze změn
+    return base;
   }
 
   function getDungeonAttackChances(locId, floor) {
