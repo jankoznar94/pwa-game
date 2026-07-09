@@ -945,8 +945,8 @@
     if (locId === 0) return base * (1 + floor * 0.05 / 7);
     // D3: poslední patro o 10% pomalejší, lineární schod
     if (locId === 2) return base * (1 + floor * 0.10 / 7);
-    // D4: stejný base jako D1 + dalších 10 % (boss zpomalení)
-    if (locId === 3) return base * (1 + floor * 0.15 / 7);
+    // D4: zpomalení — červený timer je moc rychlý, poslední patro o 40 % pomalejší
+    if (locId === 3) return base * (1 + floor * 0.40 / 7);
     // D5 (Mrazivé štíty) — pomalejší, kvůli negation ringu
     if (locId === 4) return base * 1.35;
     // D2: beze změn
@@ -1287,7 +1287,7 @@
     // D2 (Poušť) — náhodná rychlost na začátku každého útoku, červená/zelená/modrá
     if (mb.locId === 1) {
       const r = Math.random();
-      const speed = r < 0.33 ? 1.05 : r < 0.66 ? 0.65 : 0.35;
+      const speed = r < 0.30 ? 1.05 : r < 0.80 ? 0.65 : 0.35;
       winTime = Math.round(winTime / speed);
       circle.style.stroke = speed >= 1 ? '#e94560' : speed >= 0.5 ? '#4caf50' : '#4a7dff';
     }
@@ -1295,7 +1295,7 @@
     // D4 (Pekelné výspy) — přehřívání + červená/zelená/modrá
     if (mb.locId === 3) {
       const r = Math.random();
-      const speed = r < 0.33 ? 1.05 : r < 0.66 ? 0.65 : 0.35;
+      const speed = r < 0.30 ? 1.05 : r < 0.80 ? 0.65 : 0.35;
       let baseWinTime = Math.round(winTime / speed);
       // Heat overlay — mírný, max 5% zrychlení při heat 10
       const heatMult = 1 + mb._heatLevel * 0.005;
@@ -1329,7 +1329,7 @@
       const oldNeg = $('mbNegationRing');
       if (oldNeg) oldNeg.classList.add('hidden');
       const r = Math.random();
-      const speed = r < 0.33 ? 1.05 : r < 0.66 ? 0.65 : 0.35;
+      const speed = r < 0.30 ? 1.05 : r < 0.80 ? 0.65 : 0.35;
       winTime = Math.round(winTime / speed);
       // Barva: červená = rychlejší, zelená = střední, modrá = pomalejší
       circle.style.stroke = speed >= 1 ? '#e94560' : speed >= 0.5 ? '#4caf50' : '#4a7dff';
