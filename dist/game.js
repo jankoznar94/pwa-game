@@ -167,15 +167,19 @@
       if (mb._attackWindowTimer) { clearTimeout(mb._attackWindowTimer); mb._attackWindowTimer = null; }
       if (mb._ringTimer) { clearTimeout(mb._ringTimer); mb._ringTimer = null; }
       if (mb._bonusRaf) { cancelAnimationFrame(mb._bonusRaf); mb._bonusRaf = null; }
-      // Uložit elapsed čas pro rAF loop
+      if (mb._bonusStartTimer) { clearTimeout(mb._bonusStartTimer); mb._bonusStartTimer = null; }
+      if (mb._bonusEndTimer) { clearTimeout(mb._bonusEndTimer); mb._bonusEndTimer = null; }
+      // Uložit elapsed čas z CSS animace
       const circle = document.querySelector('.timer-circle');
       if (circle) {
         const style = getComputedStyle(circle);
         const dashoffset = parseFloat(style.strokeDashoffset) || 691;
         const pct = 1 - dashoffset / 691;
         mb._pausedRemainingTime = Math.max(0, mb._currentWindowTime * (1 - pct));
+        mb._pausedElapsedTime = mb._currentWindowTime - mb._pausedRemainingTime;
       } else {
         mb._pausedRemainingTime = mb._currentWindowTime || 0;
+        mb._pausedElapsedTime = 0;
       }
       mb._pauseToggling = false;
     } else {
@@ -194,37 +198,26 @@
           overlay.classList.add('hidden');
           _mapPaused = false;
           setPauseIcon(btn, false);
-          // Restartovat rAF loop s upraveným startTime
+          // Obnovit timer — CSS animace se zbytkem času
           const remainingMs = mb._pausedRemainingTime || mb._currentWindowTime || 0;
           if (mb._currentWindowTime && remainingMs > 0) {
-            const elapsed = mb._currentWindowTime - remainingMs;
-            const attackStartTime = performance.now() - elapsed;
-            const winTime = mb._currentWindowTime;
             const circle = document.querySelector('.timer-circle');
             if (circle) {
-              (function frame() {
+              restartTimerRing(circle, remainingMs);
+            }
+            // Obnovit bonus zónu
+            if (mb._bonusStartMs != null) {
+              const elapsed = mb._pausedElapsedTime || 0;
+              const bonusStartRemaining = Math.max(0, mb._bonusStartMs - elapsed);
+              const bonusEndRemaining = Math.max(0, (mb._bonusStartMs + mb._bonusMs) - elapsed);
+              mb._bonusStartTimer = setTimeout(() => {
                 if (mapBattleState.ended) return;
-                const now = performance.now();
-                const rawElapsed = now - attackStartTime;
-                
-                const effectiveElapsed = rawElapsed;
-                const pct = Math.min(effectiveElapsed / winTime, 1);
-                mb._bonusActive = (effectiveElapsed >= mb._bonusStartMs && effectiveElapsed < mb._bonusStartMs + mb._bonusMs);
-                if (circle) {
-                  circle.style.opacity = '1';
-                  if (isFrozen) {
-                    circle.style.stroke = '#4fc3f7';
-                  } else {
-                    circle.style.strokeDashoffset = Math.round(691 * (1 - pct));
-                  }
-                }
-                if (effectiveElapsed < winTime) {
-                  mb._bonusRaf = requestAnimationFrame(frame);
-                } else {
-                  mb._bonusActive = false;
-                  mb._bonusRaf = null;
-                }
-              })();
+                mb._bonusActive = true;
+              }, bonusStartRemaining);
+              mb._bonusEndTimer = setTimeout(() => {
+                if (mapBattleState.ended) return;
+                mb._bonusActive = false;
+              }, bonusEndRemaining);
             }
             mb._sequenceTimer = setTimeout(() => {
               if (mapBattleState.ended) return;
