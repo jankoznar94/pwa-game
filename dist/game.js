@@ -945,8 +945,8 @@
     if (locId === 0) return base * (1 + floor * 0.05 / 7);
     // D3: poslední patro o 10% pomalejší, lineární schod
     if (locId === 2) return base * (1 + floor * 0.10 / 7);
-    // D4: zpomalení — červený timer je moc rychlý, poslední patro o 40 % pomalejší
-    if (locId === 3) return base * (1 + floor * 0.40 / 7);
+    // D4: zpomalení — červený timer je moc rychlý, poslední patro o 30 % pomalejší
+    if (locId === 3) return base * (1 + floor * 0.30 / 7);
     // D5 (Mrazivé štíty) — pomalejší, kvůli negation ringu
     if (locId === 4) return base * 1.35;
     // D2: beze změn
